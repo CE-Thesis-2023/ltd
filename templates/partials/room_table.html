@@ -1,0 +1,24 @@
+<table>
+  <thead>
+    <tr>
+      <th width="100">Room ID</th>
+      <th width="300">Name</th>
+      <th width="100">Status</th>
+      <th width="100">Last Updated</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{ range .Rooms }}
+    <tr>
+      <td>{{ .Id }}</td>
+      <td>{{ .Name }}</td>
+      {{ if (eq .Status "OCCUPIED") }}
+      <td><span class="label alert">Occupied</span></td>
+      {{ else }}
+      <td><span class="label success">Empty</span></td>
+      {{ end }}
+      <td>{{ .UpdatedAt }}</td>
+    </tr>
+    {{ end }}
+  </tbody>
+</table>
