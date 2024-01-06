@@ -16,12 +16,13 @@ var once sync.Once
 var globalConfigs *Configs
 
 type Configs struct {
-	Public     HttpConfigs       `json:"public,omitempty" yaml:"public,omitempty"`
-	Private    HttpConfigs       `json:"private,omitempty" yaml:"private,omitempty"`
-	Logger     LoggerConfigs     `json:"logger,omitempty" yaml:"logger,omitempty"`
-	EventStore EventStoreConfigs `json:"eventStore,omitempty" yaml:"eventStore,omitempty"`
-	MqttStore  EventStoreConfigs `json:"mqttStore,omitempty" yaml:"mqttStore,omitempty"`
-	Sqlite     DatabaseConfigs   `json:"sqlite,omitempty" yaml:"sqlite,omitempty"`
+	Public        HttpConfigs       `json:"public,omitempty" yaml:"public,omitempty"`
+	Private       HttpConfigs       `json:"private,omitempty" yaml:"private,omitempty"`
+	Logger        LoggerConfigs     `json:"logger,omitempty" yaml:"logger,omitempty"`
+	EventStore    EventStoreConfigs `json:"eventStore,omitempty" yaml:"eventStore,omitempty"`
+	MqttStore     EventStoreConfigs `json:"mqttStore,omitempty" yaml:"mqttStore,omitempty"`
+	Sqlite        DatabaseConfigs   `json:"sqlite,omitempty" yaml:"sqlite,omitempty"`
+	InfluxConfigs InfluxConfigs     `json:"influx,omitempty" yaml:"influx,omitempty"`
 }
 
 func (c Configs) String() string {
@@ -83,6 +84,13 @@ type EventStoreConfigs struct {
 	Username string    `json:"username,omitempty" yaml:"username,omitempty"`
 	Password string    `json:"password,omitempty" yaml:"password,omitempty"`
 	Level    string    `json:"level,omitempty" yaml:"level,omitempty"`
+}
+
+type InfluxConfigs struct {
+	Host  string `json:"host,omitempty" yaml:"host,omitempty"`
+	Port  int    `json:"port,omitempty" yaml:"port,omitempty"`
+	Token string `json:"token,omitempty" yaml:"token,omitempty"`
+	Name  string `json:"applicationName,omitempty" yaml:"applicationName,omitempty"`
 }
 
 type DatabaseConfigs struct {
