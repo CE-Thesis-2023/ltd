@@ -54,7 +54,7 @@ func createLogger(opts *configs.LoggerConfigs) (*zap.Logger, error) {
 	logConfigs := zap.Config{
 		Level:             zap.NewAtomicLevelAt(*lvl),
 		DisableCaller:     true,
-		DisableStacktrace: false,
+		DisableStacktrace: true,
 		Development:       false,
 		Encoding:          opts.Encoding,
 		EncoderConfig:     encoderConfig,

@@ -16,13 +16,15 @@ var once sync.Once
 var globalConfigs *Configs
 
 type Configs struct {
-	Public        HttpConfigs       `json:"public,omitempty" yaml:"public,omitempty"`
-	Private       HttpConfigs       `json:"private,omitempty" yaml:"private,omitempty"`
-	Logger        LoggerConfigs     `json:"logger,omitempty" yaml:"logger,omitempty"`
-	EventStore    EventStoreConfigs `json:"eventStore,omitempty" yaml:"eventStore,omitempty"`
-	MqttStore     EventStoreConfigs `json:"mqttStore,omitempty" yaml:"mqttStore,omitempty"`
-	Sqlite        DatabaseConfigs   `json:"sqlite,omitempty" yaml:"sqlite,omitempty"`
-	InfluxConfigs InfluxConfigs     `json:"influx,omitempty" yaml:"influx,omitempty"`
+	Public           HttpConfigs            `json:"public,omitempty" yaml:"public,omitempty"`
+	Private          HttpConfigs            `json:"private,omitempty" yaml:"private,omitempty"`
+	Logger           LoggerConfigs          `json:"logger,omitempty" yaml:"logger,omitempty"`
+	EventStore       EventStoreConfigs      `json:"eventStore,omitempty" yaml:"eventStore,omitempty"`
+	MqttStore        EventStoreConfigs      `json:"mqttStore,omitempty" yaml:"mqttStore,omitempty"`
+	Sqlite           DatabaseConfigs        `json:"sqlite,omitempty" yaml:"sqlite,omitempty"`
+	InfluxConfigs    InfluxConfigs          `json:"influx,omitempty" yaml:"influx,omitempty"`
+	LocalTranscoder  OvenMediaEngineConfigs `json:"localTranscoder,omitempty" yaml:"localTranscoder,omitempty"`
+	CloudMediaServer OvenMediaEngineConfigs `json:"cloudMediaServer,omitempty" yaml:"cloudMediaServer,omitempty"`
 }
 
 func (c Configs) String() string {
@@ -95,6 +97,15 @@ type InfluxConfigs struct {
 
 type DatabaseConfigs struct {
 	Connection string `json:"connection,omitempty" yaml:"connection,omitempty"`
+}
+
+type OvenMediaEngineConfigs struct {
+	Host            string `json:"host,omitempty" yaml:"host,omitempty"`
+	Port            int    `json:"port,omitempty" yaml:"port,omitempty"`
+	Username        string `json:"username,omitempty" yaml:"username,omitempty"`
+	Password        string `json:"password,omitempty" yaml:"password,omitempty"`
+	VirtualHostName string `json:"virtualHostName,omitempty" yaml:"virtualHostName,omitempty"`
+	ApplicationName string `json:"applicationName,omitempty" yaml:"applicationName,omitempty"`
 }
 
 func (c *EventStoreConfigs) HasAuth() bool {
