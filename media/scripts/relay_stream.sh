@@ -1,7 +1,7 @@
 #!/bin/bash
 
 curl -XPOST -H 'Authorization: Basic dGhlc2lzOnExamsyM2kxOQ==' -H "Content-type: application/json" -d '{
-  "id": "ltdtest-000",
+  "id": "ltdtest-001",
   "stream": {
     "name": "ltdtest",
     "variantNames": []

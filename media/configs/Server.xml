@@ -47,19 +47,13 @@
                 <Application>
                     <Name>ltd</Name>
                     <Type>live</Type>
+
                     <OutputProfiles>
                         <HardwareAcceleration>false</HardwareAcceleration>
                         <OutputProfile>
-                            <Name>bypass_stream</Name>
+                            <Name>transcoding</Name>
                             <OutputStreamName>${OriginStreamName}</OutputStreamName>
                             <Encodes>
-                                <Audio>
-                                    <Bypass>true</Bypass>
-                                </Audio>
-
-                                <Video>
-                                    <Bypass>true</Bypass>
-                                </Video>
                                 <Video>
                                     <!-- vp8, h264 -->
                                     <Name>video_h264_720</Name>
@@ -69,9 +63,13 @@
                                     <Bitrate>2000000</Bitrate>
                                     <Framerate>30.0</Framerate>
                                     <Preset>faster</Preset>
+                                    <KeyFrameInterval>30</KeyFrameInterval>
+                                    <BFrames>0</BFrames>
                                 </Video>
+
                                 <Audio>
-                                    <Codec>opus</Codec>
+                                    <Name>audio_aac_128000</Name>
+                                    <Codec>aac</Codec>
                                     <Bitrate>128000</Bitrate>
                                     <Samplerate>48000</Samplerate>
                                     <Channel>2</Channel>
