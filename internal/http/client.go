@@ -2,6 +2,7 @@ package custhttp
 
 import (
 	"context"
+	"encoding/xml"
 	"io"
 	"labs/local-transcoder/internal/logger"
 	"net/http"
@@ -113,6 +114,24 @@ func JSONResponse(resp *fastshot.Response, dest interface{}) error {
 	if err := sonic.Unmarshal(bodyBytes, dest); err != nil {
 		logger.SDebug("ParseResponseBody: sonic.Unmarshal",
 			zap.Error(err))
+		return err
+	}
+
+	return nil
+}
+
+func XMLResponse(resp *fastshot.Response, dest interface{}) error {
+	body := resp.RawResponse.Body
+	defer body.Close()
+
+	bodyBytes, err := io.ReadAll(body)
+	if err != nil {
+		logger.SDebug("ParseResponseBody: io.ReadAll", zap.Error(err))
+		return err
+	}
+
+	if err := xml.Unmarshal(bodyBytes, dest); err != nil {
+		logger.SDebug("ParseResponseBody: xml.Unmarshal", zap.Error(err))
 		return err
 	}
 
