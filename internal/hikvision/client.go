@@ -16,6 +16,7 @@ type Client interface {
 	PtzCtrl(credentials *Credentials) PtzApiClientInterface
 	Smart(credentials *Credentials) SmartApiInterface
 	Event(credentials *Credentials) EventApiInterface
+	System(credentials *Credentials) SystemApiInterface
 }
 
 type client struct {
@@ -98,6 +99,13 @@ func (c *client) Smart(credentials *Credentials) SmartApiInterface {
 
 func (c *client) Event(credentials *Credentials) EventApiInterface {
 	return &eventApiClient{
+		restClient: c.getRestClient(credentials),
+		pool:       c.pool,
+	}
+}
+
+func (c *client) System(credentials *Credentials) SystemApiInterface {
+	return &systemApiClient{
 		restClient: c.getRestClient(credentials),
 		pool:       c.pool,
 	}
