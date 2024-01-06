@@ -3,21 +3,21 @@ package main
 import (
 	"context"
 	eventsapi "labs/local-transcoder/api/events"
-	privateapi "labs/local-transcoder/api/private"
+	// privateapi "labs/local-transcoder/api/private"
 	publicapi "labs/local-transcoder/api/public"
 	"labs/local-transcoder/biz/service"
 	custactors "labs/local-transcoder/internal/actor"
 	"labs/local-transcoder/internal/app"
 	"labs/local-transcoder/internal/cache"
 	"labs/local-transcoder/internal/configs"
-	custcron "labs/local-transcoder/internal/cron"
+	// custcron "labs/local-transcoder/internal/cron"
 	custdb "labs/local-transcoder/internal/db"
 	custhttp "labs/local-transcoder/internal/http"
 	"labs/local-transcoder/internal/logger"
-	custmqtt "labs/local-transcoder/internal/mqtt"
+	// custmqtt "labs/local-transcoder/internal/mqtt"
 	"time"
 
-	"github.com/go-co-op/gocron"
+	// "github.com/go-co-op/gocron"
 	"go.uber.org/zap"
 )
 
@@ -31,18 +31,6 @@ func main() {
 					custhttp.WithErrorHandler(custhttp.GlobalErrorHandler()),
 					custhttp.WithRegistration(publicapi.ServiceRegistration()),
 					custhttp.WithMiddleware(custhttp.CommonPublicMiddlewares(&configs.Public)...),
-					custhttp.WithTemplatePath("./templates"),
-				)),
-				app.WithHttpServer(custhttp.New(
-					custhttp.WithGlobalConfigs(&configs.Private),
-					custhttp.WithErrorHandler(custhttp.GlobalErrorHandler()),
-					custhttp.WithRegistration(privateapi.ServiceRegistration()),
-					custhttp.WithMiddleware(custhttp.CommonPrivateMiddlewares(&configs.Private)...),
-				)),
-				app.WithScheduling(custcron.New(
-					custcron.WithRegisterFunc(func(s *gocron.Scheduler) error {
-						return nil
-					}),
 				)),
 				app.WithFactoryHook(func() error {
 					ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -60,22 +48,22 @@ func main() {
 					service.Init()
 					eventsapi.Init(ctx)
 
-					custmqtt.InitClient(
-						context.Background(),
-						custmqtt.WithClientGlobalConfigs(&configs.MqttStore),
-						custmqtt.WithOnReconnection(eventsapi.Register),
-						custmqtt.WithOnConnectError(func(err error) {
-							logger.Error("MQTT Connection failed", zap.Error(err))
-						}),
-						custmqtt.WithClientError(eventsapi.ClientErrorHandler),
-						custmqtt.WithOnServerDisconnect(eventsapi.DisconnectHandler),
-						custmqtt.WithHandlerRegister(eventsapi.RouterHandler()),
-					)
+					// custmqtt.InitClient(
+					// 	context.Background(),
+					// 	custmqtt.WithClientGlobalConfigs(&configs.MqttStore),
+					// 	custmqtt.WithOnReconnection(eventsapi.Register),
+					// 	custmqtt.WithOnConnectError(func(err error) {
+					// 		logger.Error("MQTT Connection failed", zap.Error(err))
+					// 	}),
+					// 	custmqtt.WithClientError(eventsapi.ClientErrorHandler),
+					// 	custmqtt.WithOnServerDisconnect(eventsapi.DisconnectHandler),
+					// 	custmqtt.WithHandlerRegister(eventsapi.RouterHandler()),
+					// )
 					return nil
 				}),
 				app.WithShutdownHook(func(ctx context.Context) {
 					custdb.Stop(ctx)
-					custmqtt.StopClient(ctx)
+					// custmqtt.StopClient(ctx)
 					logger.Close()
 				}),
 			}
