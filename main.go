@@ -6,6 +6,7 @@ import (
 	privateapi "labs/local-transcoder/api/private"
 	publicapi "labs/local-transcoder/api/public"
 	"labs/local-transcoder/biz/service"
+	custactors "labs/local-transcoder/internal/actor"
 	"labs/local-transcoder/internal/app"
 	"labs/local-transcoder/internal/cache"
 	"labs/local-transcoder/internal/configs"
@@ -54,6 +55,7 @@ func main() {
 					// custdb.Migrate(nil)
 
 					cache.Init()
+					custactors.Init()
 
 					service.Init()
 					eventsapi.Init(ctx)
