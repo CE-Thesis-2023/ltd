@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Server version="8">
+    <Name>Local Transcoder Device</Name>
+    <Type>origin</Type>
+    <IP>*</IP>
+    <PrivacyProtection>false</PrivacyProtection>
+    <Bind>
+        <Managers>
+            <API>
+                <Port>7956</Port>
+                <WorkerCount>1</WorkerCount>
+            </API>
+        </Managers>
+        <Providers>
+            <RTMP>
+                <Port>7957</Port>
+                <WorkerCount>2</WorkerCount>
+            </RTMP>
+        </Providers>
+    </Bind>
+    <Managers>
+        <Host>
+            <Names>
+                <Name>*</Name>
+            </Names>
+        </Host>
+        <API>
+            <AccessToken>thesis:q1jk23i19</AccessToken>
+        </API>
+    </Managers>
+    <Modules>
+        <!-- Only works with TLS -->
+        <HTTP2>
+            <Enable>false</Enable>
+        </HTTP2>
+    </Modules>
+    <VirtualHosts>
+        <VirtualHost>
+            <Name>default</Name>
+            <Distribution>ct.thesis.media.ltd</Distribution>
+            <Host>
+                <Names>
+                    <Name>*</Name>
+                </Names>
+            </Host>
+            <Applications>
+                <Application>
+                    <Name>ltd</Name>
+                    <Type>live</Type>
+                    <OutputProfiles>
+                        <HardwareAcceleration>false</HardwareAcceleration>
+                        <OutputProfile>
+                            <Name>bypass_stream</Name>
+                            <OutputStreamName>${OriginStreamName}</OutputStreamName>
+                            <Encodes>
+                                <Audio>
+                                    <Bypass>true</Bypass>
+                                </Audio>
+
+                                <Video>
+                                    <Bypass>true</Bypass>
+                                </Video>
+                                <Video>
+                                    <!-- vp8, h264 -->
+                                    <Name>video_h264_720</Name>
+                                    <Codec>h264</Codec>
+                                    <Width>1280</Width>
+                                    <Height>720</Height>
+                                    <Bitrate>2000000</Bitrate>
+                                    <Framerate>30.0</Framerate>
+                                    <Preset>faster</Preset>
+                                </Video>
+                                <Audio>
+                                    <Codec>opus</Codec>
+                                    <Bitrate>128000</Bitrate>
+                                    <Samplerate>48000</Samplerate>
+                                    <Channel>2</Channel>
+                                </Audio>
+                            </Encodes>
+                        </OutputProfile>
+                    </OutputProfiles>
+
+                    <Providers>
+                        <RTMP>
+                            <!-- RTMP in settings -->
+                            <!-- rtmp://<ip>:<port>/ltd/<stream-name> -->
+                            <BlockDuplicateStreamName>true</BlockDuplicateStreamName>
+                        </RTMP>
+                    </Providers>
+
+                    <Publishers>
+                        <SRTPush></SRTPush>
+                    </Publishers>
+                </Application>
+            </Applications>
+        </VirtualHost>
+    </VirtualHosts>
+</Server>

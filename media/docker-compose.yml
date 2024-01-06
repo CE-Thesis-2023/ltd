@@ -1,0 +1,22 @@
+version: '3.9'
+services:
+  proxy:
+    image: 'airensoft/ovenmediaengine:0.16.1'
+    container_name: 'proxy'
+    restart: 'always'
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: '2048M'
+    volumes:
+      - './configs:/opt/ovenmediaengine/bin/origin_conf'
+    ports:
+      # API
+      - '7956:7956'
+      # RTMP
+      - '7957:7957/tcp'
+      - '7957:7957/udp'
+networks:
+  ltd:
+    driver: local
