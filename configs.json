@@ -7,30 +7,9 @@
       "key": "./certs/key.pem"
     }
   },
-  "private": {
-    "port": 8081,
-    "name": "private_api",
-    "tls": {
-      "cert": "./certs/cert.pem",
-      "key": "./certs/key.pem"
-    },
-    "auth": {
-      "username": "manager",
-      "token": "Nguyen132"
-    }
-  },
   "logger": {
     "level": "debug",
     "encoding": "console"
-  },
-  "eventStore": {
-    "host": "",
-    "port": 8082,
-    "enabled": true,
-    "name": "event_store",
-    "username": "",
-    "password": "",
-    "level": "debug"
   },
   "mqttStore": {
     "host": "",
