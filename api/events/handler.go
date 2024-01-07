@@ -85,6 +85,18 @@ func (h *StandardEventHandler) ReceiveRemoteCommands(p *paho.Publish) error {
 				return
 			}
 			logger.SInfo("ReceiveRemoteCommands: Command_StartStream success")
+		case events.Command_EndStream:
+			info, ok := msg.Info.(events.CommandEndStreamInfo)
+			if !ok {
+				logger.SError("ReceiveRemoteCommands: Command_EndStream",
+					zap.String("error", "info not type CommmandEndStreamInfo"))
+				return
+			}
+			if err := biz.EndStream(ctx, &info); err != nil {
+				logger.SError("ReceiveRemoteCommands: biz.EndStream", zap.Error(err))
+				return
+			}
+			logger.SInfo("ReceiveRemoteCommands: Command_EndStream success")
 		default:
 			logger.SError("ReceiveRemoteCommands: unknown command type",
 				zap.String("type", string(msg.CommandType)),

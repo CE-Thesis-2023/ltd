@@ -27,10 +27,14 @@ type CommandStartStreamInfo struct {
 }
 
 type CommandAddCameraInfo struct {
-	Id       string `json:"cameraId"`
+	CameraId string `json:"cameraId"`
 	Name     string `json:"name"`
 	Ip       string `json:"ip"`
 	Port     int    `json:"port"`
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+type CommandEndStreamInfo struct {
+	CameraId string `json:"cameraId"`
 }

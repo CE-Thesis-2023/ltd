@@ -11,6 +11,7 @@ type CommandServiceInterface interface {
 	DeviceInfo(ctx context.Context, req *events.CommandRetrieveDeviceInfo) error
 	AddCamera(ctx context.Context, req *events.CommandAddCameraInfo) error
 	StartStream(ctx context.Context, req *events.CommandStartStreamInfo) error
+	EndStream(ctx context.Context, req *events.CommandEndStreamInfo) error
 }
 type CommandService struct {
 	db *custdb.LayeredDb
@@ -36,4 +37,8 @@ func (s *CommandService) DeviceInfo(ctx context.Context, req *events.CommandRetr
 
 func (s *CommandService) StartStream(ctx context.Context, req *events.CommandStartStreamInfo) error {
 	panic("unimplemented")
+}
+
+func (s *CommandService) EndStream(ctx context.Context, req *events.CommandEndStreamInfo) error {
+	return nil
 }
