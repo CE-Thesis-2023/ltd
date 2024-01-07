@@ -50,12 +50,27 @@ func newMediaService() MediaServiceInterface {
 	}
 }
 
+func (s mediaService) Shutdown() {
+	logger.SInfo("mediaService.Shutdown: shutdown received")
+	for cameraId, p := range s.onGoingProcesses {
+		delete(s.onGoingProcesses, cameraId)
+		if err := p.proc.Cancel(); err != nil {
+			logger.SDebug("mediaService.Shutdown: cancel process", zap.Error(err))
+			continue
+		}
+		logger.SDebug("mediaService.Shutdown: canceled stream", zap.String("cameraId", cameraId))
+	}
+	s.streamingPool.Release()
+	logger.SDebug("mediaService.Shutdown: released streaming pool")
+}
+
 type MediaServiceInterface interface {
 	AdmissionWebhook(ctx context.Context, req *ms.AdmissionWebhookRequest) (*ms.AdmissionWebhookResponse, error)
 	RequestPullRtsp(ctx context.Context, camera *db.Camera, req *events.CommandStartStreamInfo) error
 	RequestPushSrt(ctx context.Context, req *ms.PushStreamingRequest) (*ome.StartPushStreamingResponse, error)
 	RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Camera, req *events.CommandStartStreamInfo) error
 	CancelFFmpegRtspToSrt(ctx context.Context, camera *db.Camera) error
+	Shutdown()
 }
 
 func (s *mediaService) AdmissionWebhook(ctx context.Context, req *ms.AdmissionWebhookRequest) (*ms.AdmissionWebhookResponse, error) {

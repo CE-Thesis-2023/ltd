@@ -71,6 +71,7 @@ func main() {
 				app.WithShutdownHook(func(ctx context.Context) {
 					custdb.Stop(ctx)
 					custmqtt.StopClient(ctx)
+					service.Shutdown()
 					logger.Close()
 				}),
 			}

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-jsonRequest='{"commandType":"Command_StartFfmpegStream","info":{"cameraId":"32845204","channelId":"1"}}'
+jsonRequest='{"commandType":"Command_EndFfmpegStream","info":{"cameraId":"32845204"}}'
 cameraId='32845204'
 
 mqtt pub -t commands/$cameraId \

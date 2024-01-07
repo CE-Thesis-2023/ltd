@@ -50,11 +50,7 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 			return nil
 		}, retry.Attempts(3),
 			retry.RetryIf(func(err error) bool {
-				if err != nil {
-					logger.SDebug("RequestFFmpegRtspToSrt: errored, restart now")
-					return true
-				}
-				if s.shouldRestartStream(ctx, camera, sourceUrl, destinationUrl) {
+				if s.shouldRestartStream(err, camera, sourceUrl, destinationUrl) {
 					logger.SInfo("RequestFFmpegRtspToSrt: restarting stream")
 				} else {
 					logger.SInfo("RequestFFmpegRtspToSrt: will not restart stream")
@@ -93,12 +89,15 @@ func (s *mediaService) buildFfmpegRestreamingCommand(sourceUrl string, destinati
 	return cmd
 }
 
-func (s *mediaService) shouldRestartStream(ctx context.Context, camera *db.Camera, sourceUrl string, destinationUrl string) bool {
+func (s *mediaService) shouldRestartStream(err error, camera *db.Camera, sourceUrl string, destinationUrl string) bool {
 	logger.SDebug("shouldRestartStream",
 		zap.String("source", sourceUrl),
 		zap.String("destination", destinationUrl))
 	_, found := s.onGoingProcesses[camera.Id]
-	return found
+	if found && err != nil {
+		return true
+	}
+	return false
 }
 
 func (s *mediaService) recordThisStream(ctx context.Context, camera *db.Camera, sourceUrl string, destinationUrl string, proc *exec.Cmd) {

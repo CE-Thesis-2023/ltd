@@ -23,3 +23,9 @@ func GetCommandService() CommandServiceInterface {
 func GetStreamManagementService() *StreamManagementService {
 	return streamManagementService
 }
+
+func Shutdown() {
+	GetStreamManagementService().
+		MediaService().
+		Shutdown()
+}

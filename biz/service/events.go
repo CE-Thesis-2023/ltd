@@ -30,6 +30,7 @@ type CommandServiceInterface interface {
 	EndStream(ctx context.Context, req *events.CommandEndStreamInfo) error
 	StartFfmpegStream(ctx context.Context, req *events.CommandStartStreamInfo) error
 	EndFfmpegStream(ctx context.Context, req *events.CommandEndStreamInfo) error
+	Shutdown()
 }
 type CommandService struct {
 	db              *custdb.LayeredDb
@@ -52,6 +53,11 @@ func NewCommandService() CommandServiceInterface {
 		pool:                    p,
 		streamManagementService: GetStreamManagementService(),
 	}
+}
+
+func (s *CommandService) Shutdown() {
+	logger.SInfo("CommandService: shutdown requested")
+	s.pool.Release()
 }
 
 func (s *CommandService) AddCamera(ctx context.Context, req *events.CommandAddCameraInfo) error {
