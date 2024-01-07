@@ -13,8 +13,7 @@ import (
 	"labs/local-transcoder/internal/ome"
 	"labs/local-transcoder/models/db"
 	"labs/local-transcoder/models/events"
-	"net/url"
-	"strings"
+	"labs/local-transcoder/models/ms"
 	"time"
 
 	"github.com/Masterminds/squirrel"
@@ -36,17 +35,20 @@ type CommandService struct {
 	omeClient       ome.OmeClientInterface
 	hikvisionClient hikvision.Client
 	pool            *ants.Pool
+
+	streamManagementService StreamManagementServiceInterface
 }
 
 func NewCommandService() CommandServiceInterface {
 	p, _ := ants.NewPool(10,
 		ants.WithLogger(logger.NewZapToAntsLogger(logger.Logger())))
 	return &CommandService{
-		db:              custdb.Layered(),
-		cache:           cache.Cache(),
-		omeClient:       factory.Ome(),
-		hikvisionClient: factory.Hikvision(),
-		pool:            p,
+		db:                      custdb.Layered(),
+		cache:                   cache.Cache(),
+		omeClient:               factory.Ome(),
+		hikvisionClient:         factory.Hikvision(),
+		pool:                    p,
+		streamManagementService: GetStreamManagementService(),
 	}
 }
 
@@ -188,71 +190,23 @@ func (s *CommandService) StartStream(ctx context.Context, req *events.CommandSta
 	}
 
 	logger.SDebug("StartStream: camera", zap.Any("camera", camera))
-	if err := s.requestStream(ctx, camera, req); err != nil {
+	m := s.streamManagementService.MediaService()
+	if err := m.RequestPullRtsp(ctx, camera, req); err != nil {
 		logger.SError("StartStream: request stream error",
 			zap.Error(err))
 		return err
 	}
 
-	logger.SInfo("StartStream: sucess")
-	return nil
-}
-
-func (s *CommandService) requestStream(ctx context.Context, camera *db.Camera, req *events.CommandStartStreamInfo) error {
-	omeListResp, err := s.omeClient.Streams().List(ctx)
+	resp, err := m.RequestPushSrt(ctx, &ms.PushStreamingRequest{
+		StreamName: req.CameraId,
+	})
 	if err != nil {
-		logger.SDebug("requestStream: list streams error", zap.Error(err))
-		return err
+		logger.SError("RequestPushSrt: request push srt", zap.Error(err))
+		return nil
 	}
 
-	for _, stream := range omeListResp.Names {
-		if strings.EqualFold(stream, req.CameraId) {
-			logger.SError("requestStream: stream already started", zap.String("name", req.CameraId))
-			return custerror.ErrorAlreadyExists
-		}
-	}
-
-	logger.SDebug("requestStream: stream not started, attempting to ask media server to enable stream")
-
-	if err := s.startPullRtspStream(ctx, camera, req); err != nil {
-		logger.SError("requestStream: startPullRtspStream error", zap.Error(err))
-		return err
-	}
-
-	logger.SInfo("requestStream: success")
+	logger.SInfo("StartStream: sucess", zap.Any("pushStreaming", resp))
 	return nil
-}
-
-func (s *CommandService) startPullRtspStream(ctx context.Context, camera *db.Camera, req *events.CommandStartStreamInfo) error {
-	if err := s.omeClient.Streams().CreatePull(ctx, &ome.StreamCreationRequest{
-		Name: req.CameraId,
-		URLs: []string{
-			s.buildRtspStreamUrl(camera, req),
-		},
-		Properties: ome.StreamProperties{
-			Persistent:            true, // dont delete stream if no viewer or no input
-			IgnoreRtcpSRTimestamp: false,
-		},
-	}); err != nil {
-		logger.SDebug("startPullRtspStream: CreatePull error", zap.Error(err))
-		return err
-	}
-	logger.SDebug("startPullRtspStream: success")
-	return nil
-}
-
-func (s *CommandService) buildRtspStreamUrl(camera *db.Camera, req *events.CommandStartStreamInfo) string {
-	u := &url.URL{}
-	u.Scheme = "rtsp"
-	u.Host = camera.Ip
-	if camera.Port != 0 {
-		u.Host = fmt.Sprintf("%s:%d", camera.Ip, camera.Port)
-	}
-	u = u.JoinPath("/ISAPI", "/Streaming", "channels", req.ChannelId)
-	u.User = url.UserPassword(camera.Username, camera.Password)
-	url := u.String()
-	logger.SDebug("buildRtspStreamUrl: stream url", zap.String("url", url))
-	return url
 }
 
 func (s *CommandService) EndStream(ctx context.Context, req *events.CommandEndStreamInfo) error {

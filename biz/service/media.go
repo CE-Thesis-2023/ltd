@@ -7,6 +7,8 @@ import (
 	custdb "labs/local-transcoder/internal/db"
 	"labs/local-transcoder/internal/logger"
 	"labs/local-transcoder/internal/ome"
+	"labs/local-transcoder/models/db"
+	"labs/local-transcoder/models/events"
 	"labs/local-transcoder/models/ms"
 
 	"go.uber.org/zap"
@@ -26,6 +28,8 @@ func newMediaService() MediaServiceInterface {
 
 type MediaServiceInterface interface {
 	AdmissionWebhook(ctx context.Context, req *ms.AdmissionWebhookRequest) (*ms.AdmissionWebhookResponse, error)
+	RequestPullRtsp(ctx context.Context, camera *db.Camera, req *events.CommandStartStreamInfo) error
+	RequestPushSrt(ctx context.Context, req *ms.PushStreamingRequest) (*ome.StartPushStreamingResponse, error)
 }
 
 func (s *mediaService) AdmissionWebhook(ctx context.Context, req *ms.AdmissionWebhookRequest) (*ms.AdmissionWebhookResponse, error) {
