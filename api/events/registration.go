@@ -2,7 +2,9 @@ package eventsapi
 
 import (
 	"context"
+	"fmt"
 	"labs/local-transcoder/helper"
+	"labs/local-transcoder/internal/configs"
 	"labs/local-transcoder/internal/logger"
 	custmqtt "labs/local-transcoder/internal/mqtt"
 	"time"
@@ -31,7 +33,10 @@ func Register(cm *autopaho.ConnectionManager, connack *paho.Connack) {
 }
 
 func makeSubsciptions(ctx context.Context, cm *autopaho.ConnectionManager, connack *paho.Connack) []paho.SubscribeOptions {
-	return []paho.SubscribeOptions{}
+	return []paho.SubscribeOptions{
+		{Topic: fmt.Sprintf("commands/%s", configs.Get().DeviceInfo.DeviceId), QoS: 1},
+		{Topic: fmt.Sprintf("ptzctrl/%s", configs.Get().DeviceInfo.DeviceId), QoS: 1},
+	}
 }
 
 func ClientErrorHandler(err error) {
@@ -48,6 +53,15 @@ func DisconnectHandler(d *paho.Disconnect) {
 
 func RouterHandler() custmqtt.RouterRegister {
 	return func(router *paho.StandardRouter) {
+		handlers := GetStandardEventsHandler()
+		router.RegisterHandler(
+			fmt.Sprintf("commands/%s", configs.Get().DeviceInfo.DeviceId),
+			WrapForHandlers(handlers.ReceiveRemoteCommands),
+		)
+		router.RegisterHandler(
+			fmt.Sprintf("ptzctrl/%s", configs.Get().DeviceInfo.DeviceId),
+			WrapForHandlers(handlers.ReceiveRemoteMovementControl),
+		)
 	}
 }
 

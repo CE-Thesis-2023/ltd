@@ -6,7 +6,7 @@ var once sync.Once
 
 var (
 	streamManagementService *StreamManagementService
-	commandService          *CommandService
+	commandService          CommandServiceInterface
 )
 
 func Init() {
@@ -16,7 +16,7 @@ func Init() {
 	})
 }
 
-func GetCommandService() *CommandService {
+func GetCommandService() CommandServiceInterface {
 	return commandService
 }
 

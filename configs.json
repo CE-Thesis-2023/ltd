@@ -12,15 +12,18 @@
     "encoding": "console"
   },
   "mqttStore": {
-    "host": "",
-    "port": 8083,
+    "host": "103.165.142.44",
+    "port": 9093,
     "enabled": true,
-    "name": "mqtt_store",
+    "name": "mqtt_gateway",
     "username": "",
     "password": "",
     "level": "debug"
   },
   "sqlite": {
     "connection": "./db/emb.db"
+  },
+  "deviceInfo": {
+    "deviceId": "ltd_test_01"
   }
 }

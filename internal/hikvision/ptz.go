@@ -16,11 +16,13 @@ import (
 type PtzApiClientInterface interface {
 	Channels(ctx context.Context) (*PTZCtrlChannelsResponse, error)
 	Capabilities(ctx context.Context, channelId string) (*PtzCtrlChannelCapabilities, error)
+	RawContinuous(ctx context.Context, req *PtzCtrlRawContinousRequest) error
+	ContinousWithReset(ctx context.Context, req *PtzCtrlContinousWithResetRequest) error
 }
 
 type ptzApiClient struct {
-	restClient  fastshot.ClientHttpMethods
-	pool        *ants.Pool
+	restClient fastshot.ClientHttpMethods
+	pool       *ants.Pool
 }
 
 func (c *ptzApiClient) getBaseUrl() string {

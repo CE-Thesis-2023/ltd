@@ -1,13 +1,39 @@
 package service
 
-import custdb "labs/local-transcoder/internal/db"
+import (
+	"context"
+	custdb "labs/local-transcoder/internal/db"
+	"labs/local-transcoder/models/events"
+)
 
+type CommandServiceInterface interface {
+	PtzCtrl(ctx context.Context, req *events.PtzCtrlRequest) error
+	DeviceInfo(ctx context.Context, req *events.CommandRetrieveDeviceInfo) error
+	AddCamera(ctx context.Context, req *events.CommandAddCameraInfo) error
+	StartStream(ctx context.Context, req *events.CommandStartStreamInfo) error
+}
 type CommandService struct {
 	db *custdb.LayeredDb
 }
 
-func NewCommandService() *CommandService {
+func NewCommandService() CommandServiceInterface {
 	return &CommandService{
-		db:          custdb.Layered(),
+		db: custdb.Layered(),
 	}
+}
+
+func (s *CommandService) PtzCtrl(ctx context.Context, req *events.PtzCtrlRequest) error {
+	panic("unimplemented")
+}
+
+func (s *CommandService) AddCamera(ctx context.Context, req *events.CommandAddCameraInfo) error {
+	panic("unimplemented")
+}
+
+func (s *CommandService) DeviceInfo(ctx context.Context, req *events.CommandRetrieveDeviceInfo) error {
+	panic("unimplemented")
+}
+
+func (s *CommandService) StartStream(ctx context.Context, req *events.CommandStartStreamInfo) error {
+	panic("unimplemented")
 }
