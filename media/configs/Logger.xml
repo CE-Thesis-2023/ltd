@@ -4,5 +4,5 @@
     <Tag name="RTMP" level="info" />
     <Tag name="SRT" level="info" />
     <Tag name="RTSP" level="info" />
-    <Tag name=".*" level="debug" />
+    <Tag name=".*" level="info" />
 </Logger>
