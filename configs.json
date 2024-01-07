@@ -25,5 +25,21 @@
   },
   "deviceInfo": {
     "deviceId": "ltd_test_01"
+  },
+  "localTranscoder": {
+    "host": "127.0.0.1",
+    "port": "7956",
+    "username": "thesis",
+    "password": "q1jk23i19",
+    "virtualHostName": "default",
+    "applicationName": "ltd"
+  },
+  "cloudMediaServer": {
+    "host": "103.165.142.44",
+    "port": "7956",
+    "username": "thesis",
+    "password": "q1jk23i19",
+    "virtualHostName": "default",
+    "applicationName": "camera"
   }
 }
