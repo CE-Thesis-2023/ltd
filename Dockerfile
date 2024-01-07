@@ -21,8 +21,12 @@ RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
 
 FROM alpine:3.18 AS runner
 
-COPY public public
-COPY templates templates
+WORKDIR /usr/local/bin
+COPY /bin/ffmpeg ffmpeg
+COPY /bin/ffplay ffplay
+COPY /bin/ffprobe ffprobe
+
+WORKDIR /
 COPY configs.json configs.json
 COPY --from=builder /build/main main
 

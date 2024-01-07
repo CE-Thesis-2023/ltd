@@ -2,29 +2,20 @@ package main
 
 import (
 	"context"
+	"go.uber.org/zap"
 	eventsapi "labs/local-transcoder/api/events"
-	"labs/local-transcoder/helper/factory"
-	"labs/local-transcoder/models/db"
-
-	// privateapi "labs/local-transcoder/api/private"
 	publicapi "labs/local-transcoder/api/public"
 	"labs/local-transcoder/biz/service"
-	custactors "labs/local-transcoder/internal/actor"
+	"labs/local-transcoder/helper/factory"
 	"labs/local-transcoder/internal/app"
 	"labs/local-transcoder/internal/cache"
 	"labs/local-transcoder/internal/configs"
-	custmqtt "labs/local-transcoder/internal/mqtt"
-
-	// custcron "labs/local-transcoder/internal/cron"
 	custdb "labs/local-transcoder/internal/db"
 	custhttp "labs/local-transcoder/internal/http"
 	"labs/local-transcoder/internal/logger"
-
-	// custmqtt "labs/local-transcoder/internal/mqtt"
+	custmqtt "labs/local-transcoder/internal/mqtt"
+	"labs/local-transcoder/models/db"
 	"time"
-
-	// "github.com/go-co-op/gocron"
-	"go.uber.org/zap"
 )
 
 func main() {
@@ -49,7 +40,6 @@ func main() {
 					custdb.Migrate(&db.Camera{})
 
 					cache.Init()
-					custactors.Init()
 					factory.Init(ctx, configs)
 
 					service.Init()

@@ -1,0 +1,17 @@
+version: '3.9'
+services:
+  local-transcoder:
+    image: 'nguyentrantrung/local-transcoder:latest'
+    container_name: ltd
+    network_mode: host
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 2048m
+    environment:
+      - CONFIG_FILE_PATH=./configs.json
+    volumes:
+      - ./db:/db
+    restart: on-failure
+    pull_policy: always

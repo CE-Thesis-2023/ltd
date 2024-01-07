@@ -20,7 +20,7 @@
     "connection": "./db/emb.db"
   },
   "deviceInfo": {
-    "deviceId": "32845204"
+    "deviceId": "testdevice"
   },
   "localTranscoder": {
     "host": "127.0.0.1",
@@ -37,5 +37,8 @@
     "password": "q1jk23i19",
     "virtualHostName": "default",
     "applicationName": "camera"
+  },
+  "ffmpeg": {
+    "binaryPath": "/usr/local/bin/ffmpeg"
   }
 }
