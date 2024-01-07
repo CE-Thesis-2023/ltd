@@ -20,7 +20,7 @@
     "connection": "./db/emb.db"
   },
   "deviceInfo": {
-    "deviceId": "testdevice"
+    "deviceId": "32845204"
   },
   "localTranscoder": {
     "host": "127.0.0.1",
