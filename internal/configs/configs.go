@@ -26,6 +26,7 @@ type Configs struct {
 	LocalTranscoder  OvenMediaEngineConfigs `json:"localTranscoder,omitempty" yaml:"localTranscoder,omitempty"`
 	CloudMediaServer OvenMediaEngineConfigs `json:"cloudMediaServer,omitempty" yaml:"cloudMediaServer,omitempty"`
 	DeviceInfo       DeviceInfoConfigs      `json:"deviceInfo,omitempty" yaml:"deviceInfo,omitempty"`
+	Ffmpeg           FfmpegConfigs          `json:"ffmpeg,omitempty" yaml:"ffmpeg,omitempty"`
 }
 
 func (c Configs) String() string {
@@ -107,6 +108,10 @@ type OvenMediaEngineConfigs struct {
 	Password        string `json:"password,omitempty" yaml:"password,omitempty"`
 	VirtualHostName string `json:"virtualHostName,omitempty" yaml:"virtualHostName,omitempty"`
 	ApplicationName string `json:"applicationName,omitempty" yaml:"applicationName,omitempty"`
+}
+
+type FfmpegConfigs struct {
+	BinaryPath string `json:"binaryPath,omitempty" yaml:"binaryPath,omitempty"`
 }
 
 type DeviceInfoConfigs struct {

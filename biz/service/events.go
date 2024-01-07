@@ -28,6 +28,8 @@ type CommandServiceInterface interface {
 	AddCamera(ctx context.Context, req *events.CommandAddCameraInfo) error
 	StartStream(ctx context.Context, req *events.CommandStartStreamInfo) error
 	EndStream(ctx context.Context, req *events.CommandEndStreamInfo) error
+	StartFfmpegStream(ctx context.Context, req *events.CommandStartStreamInfo) error
+	EndFfmpegStream(ctx context.Context, req *events.CommandEndStreamInfo) error
 }
 type CommandService struct {
 	db              *custdb.LayeredDb
@@ -210,5 +212,55 @@ func (s *CommandService) StartStream(ctx context.Context, req *events.CommandSta
 }
 
 func (s *CommandService) EndStream(ctx context.Context, req *events.CommandEndStreamInfo) error {
+	return nil
+}
+
+func (s *CommandService) StartFfmpegStream(ctx context.Context, req *events.CommandStartStreamInfo) error {
+	camera, err := s.getCameraById(ctx, req.CameraId)
+	if err != nil {
+		if errors.Is(err, custerror.ErrorNotFound) {
+			logger.SError("StartFfmpegStream: camera not found",
+				zap.String("id", req.CameraId),
+				zap.Error(err))
+			return err
+		}
+		logger.SError("StartFfmpegStream: getCameraById error", zap.Error(err))
+		return err
+	}
+
+	logger.SDebug("StartFfmpegStream: camera", zap.Any("camera", camera))
+	m := GetStreamManagementService().MediaService()
+	err = m.RequestFFmpegRtspToSrt(ctx, camera, req)
+	if err != nil {
+		logger.SError("RequestFFmpegRtspToSrt: request push srt", zap.Error(err))
+		return nil
+	}
+
+	logger.SInfo("StartFfmpegStream: success", zap.Any("cameraId", req.CameraId))
+	return nil
+}
+
+func (s *CommandService) EndFfmpegStream(ctx context.Context, req *events.CommandEndStreamInfo) error {
+	camera, err := s.getCameraById(ctx, req.CameraId)
+	if err != nil {
+		if errors.Is(err, custerror.ErrorNotFound) {
+			logger.SError("EndFfmpegStream: camera not found",
+				zap.String("id", req.CameraId),
+				zap.Error(err))
+			return err
+		}
+		logger.SError("EndFfmpegStream: getCameraById error", zap.Error(err))
+		return err
+	}
+
+	logger.SDebug("EndFfmpegStream: camera", zap.Any("camera", camera))
+	m := GetStreamManagementService().MediaService()
+	err = m.CancelFFmpegRtspToSrt(ctx, camera)
+	if err != nil {
+		logger.SError("CancelFFmpegRtspToSrt: cancel error", zap.Error(err))
+		return nil
+	}
+
+	logger.SInfo("EndFfmpegStream: success", zap.Any("cameraId", req.CameraId))
 	return nil
 }

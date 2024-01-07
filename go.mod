@@ -5,6 +5,7 @@ go 1.21.4
 require (
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/anthdm/hollywood v0.0.0-20231230200740-54133c9bd2b4
+	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/bytedance/sonic v1.10.2
 	github.com/carlmjohnson/flowmatic v0.23.4
 	github.com/eclipse/paho.golang v0.12.0
@@ -18,6 +19,7 @@ require (
 	github.com/motemen/go-loghttp v0.0.0-20231107055348-29ae44b293f4
 	github.com/opus-domini/fast-shot v0.9.0
 	github.com/panjf2000/ants/v2 v2.9.0
+	github.com/u2takey/ffmpeg-go v0.5.0
 	go.mrchanchal.com/zaphandler v0.0.0-20230611140024-bd4fd80897ad
 	gorm.io/driver/sqlite v1.5.4
 	gorm.io/gorm v1.25.5
@@ -25,6 +27,7 @@ require (
 
 require (
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
+	github.com/aws/aws-sdk-go v1.38.20 // indirect
 	github.com/carlmjohnson/deque v0.23.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
@@ -37,6 +40,7 @@ require (
 	github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
@@ -54,6 +58,7 @@ require (
 	github.com/rs/xid v1.4.0 // indirect
 	github.com/tinylib/msgp v1.1.8 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
+	github.com/u2takey/go-utils v0.3.1 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/arch v0.4.0 // indirect
@@ -72,7 +77,7 @@ require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/go-co-op/gocron v1.36.0
-	github.com/google/uuid v1.5.0 // indirect
+	github.com/google/uuid v1.5.0
 	github.com/klauspost/compress v1.17.2 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

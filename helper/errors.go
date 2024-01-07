@@ -20,3 +20,18 @@ func EventHandlerErrorHandler(err error) {
 			zap.Error(err))
 	}
 }
+
+func RunWithRestart(f func() error, shouldRestart func(err error) bool) {
+	for {
+		if err := f(); err != nil {
+			logger.SDebug("RunWithRestart: task failed", zap.Error(err))
+			if shouldRestart(err) {
+				logger.SDebug("RunWithRestart: should restart")
+				continue
+			}
+			logger.SDebug("RunWithRestart: should stop")
+			return
+		}
+
+	}
+}

@@ -3,15 +3,17 @@ package events
 type CommandType string
 
 const (
-	Command_GetDeviceInfo CommandType = "Command_GetDeviceInfo"
-	Command_StartStream   CommandType = "Command_StartStream"
-	Command_EndStream     CommandType = "Command_EndStream"
-	Command_AddCamera     CommandType = "Command_AddCamera"
+	Command_GetDeviceInfo     CommandType = "Command_GetDeviceInfo"
+	Command_StartStream       CommandType = "Command_StartStream"
+	Command_EndStream         CommandType = "Command_EndStream"
+	Command_AddCamera         CommandType = "Command_AddCamera"
+	Command_StartFfmpegStream CommandType = "Command_StartFfmpegStream"
+	Command_EndFfmpegStream   CommandType = "Command_EndFfmpegStream"
 )
 
 type CommandRequest struct {
-	CommandType CommandType `json:"commandType"`
-	Info        map[string]interface{}      `json:"info"`
+	CommandType CommandType            `json:"commandType"`
+	Info        map[string]interface{} `json:"info"`
 }
 
 type CommandRetrieveDeviceInfo struct {

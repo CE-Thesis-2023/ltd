@@ -4,25 +4,49 @@ import (
 	"context"
 	"labs/local-transcoder/helper"
 	"labs/local-transcoder/helper/factory"
+	"labs/local-transcoder/internal/cache"
+	custcon "labs/local-transcoder/internal/concurrent"
 	custdb "labs/local-transcoder/internal/db"
 	"labs/local-transcoder/internal/logger"
 	"labs/local-transcoder/internal/ome"
 	"labs/local-transcoder/models/db"
 	"labs/local-transcoder/models/events"
 	"labs/local-transcoder/models/ms"
+	"os/exec"
 
+	"github.com/dgraph-io/ristretto"
+	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 )
 
+type onGoingProcess struct {
+	SourceUrl      string
+	DestinationUrl string
+	proc           *exec.Cmd
+}
+
+func (c *onGoingProcess) Cancel(ctx context.Context) error {
+	if c.proc != nil {
+		return c.proc.Cancel()
+	}
+	return nil
+}
+
 type mediaService struct {
-	db        *custdb.LayeredDb
-	omeClient ome.OmeClientInterface
+	db               *custdb.LayeredDb
+	omeClient        ome.OmeClientInterface
+	streamingPool    *ants.Pool
+	cache            *ristretto.Cache
+	onGoingProcesses map[string]*onGoingProcess
 }
 
 func newMediaService() MediaServiceInterface {
 	return &mediaService{
-		db:        custdb.Layered(),
-		omeClient: factory.Ome(),
+		db:               custdb.Layered(),
+		omeClient:        factory.Ome(),
+		streamingPool:    custcon.New(20),
+		cache:            cache.Cache(),
+		onGoingProcesses: map[string]*onGoingProcess{},
 	}
 }
 
@@ -30,6 +54,8 @@ type MediaServiceInterface interface {
 	AdmissionWebhook(ctx context.Context, req *ms.AdmissionWebhookRequest) (*ms.AdmissionWebhookResponse, error)
 	RequestPullRtsp(ctx context.Context, camera *db.Camera, req *events.CommandStartStreamInfo) error
 	RequestPushSrt(ctx context.Context, req *ms.PushStreamingRequest) (*ome.StartPushStreamingResponse, error)
+	RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Camera, req *events.CommandStartStreamInfo) error
+	CancelFFmpegRtspToSrt(ctx context.Context, camera *db.Camera) error
 }
 
 func (s *mediaService) AdmissionWebhook(ctx context.Context, req *ms.AdmissionWebhookRequest) (*ms.AdmissionWebhookResponse, error) {
