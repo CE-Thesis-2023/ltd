@@ -4,6 +4,7 @@
     <Type>origin</Type>
     <IP>*</IP>
     <PrivacyProtection>false</PrivacyProtection>
+    <StunServer>stun.l.google.com:19302</StunServer>
     <Bind>
         <Managers>
             <API>
@@ -12,11 +13,12 @@
             </API>
         </Managers>
         <Providers>
-            <RTMP>
-                <Port>7957</Port>
+            <RTSPC>
                 <WorkerCount>2</WorkerCount>
-            </RTMP>
+            </RTSPC>
         </Providers>
+        <Publishers>
+        </Publishers>
     </Bind>
     <Managers>
         <Host>
@@ -43,6 +45,7 @@
                     <Name>*</Name>
                 </Names>
             </Host>
+
             <Applications>
                 <Application>
                     <Name>ltd</Name>
@@ -67,6 +70,7 @@
                                     <BFrames>0</BFrames>
                                 </Video>
 
+
                                 <Audio>
                                     <Name>audio_aac_128000</Name>
                                     <Codec>aac</Codec>
@@ -79,11 +83,8 @@
                     </OutputProfiles>
 
                     <Providers>
-                        <RTMP>
-                            <!-- RTMP in settings -->
-                            <!-- rtmp://<ip>:<port>/ltd/<stream-name> -->
-                            <BlockDuplicateStreamName>true</BlockDuplicateStreamName>
-                        </RTMP>
+                        <RTSPPull />
+
                     </Providers>
 
                     <Publishers>

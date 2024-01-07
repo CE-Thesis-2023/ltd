@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Logger version="2">
     <Path>/var/log/ovenmediaengine</Path>
-    <Tag name="SRT" level="debug" />
-    <Tag name="RTMP" level="debug" />
-
-    <Tag name=".*" level="info" />
+    <Tag name="RTMP" level="info" />
+    <Tag name="SRT" level="info" />
+    <Tag name="RTSP" level="info" />
+    <Tag name=".*" level="debug" />
 </Logger>

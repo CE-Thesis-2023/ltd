@@ -65,7 +65,7 @@ func (c *omeStreamsApiClient) handleError(ctx context.Context, resp *fastshot.Re
 			return err
 		}
 		return custerror.FormatAlreadyExists(parsedResp.Message)
-	case 500:
+	case 500, 502:
 		return custerror.ErrorInternal
 	}
 

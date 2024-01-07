@@ -1,7 +1,7 @@
 version: '3.9'
 services:
   proxy:
-    image: 'airensoft/ovenmediaengine:0.16.1'
+    image: 'airensoft/ovenmediaengine:0.16.3'
     container_name: 'proxy'
     restart: 'always'
     deploy:
@@ -17,6 +17,4 @@ services:
       # RTMP
       - '7957:7957/tcp'
       - '7957:7957/udp'
-networks:
-  ltd:
-    driver: local
+    network_mode: host

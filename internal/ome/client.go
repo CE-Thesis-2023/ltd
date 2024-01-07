@@ -3,6 +3,7 @@ package ome
 import (
 	"fmt"
 	"labs/local-transcoder/internal/configs"
+	"net/url"
 	"time"
 
 	fastshot "github.com/opus-domini/fast-shot"
@@ -21,7 +22,11 @@ type OmeClient struct {
 
 func NewOmeClient(configs *configs.OvenMediaEngineConfigs) OmeClientInterface {
 	baseUrl := fmt.Sprintf("%s:%d", configs.Host, configs.Port)
-	restClient := fastshot.NewClient(baseUrl).
+	u := &url.URL{}
+	u.Host = baseUrl
+	u.Scheme = "http"
+	url := u.String()
+	restClient := fastshot.NewClient(url).
 		Auth().BasicAuth(configs.Username, configs.Password).
 		Config().SetTimeout(time.Second * 5).
 		Build()

@@ -65,7 +65,7 @@ func (s *mediaService) buildPushSrtUrl(ctx context.Context, req *ms.PushStreamin
 	if configs.Port != 0 {
 		streamUrl.Host = fmt.Sprintf("%s:%d", configs.Host, configs.Port)
 	}
-	streamUrl.JoinPath(configs.ApplicationName, req.StreamName)
+	streamUrl = streamUrl.JoinPath(configs.ApplicationName, req.StreamName)
 	encodedStreamId := streamUrl.String()
 
 	queries := streamUrl.Query()
