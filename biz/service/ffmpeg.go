@@ -5,12 +5,14 @@ import (
 	"labs/local-transcoder/internal/configs"
 	custerror "labs/local-transcoder/internal/error"
 	"labs/local-transcoder/internal/logger"
+	custrtsp "labs/local-transcoder/internal/rtsp"
 	"labs/local-transcoder/models/db"
 	"labs/local-transcoder/models/events"
 	"os/exec"
 	"path/filepath"
 
 	"github.com/avast/retry-go"
+	"github.com/bluenviron/gortsplib/v4/pkg/base"
 	ffmpeg_go "github.com/u2takey/ffmpeg-go"
 	"go.uber.org/zap"
 )
@@ -33,12 +35,32 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 	command := s.buildFfmpegRestreamingCommand(sourceUrl, destinationUrl)
 	logger.SDebug("RequestFFmpegRtspToSrt: commanđ", zap.String("command", command.String()))
 
+	srcUrlParsed, err := base.ParseURL(sourceUrl)
+	if err != nil {
+		logger.SError("RequestFFmpegRtspToSrt: base.ParseURL of sourceUrl", zap.Error(err))
+		return err
+	}
+
+	client := custrtsp.New()
+	if err := client.Start(srcUrlParsed.Scheme, srcUrlParsed.Host); err != nil {
+		logger.SError("RequestFFmpegRtspToSrt: client.Start", zap.Error(err))
+		return err
+	}
+	defer client.Close()
+
+	sess, _, err := client.Describe(srcUrlParsed)
+	if err != nil {
+		logger.SError("RequestFFmpegRtspToSrt: rtspClient.Describe", zap.Error(err))
+		return err
+	}
+
+	logger.SInfo("RequestFFmpegRtspToSrt: source DESCRIBE information", logger.Json("describeResp", sess))
 	s.streamingPool.Submit(func() {
 		retry.Do(func() error {
 			compiledGoCommand := command.Compile()
 
 			s.recordThisStream(ctx, camera, sourceUrl, destinationUrl, compiledGoCommand)
-			logger.SDebug("RequestFFmpegRtspToSrt: recorded this stream into memory")
+			logger.SDebug("RequestFFmpegRtspToSrt: reported this stream into memory")
 
 			logger.SDebug("RequestFFmpegRtspToSrt: start FFMPEG process")
 			if err := compiledGoCommand.Run(); err != nil {
@@ -52,11 +74,13 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 			retry.RetryIf(func(err error) bool {
 				if s.shouldRestartStream(err, camera, sourceUrl, destinationUrl) {
 					logger.SInfo("RequestFFmpegRtspToSrt: restarting stream")
-				} else {
-					logger.SInfo("RequestFFmpegRtspToSrt: will not restart stream")
+					return true
 				}
+				logger.SInfo("RequestFFmpegRtspToSrt: will not restart stream")
 				return false
 			}))
+		logger.SInfo("RequestFFmpegRtspToSrt: stream attempted 3 times, will disappear")
+		delete(s.onGoingProcesses, req.CameraId)
 	})
 
 	logger.SDebug("RequestFFmpegRtspToSrt: assigned task")
@@ -66,14 +90,17 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 func (s *mediaService) buildFfmpegRestreamingCommand(sourceUrl string, destinationUrl string) *ffmpeg_go.Stream {
 	cmd := ffmpeg_go.Input(sourceUrl).
 		Output(destinationUrl, ffmpeg_go.KwArgs{
-			"c:v":       "libx264",
-			"c:a":       "aac",
-			"f":         "mpegts",
-			"preset":    "veryfast",
-			"tune":      "zerolatency",
-			"profile:v": "baseline",
-			"s":         "1280x720",
-			"filter:v":  "fps=24",
+			"c:v":            "libx264",
+			"c:a":            "aac",
+			"f":              "mpegts",
+			"preset":         "veryfast",
+			"tune":           "zerolatency",
+			"profile:v":      "baseline",
+			"s":              "1280x720",
+			"filter:v":       "fps=24",
+			"timeout":        5000000,
+			"v":              "debug",
+			"rtsp_transport": "tcp",
 		}).ErrorToStdOut().
 		WithCpuCoreLimit(2)
 
@@ -112,12 +139,16 @@ func (s *mediaService) isThisStreamGoing(ctx context.Context, camera *db.Camera,
 	pr, found := s.onGoingProcesses[camera.Id]
 	if pr != nil {
 		logger.SDebug("isThisStreamGoing: stream already ongoing", zap.Any("process", pr))
+		return true
 	}
 	if found {
 		if pr.proc != nil {
 			if pr.proc.ProcessState != nil {
 				if pr.proc.ProcessState.Exited() || pr.proc.ProcessState.ExitCode() != 0 {
 					logger.SDebug("isThisStreamGoing: process associated with it has already exited")
+					return false
+				} else {
+					logger.SDebug("isThisStreamGoing: process are not terminated yet")
 					return true
 				}
 			}

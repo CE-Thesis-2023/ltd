@@ -210,7 +210,7 @@ func (s *CommandService) StartStream(ctx context.Context, req *events.CommandSta
 	})
 	if err != nil {
 		logger.SError("RequestPushSrt: request push srt", zap.Error(err))
-		return nil
+		return err
 	}
 
 	logger.SInfo("StartStream: sucess", zap.Any("pushStreaming", resp))
@@ -239,7 +239,7 @@ func (s *CommandService) StartFfmpegStream(ctx context.Context, req *events.Comm
 	err = m.RequestFFmpegRtspToSrt(ctx, camera, req)
 	if err != nil {
 		logger.SError("RequestFFmpegRtspToSrt: request push srt", zap.Error(err))
-		return nil
+		return err
 	}
 
 	logger.SInfo("StartFfmpegStream: success", zap.Any("cameraId", req.CameraId))
