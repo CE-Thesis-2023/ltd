@@ -11,6 +11,8 @@ COPY api api
 COPY biz biz
 COPY internal internal
 COPY helper helper
+COPY models models
+
 COPY main.go main.go
 
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
@@ -19,7 +21,6 @@ RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
 
 FROM alpine:3.18 AS runner
 
-COPY certs certs
 COPY public public
 COPY templates templates
 COPY configs.json configs.json

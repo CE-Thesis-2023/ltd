@@ -32,9 +32,11 @@ func NewClient(options ...HikvisionClientOptioner) (Client, error) {
 
 	var pool *ants.Pool
 	if opts.Poolsize != 0 {
-		pool, _ = ants.NewPool(opts.Poolsize, nil)
+		pool, _ = ants.NewPool(opts.Poolsize,
+			ants.WithLogger(logger.NewZapToAntsLogger(logger.Logger())))
 	} else {
-		pool, _ = ants.NewPool(20, nil)
+		pool, _ = ants.NewPool(20,
+			ants.WithLogger(logger.NewZapToAntsLogger(logger.Logger())))
 	}
 
 	return &client{

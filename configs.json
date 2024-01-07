@@ -1,11 +1,7 @@
 {
   "public": {
     "port": 8080,
-    "name": "public_api",
-    "tls": {
-      "cert": "./certs/cert.pem",
-      "key": "./certs/key.pem"
-    }
+    "name": "public_api"
   },
   "logger": {
     "level": "debug",
@@ -28,7 +24,7 @@
   },
   "localTranscoder": {
     "host": "127.0.0.1",
-    "port": "7956",
+    "port": 7956,
     "username": "thesis",
     "password": "q1jk23i19",
     "virtualHostName": "default",
@@ -36,7 +32,7 @@
   },
   "cloudMediaServer": {
     "host": "103.165.142.44",
-    "port": "7956",
+    "port": 7956,
     "username": "thesis",
     "password": "q1jk23i19",
     "virtualHostName": "default",

@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	eventsapi "labs/local-transcoder/api/events"
+	"labs/local-transcoder/helper/factory"
+
 	// privateapi "labs/local-transcoder/api/private"
 	publicapi "labs/local-transcoder/api/public"
 	"labs/local-transcoder/biz/service"
@@ -10,10 +12,13 @@ import (
 	"labs/local-transcoder/internal/app"
 	"labs/local-transcoder/internal/cache"
 	"labs/local-transcoder/internal/configs"
+	custmqtt "labs/local-transcoder/internal/mqtt"
+
 	// custcron "labs/local-transcoder/internal/cron"
 	custdb "labs/local-transcoder/internal/db"
 	custhttp "labs/local-transcoder/internal/http"
 	"labs/local-transcoder/internal/logger"
+
 	// custmqtt "labs/local-transcoder/internal/mqtt"
 	"time"
 
@@ -40,30 +45,31 @@ func main() {
 						context.Background(),
 						custdb.WithGlobalConfigs(&configs.Sqlite),
 					)
-					// custdb.Migrate(nil)
+					custdb.Migrate()
 
 					cache.Init()
 					custactors.Init()
+					factory.Init(ctx, configs)
 
 					service.Init()
 					eventsapi.Init(ctx)
 
-					// custmqtt.InitClient(
-					// 	context.Background(),
-					// 	custmqtt.WithClientGlobalConfigs(&configs.MqttStore),
-					// 	custmqtt.WithOnReconnection(eventsapi.Register),
-					// 	custmqtt.WithOnConnectError(func(err error) {
-					// 		logger.Error("MQTT Connection failed", zap.Error(err))
-					// 	}),
-					// 	custmqtt.WithClientError(eventsapi.ClientErrorHandler),
-					// 	custmqtt.WithOnServerDisconnect(eventsapi.DisconnectHandler),
-					// 	custmqtt.WithHandlerRegister(eventsapi.RouterHandler()),
-					// )
+					custmqtt.InitClient(
+						context.Background(),
+						custmqtt.WithClientGlobalConfigs(&configs.MqttStore),
+						custmqtt.WithOnReconnection(eventsapi.Register),
+						custmqtt.WithOnConnectError(func(err error) {
+							logger.Error("MQTT Connection failed", zap.Error(err))
+						}),
+						custmqtt.WithClientError(eventsapi.ClientErrorHandler),
+						custmqtt.WithOnServerDisconnect(eventsapi.DisconnectHandler),
+						custmqtt.WithHandlerRegister(eventsapi.RouterHandler()),
+					)
 					return nil
 				}),
 				app.WithShutdownHook(func(ctx context.Context) {
 					custdb.Stop(ctx)
-					// custmqtt.StopClient(ctx)
+					custmqtt.StopClient(ctx)
 					logger.Close()
 				}),
 			}

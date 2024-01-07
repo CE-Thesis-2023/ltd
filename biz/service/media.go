@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"labs/local-transcoder/helper"
-	"labs/local-transcoder/internal/configs"
+	"labs/local-transcoder/helper/factory"
 	custdb "labs/local-transcoder/internal/db"
 	"labs/local-transcoder/internal/logger"
 	"labs/local-transcoder/internal/ome"
@@ -18,12 +18,9 @@ type mediaService struct {
 }
 
 func newMediaService() MediaServiceInterface {
-	localTranscoderOmeConfigs := configs.Get().LocalTranscoder
-
-	omeClient := ome.NewOmeClient(&localTranscoderOmeConfigs)
 	return &mediaService{
 		db:        custdb.Layered(),
-		omeClient: omeClient,
+		omeClient: factory.Ome(),
 	}
 }
 

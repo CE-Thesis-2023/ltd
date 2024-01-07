@@ -38,7 +38,7 @@ func New(options ...Optioner) *HttpServer {
 		engine := html.New(configs.templatePath, ".html")
 		httpConfigs.Views = engine
 	}
-	
+
 	app := fiber.New(httpConfigs)
 
 	configs.registration(app)
@@ -97,13 +97,22 @@ func (s *HttpServer) Start() error {
 	tlsConfigs := globalConfigs.Tls
 	port := fmt.Sprintf(":%d", globalConfigs.Port)
 
-	if err := s.app.ListenTLS(port, tlsConfigs.Cert, tlsConfigs.Key); err != nil {
-		if errors.Is(err, http.ErrServerClosed) {
-			return err
+	if tlsConfigs.Cert == "" || tlsConfigs.Key == "" {
+		if err := s.app.Listen(port); err != nil {
+			if errors.Is(err, http.ErrServerClosed) {
+				return err
+			}
+			return custerror.FormatInternalError("HttpServer.Start: err = %s", err)
 		}
-		return custerror.FormatInternalError("HttpServer.Start: err = %s", err)
-	}
+	} else {
+		if err := s.app.ListenTLS(port, tlsConfigs.Cert, tlsConfigs.Key); err != nil {
+			if errors.Is(err, http.ErrServerClosed) {
+				return err
+			}
+			return custerror.FormatInternalError("HttpServer.Start: err = %s", err)
+		}
 
+	}
 	return nil
 }
 

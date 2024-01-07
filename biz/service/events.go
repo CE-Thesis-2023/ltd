@@ -2,7 +2,10 @@ package service
 
 import (
 	"context"
+	"labs/local-transcoder/helper/factory"
 	custdb "labs/local-transcoder/internal/db"
+	"labs/local-transcoder/internal/hikvision"
+	"labs/local-transcoder/internal/ome"
 	"labs/local-transcoder/models/events"
 )
 
@@ -14,12 +17,16 @@ type CommandServiceInterface interface {
 	EndStream(ctx context.Context, req *events.CommandEndStreamInfo) error
 }
 type CommandService struct {
-	db *custdb.LayeredDb
+	db              *custdb.LayeredDb
+	omeClient       ome.OmeClientInterface
+	hikvisionClient hikvision.Client
 }
 
 func NewCommandService() CommandServiceInterface {
 	return &CommandService{
-		db: custdb.Layered(),
+		db:              custdb.Layered(),
+		omeClient:       factory.Ome(),
+		hikvisionClient: factory.Hikvision(),
 	}
 }
 
