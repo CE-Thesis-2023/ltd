@@ -60,6 +60,29 @@ func (db *LayeredDb) Select(ctx context.Context, selectBuilder sq.SelectBuilder,
 	return nil
 }
 
+func (db *LayeredDb) Get(ctx context.Context, selectBuilder sq.SelectBuilder, dest interface{}) error {
+	queryStr, arguments, err := selectBuilder.ToSql()
+	if err != nil {
+		return custerror.FormatInternalError("LayeredDb.Select: ToSql() err = %s", err)
+	}
+
+	logger.SDebug("LayeredDb.Get",
+		zap.String("query", queryStr),
+		zap.Any("arguments", arguments))
+
+	sqldb := db.sqldb
+
+	err = sqldb.GetContext(ctx, dest, queryStr, arguments...)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return custerror.ErrorNotFound
+		}
+		return custerror.FormatInternalError("LayeredDb.Get: GetContext err = %s", err)
+	}
+
+	return nil
+}
+
 func (db *LayeredDb) Insert(ctx context.Context, insertBuilder sq.InsertBuilder) error {
 	queryStr, arguments, err := insertBuilder.ToSql()
 	if err != nil {

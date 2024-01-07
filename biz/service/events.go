@@ -51,6 +51,7 @@ func NewCommandService() CommandServiceInterface {
 }
 
 func (s *CommandService) AddCamera(ctx context.Context, req *events.CommandAddCameraInfo) error {
+	logger.SInfo("biz.AddCamera: request", zap.Any("request", req))
 	camera, err := s.getCameraByName(ctx, req.Name)
 	if err != nil {
 		if !errors.Is(err, custerror.ErrorNotFound) {
@@ -95,8 +96,8 @@ func (s *CommandService) getCameraByName(ctx context.Context, name string) (*db.
 		From("cameras").
 		Where("name = ?", name)
 	var camera db.Camera
-	if err := s.db.Select(ctx, sqlExp, &camera); err != nil {
-		logger.SError("getCameraByName: select error", zap.Error(err))
+	if err := s.db.Get(ctx, sqlExp, &camera); err != nil {
+		logger.SError("getCameraByName: Get error", zap.Error(err))
 		return nil, err
 	}
 	logger.SDebug("getCameraByName: db hit")
@@ -124,8 +125,8 @@ func (s *CommandService) getCameraById(ctx context.Context, id string) (*db.Came
 		From("cameras").
 		Where("id = ?", id)
 	var camera db.Camera
-	if err := s.db.Select(ctx, sqlExp, &camera); err != nil {
-		logger.SError("getCameraById: select error", zap.Error(err))
+	if err := s.db.Get(ctx, sqlExp, &camera); err != nil {
+		logger.SError("getCameraById: Get error", zap.Error(err))
 		return nil, err
 	}
 	logger.SDebug("getCameraById: db hit")

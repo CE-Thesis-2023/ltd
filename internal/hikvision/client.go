@@ -62,6 +62,7 @@ func (c *client) getRestClient(opts *Credentials) fastshot.ClientHttpMethods {
 			logger.SError("hikvision.NewClient: parse IP error", zap.Error(err))
 			return nil
 		}
+		u.Scheme = "http"
 		u.User = url.UserPassword(opts.Username, opts.Password)
 		ip = u.String()
 	}

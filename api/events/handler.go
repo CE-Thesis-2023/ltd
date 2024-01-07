@@ -13,6 +13,7 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/dgraph-io/ristretto"
 	"github.com/eclipse/paho.golang/paho"
+	"github.com/mitchellh/mapstructure"
 	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 )
@@ -50,8 +51,8 @@ func (h *StandardEventHandler) ReceiveRemoteCommands(p *paho.Publish) error {
 		biz := service.GetCommandService()
 		switch msg.CommandType {
 		case events.Command_GetDeviceInfo:
-			info, ok := msg.Info.(events.CommandRetrieveDeviceInfo)
-			if !ok {
+			var info events.CommandRetrieveDeviceInfo
+			if err := mapstructure.Decode(&msg.Info, &info); err != nil {
 				logger.SError("ReceiveRemoteCommands: Command_GetDeviceInfo",
 					zap.String("error", "info not type CommandRetrieveDeviceInfo"))
 				return
@@ -62,8 +63,8 @@ func (h *StandardEventHandler) ReceiveRemoteCommands(p *paho.Publish) error {
 			}
 			logger.SInfo("ReceiveRemoteCommands: Command_GetDeviceInfo success")
 		case events.Command_AddCamera:
-			info, ok := msg.Info.(events.CommandAddCameraInfo)
-			if !ok {
+			var info events.CommandAddCameraInfo
+			if err := mapstructure.Decode(&msg.Info, &info); err != nil {
 				logger.SError("ReceiveRemoteCommands: Command_AddCamera",
 					zap.String("error", "info not type CommandAddCameraInfo"))
 				return
@@ -74,8 +75,8 @@ func (h *StandardEventHandler) ReceiveRemoteCommands(p *paho.Publish) error {
 			}
 			logger.SInfo("ReceiveRemoteCommands: Command_AddCamera success")
 		case events.Command_StartStream:
-			info, ok := msg.Info.(events.CommandStartStreamInfo)
-			if !ok {
+			var info events.CommandStartStreamInfo
+			if err := mapstructure.Decode(&msg.Info, &info); err != nil {
 				logger.SError("ReceiveRemoteCommands: Command_StartStream",
 					zap.String("error", "info not type CameraStartStreamInfo"))
 				return
@@ -86,8 +87,8 @@ func (h *StandardEventHandler) ReceiveRemoteCommands(p *paho.Publish) error {
 			}
 			logger.SInfo("ReceiveRemoteCommands: Command_StartStream success")
 		case events.Command_EndStream:
-			info, ok := msg.Info.(events.CommandEndStreamInfo)
-			if !ok {
+			var info events.CommandEndStreamInfo
+			if err := mapstructure.Decode(&msg.Info, &info); err != nil {
 				logger.SError("ReceiveRemoteCommands: Command_EndStream",
 					zap.String("error", "info not type CommmandEndStreamInfo"))
 				return

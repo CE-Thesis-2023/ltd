@@ -13,6 +13,7 @@ require (
 	github.com/gofiber/template/html/v2 v2.0.5
 	github.com/influxdata/influxdb-client-go/v2 v2.13.0
 	github.com/jmoiron/sqlx v1.3.5
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mochi-mqtt/server/v2 v2.4.2
 	github.com/motemen/go-loghttp v0.0.0-20231107055348-29ae44b293f4
 	github.com/opus-domini/fast-shot v0.9.0

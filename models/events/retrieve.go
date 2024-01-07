@@ -11,7 +11,7 @@ const (
 
 type CommandRequest struct {
 	CommandType CommandType `json:"commandType"`
-	Info        interface{} `json:"info"`
+	Info        map[string]interface{}      `json:"info"`
 }
 
 type CommandRetrieveDeviceInfo struct {

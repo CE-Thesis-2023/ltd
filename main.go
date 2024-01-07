@@ -4,6 +4,7 @@ import (
 	"context"
 	eventsapi "labs/local-transcoder/api/events"
 	"labs/local-transcoder/helper/factory"
+	"labs/local-transcoder/models/db"
 
 	// privateapi "labs/local-transcoder/api/private"
 	publicapi "labs/local-transcoder/api/public"
@@ -45,7 +46,7 @@ func main() {
 						context.Background(),
 						custdb.WithGlobalConfigs(&configs.Sqlite),
 					)
-					custdb.Migrate()
+					custdb.Migrate(&db.Camera{})
 
 					cache.Init()
 					custactors.Init()
