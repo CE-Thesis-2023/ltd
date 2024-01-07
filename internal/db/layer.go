@@ -51,6 +51,9 @@ func (db *LayeredDb) Select(ctx context.Context, selectBuilder sq.SelectBuilder,
 
 	err = sqldb.SelectContext(ctx, dest, queryStr, arguments...)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return custerror.ErrorNotFound
+		}
 		return custerror.FormatInternalError("LayeredDb.Select: SelectContext err = %s", err)
 	}
 
@@ -71,6 +74,9 @@ func (db *LayeredDb) Insert(ctx context.Context, insertBuilder sq.InsertBuilder)
 
 	_, err = sqldb.ExecContext(ctx, queryStr, arguments...)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return custerror.ErrorNotFound
+		}
 		return custerror.FormatInternalError("LayeredDb.Insert: Exec() err = %s", err)
 	}
 

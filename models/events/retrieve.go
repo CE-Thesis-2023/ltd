@@ -20,10 +20,8 @@ type CommandRetrieveDeviceInfo struct {
 }
 
 type CommandStartStreamInfo struct {
-	ChannelId         string `json:"channelId"`
-	LtdStreamName     string `json:"ltdStreamName"`
-	CloudName         string `json:"cloudStreamName"`
-	UpdateForCameraId string `json:"updateForCameraId"`
+	CameraId  string `json:"cameraId"`
+	ChannelId string `json:"channelId"`
 }
 
 type CommandAddCameraInfo struct {

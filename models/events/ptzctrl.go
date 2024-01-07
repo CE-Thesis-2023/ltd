@@ -1,7 +1,8 @@
 package events
 
 type PtzCtrlRequest struct {
-	Pan              int  `json:"pan"`
-	Tilt             int  `json:"tilt"`
-	StopAfterSeconds *int `json:"stopAfterSeconds,omitempty"`
+	CameraId         string `json:"cameraId"`
+	Pan              int    `json:"pan"`
+	Tilt             int    `json:"tilt"`
+	StopAfterSeconds *int   `json:"stopAfterSeconds,omitempty"`
 }
