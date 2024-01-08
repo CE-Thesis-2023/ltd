@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Install dependencies
+brew install hivemq/mqtt-cli/mqtt-cli
+
 # Starts the server
 cd ..
 docker compose up -d
