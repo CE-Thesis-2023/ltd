@@ -4,13 +4,13 @@
 cd ..
 docker compose up -d
 
-# Begin logs
-docker compose logs -f &
-
 sleep '5s'
+docker compose logs --since '5s'
 
-# Simulate stream start
-## Get device info
+echo "=============================="
+echo "GET DEVICE INFO"
+echo "=============================="
+
 deviceId='ltdtestdevice'
 
 mqtt pub -t commands/$deviceId \
@@ -18,7 +18,13 @@ mqtt pub -t commands/$deviceId \
     -h '103.165.142.44' \
     -p '9093'
 
-## Add camera
+sleep '5s'
+docker compose logs --since '5s'
+
+echo "=============================="
+echo "REGISTER CAMERA TO DEVICE"
+echo "=============================="
+
 deviceId='ltdtestdevice'
 
 mqtt pub -t commands/$deviceId \
@@ -26,7 +32,13 @@ mqtt pub -t commands/$deviceId \
     -h '103.165.142.44' \
     -p '9093'
 
-## Debug stream channels
+sleep '5s'
+docker compose logs --since '5s'
+
+echo "=============================="
+echo "GET DEVICE STREAM CHANNELS"
+echo "=============================="
+
 deviceId='ltdtestdevice'
 
 mqtt pub -t commands/$deviceId \
@@ -34,7 +46,13 @@ mqtt pub -t commands/$deviceId \
     -h '103.165.142.44' \
     -p '9093'
 
-## Start stream
+sleep '5s'
+docker compose logs --since '5s'
+
+echo "=============================="
+echo "START FFMPEG STREAM"
+echo "=============================="
+
 deviceId='ltdtestdevice'
 
 mqtt pub -t commands/$deviceId \
@@ -42,14 +60,58 @@ mqtt pub -t commands/$deviceId \
     -h '103.165.142.44' \
     -p '9093'
 
-## Get stream list
 sleep '5s'
+docker compose logs --since '5s'
+
+echo "=============================="
+echo "GET STREAM LIST"
+echo "=============================="
+
 curl -XGET 'http://localhost:8080/api/debug/streams'
 
-## Get stream status
+sleep '5s'
+docker compose logs --since '5s'
+
+echo "=============================="
+echo "GET STREAM STATUS"
+echo "=============================="
+
 deviceId='ltdtestdevice'
 
 mqtt pub -t commands/$deviceId \
     -m '{"commandType":"Command_GetStreamStatus","info":{"cameraId":"32845204"}}' \
     -h '103.165.142.44' \
     -p '9093'
+
+sleep '5s'
+docker compose logs --since '5s'
+
+echo "=============================="
+echo "GET STREAMS (CLOUD SERVER)"
+echo "=============================="
+
+curl -XGET -H 'Authorization: Basic dGhlc2lzOnExamsyM2kxOQ==' \
+    'http://103.165.142.44:7956/v1/vhosts/default/apps/camera/streams'
+
+sleep '5s'
+docker compose logs --since '5s'
+echo
+
+echo "=============================="
+echo "END CAMERA STREAM"
+echo "=============================="
+
+deviceId='ltdtestdevice'
+
+mqtt pub -t commands/$deviceId \
+    -m '{"commandType":"Command_EndFfmpegStream","info":{"cameraId":"32845204"}}' \
+    -h '103.165.142.44' \
+    -p '9093'
+
+sleep '5s'
+docker compose logs --since '5s'
+
+echo "=============================="
+echo "END DEBUGGING"
+echo "=============================="
+docker compose down
