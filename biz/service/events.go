@@ -186,7 +186,31 @@ func (s *CommandService) saveCamera(ctx context.Context, camera db.Camera) error
 }
 
 func (s *CommandService) DeviceInfo(ctx context.Context, req *events.CommandRetrieveDeviceInfo) error {
-	panic("unimplemented")
+	camera, err := s.getCameraById(ctx, req.CameraId)
+	if err != nil {
+		if errors.Is(err, custerror.ErrorNotFound) {
+			logger.SError("DeviceInfo: camera not found",
+				zap.String("id", req.CameraId),
+				zap.Error(err))
+			return err
+		}
+		logger.SError("DeviceInfo: getCameraById error", zap.Error(err))
+		return err
+	}
+
+	logger.SDebug("DeviceInfo: camera", zap.Any("camera", camera))
+	info, err := s.hikvisionClient.System(&hikvision.Credentials{
+		Ip:       camera.Ip,
+		Username: camera.Username,
+		Password: camera.Password,
+	}).DeviceInfo(ctx)
+	if err != nil {
+		logger.SError("StreamStatus: System.DeviceInfo error", zap.Error(err))
+		return err
+	}
+
+	logger.SInfo("StreamStatus: device info", logger.Json("info", info))
+	return nil
 }
 
 func (s *CommandService) StartStream(ctx context.Context, req *events.CommandStartStreamInfo) error {
@@ -295,7 +319,7 @@ func (s *CommandService) StreamChannels(ctx context.Context, req *events.Command
 		Username: camera.Username,
 		Password: camera.Password,
 	}).Channels(ctx, &hikvision.StreamChannelsRequest{
-		ChannelId: req.CameraId,
+		ChannelId: "",
 	})
 	if err != nil {
 		logger.SError("StreamChannels: Streams.Channels error", zap.Error(err))

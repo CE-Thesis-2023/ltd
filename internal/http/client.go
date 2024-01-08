@@ -130,6 +130,8 @@ func XMLResponse(resp *fastshot.Response, dest interface{}) error {
 		return err
 	}
 
+	logger.SDebug("ParseResponseBody: xml response", zap.String("data", string(bodyBytes)))
+
 	if err := xml.Unmarshal(bodyBytes, dest); err != nil {
 		logger.SDebug("ParseResponseBody: xml.Unmarshal", zap.Error(err))
 		return err

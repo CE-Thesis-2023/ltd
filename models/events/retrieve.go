@@ -19,8 +19,7 @@ type CommandRequest struct {
 }
 
 type CommandRetrieveDeviceInfo struct {
-	ChannelId         string `json:"channelId"`
-	UpdateForCameraId string `json:"updateForCameraId"`
+	CameraId         string `json:"cameraId"`
 }
 
 type CommandRetrieveStreamChannels struct {

@@ -39,3 +39,7 @@ func GETDebugListStreams(ctx *fiber.Ctx) error {
 	logger.SDebug("GETDebugListStreams", logger.Json("response", resp))
 	return ctx.JSON(resp)
 }
+
+func GETHealthcheck(ctx *fiber.Ctx) error {
+	return ctx.SendStatus(200)
+}
