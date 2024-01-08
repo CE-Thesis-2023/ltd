@@ -14,6 +14,7 @@ import (
 	"labs/local-transcoder/models/db"
 	"labs/local-transcoder/models/events"
 	"labs/local-transcoder/models/ms"
+	"labs/local-transcoder/models/rest"
 	"time"
 
 	"github.com/Masterminds/squirrel"
@@ -32,8 +33,10 @@ type CommandServiceInterface interface {
 	EndStream(ctx context.Context, req *events.CommandEndStreamInfo) error
 	StartFfmpegStream(ctx context.Context, req *events.CommandStartStreamInfo) error
 	EndFfmpegStream(ctx context.Context, req *events.CommandEndStreamInfo) error
+	DebugListStreams(ctx context.Context) (*rest.DebugListStreamsResponse, error)
 	Shutdown()
 }
+
 type CommandService struct {
 	db              *custdb.LayeredDb
 	cache           *ristretto.Cache
@@ -329,4 +332,16 @@ func (s *CommandService) StreamStatus(ctx context.Context, req *events.CommandGe
 
 	logger.SInfo("StreamStatus: stream statuses", logger.Json("status", statuses))
 	return nil
+}
+
+func (s *CommandService) DebugListStreams(ctx context.Context) (*rest.DebugListStreamsResponse, error) {
+	logger.SInfo("DebugListStreams: request")
+	streams, err := s.streamManagementService.
+		MediaService().
+		ListOngoingStreams(ctx)
+	if err != nil {
+		logger.SDebug("DebugListStreams: sms.ListOngoingStreams error", zap.Error(err))
+		return nil, err
+	}
+	return streams, nil
 }

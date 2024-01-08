@@ -28,3 +28,14 @@ func POSTMSAdmissionWebhook(ctx *fiber.Ctx) error {
 		logger.Json("response", resp))
 	return ctx.JSON(resp)
 }
+
+func GETDebugListStreams(ctx *fiber.Ctx) error {
+	resp, err := service.
+		GetCommandService().
+		DebugListStreams(ctx.Context())
+	if err != nil {
+		return err
+	}
+	logger.SDebug("GETDebugListStreams", logger.Json("response", resp))
+	return ctx.JSON(resp)
+}

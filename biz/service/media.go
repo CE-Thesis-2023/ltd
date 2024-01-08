@@ -12,6 +12,7 @@ import (
 	"labs/local-transcoder/models/db"
 	"labs/local-transcoder/models/events"
 	"labs/local-transcoder/models/ms"
+	"labs/local-transcoder/models/rest"
 	"os/exec"
 
 	"github.com/dgraph-io/ristretto"
@@ -72,6 +73,7 @@ type MediaServiceInterface interface {
 	RequestPushSrt(ctx context.Context, req *ms.PushStreamingRequest) (*ome.StartPushStreamingResponse, error)
 	RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Camera, req *events.CommandStartStreamInfo) error
 	CancelFFmpegRtspToSrt(ctx context.Context, camera *db.Camera) error
+	ListOngoingStreams(ctx context.Context) (*rest.DebugListStreamsResponse, error)
 	Shutdown()
 }
 
@@ -136,4 +138,19 @@ func (s *mediaService) isAllowedToUseThisTranscoder(req *ms.AdmissionWebhookRequ
 func (s *mediaService) startSrtPushStreaming(ctx context.Context, req *ms.AdmissionWebhookRequest) error {
 	logger.SDebug("startSrtPushStreaming", zap.String("ip", req.Client.Address))
 	return nil
+}
+
+func (s *mediaService) ListOngoingStreams(ctx context.Context) (*rest.DebugListStreamsResponse, error) {
+	logger.SDebug("ListOngoingStreams: request received")
+	streams := s.onGoingProcesses
+	resp := &rest.DebugListStreamsResponse{}
+	for cameraId, s := range streams {
+		resp.Streams = append(resp.Streams, rest.StreamInfo{
+			CameraId:       cameraId,
+			SourceUrl:      s.SourceUrl,
+			DestinationUrl: s.DestinationUrl,
+		})
+	}
+	logger.SDebug("ListOngoingStreams: streams", zap.Any("streams", resp))
+	return resp, nil
 }
