@@ -13,6 +13,6 @@ services:
       - CONFIG_FILE_PATH=./configs.json
     volumes:
       - ./db:/db
-      - ./configs.json:/configs.json
+      - ./src/configs.json:/configs.json
     restart: on-failure
     pull_policy: always
