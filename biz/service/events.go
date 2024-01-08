@@ -26,6 +26,7 @@ type CommandServiceInterface interface {
 	PtzCtrl(ctx context.Context, req *events.PtzCtrlRequest) error
 	DeviceInfo(ctx context.Context, req *events.CommandRetrieveDeviceInfo) error
 	StreamChannels(ctx context.Context, req *events.CommandRetrieveStreamChannels) error
+	StreamStatus(ctx context.Context, req *events.CommandGetStreamStatusRequest) error
 	AddCamera(ctx context.Context, req *events.CommandAddCameraInfo) error
 	StartStream(ctx context.Context, req *events.CommandStartStreamInfo) error
 	EndStream(ctx context.Context, req *events.CommandEndStreamInfo) error
@@ -276,12 +277,12 @@ func (s *CommandService) StreamChannels(ctx context.Context, req *events.Command
 	camera, err := s.getCameraById(ctx, req.CameraId)
 	if err != nil {
 		if errors.Is(err, custerror.ErrorNotFound) {
-			logger.SError("EndFfmpegStream: camera not found",
+			logger.SError("StreamChannels: camera not found",
 				zap.String("id", req.CameraId),
 				zap.Error(err))
 			return err
 		}
-		logger.SError("EndFfmpegStream: getCameraById error", zap.Error(err))
+		logger.SError("StreamChannels: getCameraById error", zap.Error(err))
 		return err
 	}
 
@@ -299,5 +300,33 @@ func (s *CommandService) StreamChannels(ctx context.Context, req *events.Command
 	}
 
 	logger.SInfo("StreamChannels: channelList", logger.Json("channels", channelList))
+	return nil
+}
+
+func (s *CommandService) StreamStatus(ctx context.Context, req *events.CommandGetStreamStatusRequest) error {
+	camera, err := s.getCameraById(ctx, req.CameraId)
+	if err != nil {
+		if errors.Is(err, custerror.ErrorNotFound) {
+			logger.SError("StreamStatus: camera not found",
+				zap.String("id", req.CameraId),
+				zap.Error(err))
+			return err
+		}
+		logger.SError("StreamStatus: getCameraById error", zap.Error(err))
+		return err
+	}
+
+	logger.SDebug("StreamStatus: camera", zap.Any("camera", camera))
+	statuses, err := s.hikvisionClient.Streams(&hikvision.Credentials{
+		Ip:       camera.Ip,
+		Username: camera.Username,
+		Password: camera.Password,
+	}).Status(ctx, &hikvision.StreamingStatusRequest{})
+	if err != nil {
+		logger.SError("StreamStatus: Streams.Status error", zap.Error(err))
+		return err
+	}
+
+	logger.SInfo("StreamStatus: stream statuses", logger.Json("status", statuses))
 	return nil
 }

@@ -12,6 +12,7 @@ import (
 
 type StreamsApiInterface interface {
 	Channels(ctx context.Context, req *StreamChannelsRequest) (*StreamingChannelList, error)
+	Status(ctx context.Context, req *StreamingStatusRequest) (*StreamingStatusResponse, error)
 }
 
 type streamApiClient struct {
@@ -20,7 +21,7 @@ type streamApiClient struct {
 }
 
 func (c *streamApiClient) getBaseUrl() string {
-	return "/Stream/channels"
+	return "/Stream"
 }
 
 type StreamChannelsRequest struct {
@@ -33,7 +34,7 @@ type StreamingChannelList struct {
 }
 
 func (c *streamApiClient) Channels(ctx context.Context, req *StreamChannelsRequest) (*StreamingChannelList, error) {
-	url := c.getBaseUrl()
+	url := fmt.Sprintf("%s/channels", c.getBaseUrl())
 	if req.ChannelId != "" {
 		url = fmt.Sprintf("%s/%s", url, req.ChannelId)
 	}
@@ -55,6 +56,51 @@ func (c *streamApiClient) Channels(ctx context.Context, req *StreamChannelsReque
 	}
 
 	return &parsedResp, nil
+}
+
+func (c *streamApiClient) Status(ctx context.Context, req *StreamingStatusRequest) (*StreamingStatusResponse, error) {
+	url := fmt.Sprintf("%s/status", c.getBaseUrl())
+
+	resp, err := c.restClient.GET(url).
+		Context().Set(ctx).
+		Send()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := handleError(&resp); err != nil {
+		return nil, err
+	}
+
+	var parsedResp StreamingStatusResponse
+	if err := custhttp.XMLResponse(&resp, &parsedResp); err != nil {
+		return nil, err
+	}
+
+	return &parsedResp, nil
+}
+
+type StreamingStatusRequest struct {
+}
+
+type StreamingStatusResponse struct {
+	XMLName                    xml.Name                   `xml:"StreamingStatus"`
+	TotalStreamingSessions     int                        `xml:"totalStreamingSessions"`
+	StreamingSessionStatusList StreamingSessionStatusList `xml:"StreamingSessionStatusList"`
+}
+
+type StreamingSessionStatusList struct {
+	StreamingSessionStatus []StreamingSessionStatus `xml:"StreamingSessionStatus"`
+}
+
+type StreamingSessionStatus struct {
+	XMLName       xml.Name      `xml:"StreamingSessionStatus"`
+	ClientAddress ClientAddress `xml:"clientAddress"`
+}
+
+type ClientAddress struct {
+	IpAddress   string `xml:"ipAddress"`
+	Ipv6Address string `xml:"ipv6Address"`
 }
 
 type StreamingChannel struct {

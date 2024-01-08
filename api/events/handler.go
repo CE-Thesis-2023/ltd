@@ -134,6 +134,19 @@ func (h *StandardEventHandler) ReceiveRemoteCommands(p *paho.Publish) error {
 				return
 			}
 			logger.SInfo("ReceiveRemoteCommands: Command_GetStreamChannels success")
+		case events.Command_GetStreamStatus:
+			var info events.CommandGetStreamStatusRequest
+			if err := mapstructure.Decode(&msg.Info, &info); err != nil {
+				logger.SError("ReceiveRemoteCommands: Command_GetStreamStatus",
+					zap.String("error",
+						"info not type CommandGetStreamStatusRequest"))
+				return
+			}
+			if err := biz.StreamStatus(ctx, &info); err != nil {
+				logger.SError("ReceiveRemoteCommands: biz.StreamStatus", zap.Error(err))
+				return
+			}
+			logger.SInfo("ReceiveRemoteCommands: Command_GetStreamStatus success")
 		default:
 			logger.SError("ReceiveRemoteCommands: unknown command type",
 				zap.String("type", string(msg.CommandType)),
