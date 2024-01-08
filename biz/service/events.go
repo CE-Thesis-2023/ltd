@@ -25,6 +25,7 @@ import (
 type CommandServiceInterface interface {
 	PtzCtrl(ctx context.Context, req *events.PtzCtrlRequest) error
 	DeviceInfo(ctx context.Context, req *events.CommandRetrieveDeviceInfo) error
+	StreamChannels(ctx context.Context, req *events.CommandRetrieveStreamChannels) error
 	AddCamera(ctx context.Context, req *events.CommandAddCameraInfo) error
 	StartStream(ctx context.Context, req *events.CommandStartStreamInfo) error
 	EndStream(ctx context.Context, req *events.CommandEndStreamInfo) error
@@ -268,5 +269,35 @@ func (s *CommandService) EndFfmpegStream(ctx context.Context, req *events.Comman
 	}
 
 	logger.SInfo("EndFfmpegStream: success", zap.Any("cameraId", req.CameraId))
+	return nil
+}
+
+func (s *CommandService) StreamChannels(ctx context.Context, req *events.CommandRetrieveStreamChannels) error {
+	camera, err := s.getCameraById(ctx, req.CameraId)
+	if err != nil {
+		if errors.Is(err, custerror.ErrorNotFound) {
+			logger.SError("EndFfmpegStream: camera not found",
+				zap.String("id", req.CameraId),
+				zap.Error(err))
+			return err
+		}
+		logger.SError("EndFfmpegStream: getCameraById error", zap.Error(err))
+		return err
+	}
+
+	logger.SDebug("StreamChannels: camera", zap.Any("camera", camera))
+	channelList, err := s.hikvisionClient.Streams(&hikvision.Credentials{
+		Ip:       camera.Ip,
+		Username: camera.Username,
+		Password: camera.Password,
+	}).Channels(ctx, &hikvision.StreamChannelsRequest{
+		ChannelId: req.CameraId,
+	})
+	if err != nil {
+		logger.SError("StreamChannels: Streams.Channels error", zap.Error(err))
+		return err
+	}
+
+	logger.SInfo("StreamChannels: channelList", logger.Json("channels", channelList))
 	return nil
 }

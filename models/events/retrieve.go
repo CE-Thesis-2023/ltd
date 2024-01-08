@@ -9,6 +9,7 @@ const (
 	Command_AddCamera         CommandType = "Command_AddCamera"
 	Command_StartFfmpegStream CommandType = "Command_StartFfmpegStream"
 	Command_EndFfmpegStream   CommandType = "Command_EndFfmpegStream"
+	Command_GetStreamChannels CommandType = "Command_GetStreamChannels"
 )
 
 type CommandRequest struct {
@@ -19,6 +20,10 @@ type CommandRequest struct {
 type CommandRetrieveDeviceInfo struct {
 	ChannelId         string `json:"channelId"`
 	UpdateForCameraId string `json:"updateForCameraId"`
+}
+
+type CommandRetrieveStreamChannels struct {
+	CameraId string `json:"channelId"`
 }
 
 type CommandStartStreamInfo struct {

@@ -11,7 +11,7 @@ import (
 )
 
 type StreamsApiInterface interface {
-	Channels(ctx context.Context, req *StreamChannelsRequest) (*StreamChannelsResponse, error)
+	Channels(ctx context.Context, req *StreamChannelsRequest) (*StreamingChannelList, error)
 }
 
 type streamApiClient struct {
@@ -27,10 +27,12 @@ type StreamChannelsRequest struct {
 	ChannelId string `json:"channelId"`
 }
 
-type StreamChannelsResponse struct {
+type StreamingChannelList struct {
+	XMLName          xml.Name           `xml:"StreamingChannelList"`
+	StreamingChannel []StreamingChannel `xml:"StreamingChannel,omitempty"`
 }
 
-func (c *streamApiClient) Channels(ctx context.Context, req *StreamChannelsRequest) (*StreamChannelsResponse, error) {
+func (c *streamApiClient) Channels(ctx context.Context, req *StreamChannelsRequest) (*StreamingChannelList, error) {
 	url := c.getBaseUrl()
 	if req.ChannelId != "" {
 		url = fmt.Sprintf("%s/%s", url, req.ChannelId)
@@ -47,7 +49,7 @@ func (c *streamApiClient) Channels(ctx context.Context, req *StreamChannelsReque
 		return nil, err
 	}
 
-	var parsedResp StreamChannelsResponse
+	var parsedResp StreamingChannelList
 	if err := custhttp.XMLResponse(&resp, &parsedResp); err != nil {
 		return nil, err
 	}

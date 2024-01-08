@@ -64,9 +64,14 @@ func (s *mediaService) buildRtspStreamUrl(camera *db.Camera, req *events.Command
 	if camera.Port != 0 {
 		u.Host = fmt.Sprintf("%s:%d", camera.Ip, camera.Port)
 	}
-	u = u.JoinPath("/ISAPI", "/Streaming", "channels", req.ChannelId)
+	u = u.JoinPath("/ISAPI", "/Streaming", "channels", s.calculateChannelId(camera, req))
 	u.User = url.UserPassword(camera.Username, camera.Password)
 	url := u.String()
 	logger.SDebug("buildRtspStreamUrl: stream url", zap.String("url", url))
 	return url
+}
+
+func (s *mediaService) calculateChannelId(camera *db.Camera, req *events.CommandStartStreamInfo) string {
+	channelId := req.ChannelId
+	return fmt.Sprintf("%s01", channelId)
 }

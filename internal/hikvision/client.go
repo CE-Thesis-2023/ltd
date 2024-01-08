@@ -17,6 +17,7 @@ type Client interface {
 	Smart(credentials *Credentials) SmartApiInterface
 	Event(credentials *Credentials) EventApiInterface
 	System(credentials *Credentials) SystemApiInterface
+	Streams(credentials *Credentials) StreamsApiInterface
 }
 
 type client struct {
@@ -109,6 +110,13 @@ func (c *client) Event(credentials *Credentials) EventApiInterface {
 
 func (c *client) System(credentials *Credentials) SystemApiInterface {
 	return &systemApiClient{
+		restClient: c.getRestClient(credentials),
+		pool:       c.pool,
+	}
+}
+
+func (c *client) Streams(credentials *Credentials) StreamsApiInterface {
+	return &streamApiClient{
 		restClient: c.getRestClient(credentials),
 		pool:       c.pool,
 	}
