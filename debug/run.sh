@@ -112,6 +112,22 @@ sleep '5s'
 docker compose logs --since '5s'
 
 echo "=============================="
+echo "ROTATE CAMERA"
+echo "=============================="
+
+deviceId='ltdtestdevice'
+
+mqtt pub -t ptzctrl/$deviceId \
+    -m '{"cameraId":"32845204","pan":60,"tilt":0,"stopAfterSeconds":10}' \
+    -h '103.165.142.44' \
+    -p '9093'
+
+sleep '5s'
+docker compose logs --since '5s'
+
+sleep '8s'
+
+echo "=============================="
 echo "END DEBUGGING"
 echo "=============================="
 docker compose down
