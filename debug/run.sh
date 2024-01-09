@@ -11,20 +11,6 @@ sleep '5s'
 docker compose logs --since '5s'
 
 echo "=============================="
-echo "GET DEVICE INFO"
-echo "=============================="
-
-deviceId='ltdtestdevice'
-
-mqtt pub -t commands/$deviceId \
-    -m '{"commandType":"Command_GetDeviceInfo","info":{"cameraId":"32845204"}}' \
-    -h '103.165.142.44' \
-    -p '9093'
-
-sleep '5s'
-docker compose logs --since '5s'
-
-echo "=============================="
 echo "REGISTER CAMERA TO DEVICE"
 echo "=============================="
 
@@ -32,6 +18,21 @@ deviceId='ltdtestdevice'
 
 mqtt pub -t commands/$deviceId \
     -m '{"commandType":"Command_AddCamera","info":{"cameraId":"32845204","name":"Most Expensive One","ip":"192.168.8.55","port":0,"username":"admin","password":"bkcamera2023"}}' \
+    -h '103.165.142.44' \
+    -p '9093'
+
+sleep '5s'
+docker compose logs --since '5s'
+
+
+echo "=============================="
+echo "GET DEVICE INFO"
+echo "=============================="
+
+deviceId='ltdtestdevice'
+
+mqtt pub -t commands/$deviceId \
+    -m '{"commandType":"Command_GetDeviceInfo","info":{"cameraId":"32845204"}}' \
     -h '103.165.142.44' \
     -p '9093'
 
