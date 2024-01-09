@@ -1,4 +1,4 @@
-module labs/local-transcoder
+module github.com/CE-Thesis-2023/ltd
 
 go 1.21.4
 

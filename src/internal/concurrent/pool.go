@@ -1,7 +1,7 @@
 package custcon
 
 import (
-	"labs/local-transcoder/internal/logger"
+	"github.com/CE-Thesis-2023/ltd/internal/logger"
 	"log"
 
 	"github.com/panjf2000/ants/v2"

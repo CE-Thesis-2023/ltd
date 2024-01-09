@@ -2,7 +2,7 @@ package custerror_test
 
 import (
 	"errors"
-	custerror "labs/local-transcoder/internal/error"
+	custerror "github.com/CE-Thesis-2023/ltd/internal/error"
 	"testing"
 )
 

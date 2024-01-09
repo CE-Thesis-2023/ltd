@@ -3,7 +3,7 @@ package custmqtt
 import (
 	"context"
 	"fmt"
-	"labs/local-transcoder/internal/configs"
+	"github.com/CE-Thesis-2023/ltd/internal/configs"
 	"log"
 	"net/url"
 	"sync"

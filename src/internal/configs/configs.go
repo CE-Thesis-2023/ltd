@@ -3,7 +3,7 @@ package configs
 import (
 	"context"
 	"encoding/json"
-	custerror "labs/local-transcoder/internal/error"
+	custerror "github.com/CE-Thesis-2023/ltd/internal/error"
 	"log"
 	"os"
 	"sync"

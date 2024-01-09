@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	custerror "labs/local-transcoder/internal/error"
-	"labs/local-transcoder/internal/logger"
+	custerror "github.com/CE-Thesis-2023/ltd/internal/error"
+	"github.com/CE-Thesis-2023/ltd/internal/logger"
 	"sync"
 
 	sq "github.com/Masterminds/squirrel"

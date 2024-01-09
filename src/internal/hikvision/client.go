@@ -2,7 +2,7 @@ package hikvision
 
 import (
 	"fmt"
-	"labs/local-transcoder/internal/logger"
+	"github.com/CE-Thesis-2023/ltd/internal/logger"
 	"net/http"
 	"net/url"
 	"time"

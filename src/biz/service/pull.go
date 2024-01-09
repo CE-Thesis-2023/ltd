@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 	"fmt"
-	custerror "labs/local-transcoder/internal/error"
-	"labs/local-transcoder/internal/logger"
-	"labs/local-transcoder/internal/ome"
-	"labs/local-transcoder/models/db"
-	"labs/local-transcoder/models/events"
+	custerror "github.com/CE-Thesis-2023/ltd/internal/error"
+	"github.com/CE-Thesis-2023/ltd/internal/logger"
+	"github.com/CE-Thesis-2023/ltd/internal/ome"
+	"github.com/CE-Thesis-2023/ltd/models/db"
+	"github.com/CE-Thesis-2023/ltd/models/events"
 	"net/url"
 	"strings"
 

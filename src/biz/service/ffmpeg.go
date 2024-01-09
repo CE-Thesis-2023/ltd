@@ -2,12 +2,12 @@ package service
 
 import (
 	"context"
-	"labs/local-transcoder/internal/configs"
-	custerror "labs/local-transcoder/internal/error"
-	"labs/local-transcoder/internal/logger"
-	custrtsp "labs/local-transcoder/internal/rtsp"
-	"labs/local-transcoder/models/db"
-	"labs/local-transcoder/models/events"
+	"github.com/CE-Thesis-2023/ltd/internal/configs"
+	custerror "github.com/CE-Thesis-2023/ltd/internal/error"
+	"github.com/CE-Thesis-2023/ltd/internal/logger"
+	custrtsp "github.com/CE-Thesis-2023/ltd/internal/rtsp"
+	"github.com/CE-Thesis-2023/ltd/models/db"
+	"github.com/CE-Thesis-2023/ltd/models/events"
 	"os/exec"
 	"path/filepath"
 

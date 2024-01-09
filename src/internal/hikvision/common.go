@@ -2,8 +2,8 @@ package hikvision
 
 import (
 	"encoding/xml"
-	custerror "labs/local-transcoder/internal/error"
-	custhttp "labs/local-transcoder/internal/http"
+	custerror "github.com/CE-Thesis-2023/ltd/internal/error"
+	custhttp "github.com/CE-Thesis-2023/ltd/internal/http"
 
 	fastshot "github.com/opus-domini/fast-shot"
 )

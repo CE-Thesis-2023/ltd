@@ -2,7 +2,7 @@ package custdb
 
 import (
 	"context"
-	custerror "labs/local-transcoder/internal/error"
+	custerror "github.com/CE-Thesis-2023/ltd/internal/error"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

@@ -3,9 +3,9 @@ package ome
 import (
 	"context"
 	"fmt"
-	"labs/local-transcoder/internal/configs"
-	custerror "labs/local-transcoder/internal/error"
-	custhttp "labs/local-transcoder/internal/http"
+	"github.com/CE-Thesis-2023/ltd/internal/configs"
+	custerror "github.com/CE-Thesis-2023/ltd/internal/error"
+	custhttp "github.com/CE-Thesis-2023/ltd/internal/http"
 
 	fastshot "github.com/opus-domini/fast-shot"
 )

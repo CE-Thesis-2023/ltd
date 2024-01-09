@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
-	custhttp "labs/local-transcoder/internal/http"
-	"labs/local-transcoder/internal/logger"
+	custhttp "github.com/CE-Thesis-2023/ltd/internal/http"
+	"github.com/CE-Thesis-2023/ltd/internal/logger"
 	"time"
 
 	fastshot "github.com/opus-domini/fast-shot"

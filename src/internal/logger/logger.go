@@ -2,8 +2,8 @@ package logger
 
 import (
 	"context"
-	"labs/local-transcoder/internal/configs"
-	custerror "labs/local-transcoder/internal/error"
+	"github.com/CE-Thesis-2023/ltd/internal/configs"
+	custerror "github.com/CE-Thesis-2023/ltd/internal/error"
 	"log"
 	"sync"
 

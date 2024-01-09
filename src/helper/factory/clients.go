@@ -2,10 +2,10 @@ package factory
 
 import (
 	"context"
-	"labs/local-transcoder/internal/configs"
-	"labs/local-transcoder/internal/hikvision"
-	"labs/local-transcoder/internal/logger"
-	"labs/local-transcoder/internal/ome"
+	"github.com/CE-Thesis-2023/ltd/internal/configs"
+	"github.com/CE-Thesis-2023/ltd/internal/hikvision"
+	"github.com/CE-Thesis-2023/ltd/internal/logger"
+	"github.com/CE-Thesis-2023/ltd/internal/ome"
 	"sync"
 
 	"go.uber.org/zap"

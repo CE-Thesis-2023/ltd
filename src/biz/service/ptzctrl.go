@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 	"errors"
-	custerror "labs/local-transcoder/internal/error"
-	"labs/local-transcoder/internal/hikvision"
-	"labs/local-transcoder/internal/logger"
-	"labs/local-transcoder/models/db"
-	"labs/local-transcoder/models/events"
+	custerror "github.com/CE-Thesis-2023/ltd/internal/error"
+	"github.com/CE-Thesis-2023/ltd/internal/hikvision"
+	"github.com/CE-Thesis-2023/ltd/internal/logger"
+	"github.com/CE-Thesis-2023/ltd/models/db"
+	"github.com/CE-Thesis-2023/ltd/models/events"
 	"time"
 
 	"go.uber.org/zap"

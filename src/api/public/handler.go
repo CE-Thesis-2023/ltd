@@ -1,9 +1,9 @@
 package publicapi
 
 import (
-	"labs/local-transcoder/biz/service"
-	"labs/local-transcoder/internal/logger"
-	"labs/local-transcoder/models/ms"
+	"github.com/CE-Thesis-2023/ltd/biz/service"
+	"github.com/CE-Thesis-2023/ltd/internal/logger"
+	"github.com/CE-Thesis-2023/ltd/models/ms"
 
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"

@@ -2,13 +2,13 @@ package eventsapi
 
 import (
 	"context"
-	"labs/local-transcoder/biz/service"
-	"labs/local-transcoder/internal/cache"
-	"labs/local-transcoder/internal/logger"
-	"labs/local-transcoder/models/events"
+	"github.com/CE-Thesis-2023/ltd/biz/service"
+	"github.com/CE-Thesis-2023/ltd/internal/cache"
+	"github.com/CE-Thesis-2023/ltd/internal/logger"
+	"github.com/CE-Thesis-2023/ltd/models/events"
 	"time"
 
-	"labs/local-transcoder/internal/concurrent"
+	"github.com/CE-Thesis-2023/ltd/internal/concurrent"
 
 	"github.com/bytedance/sonic"
 	"github.com/dgraph-io/ristretto"

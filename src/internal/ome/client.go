@@ -2,7 +2,7 @@ package ome
 
 import (
 	"fmt"
-	"labs/local-transcoder/internal/configs"
+	"github.com/CE-Thesis-2023/ltd/internal/configs"
 	"net/url"
 	"time"
 

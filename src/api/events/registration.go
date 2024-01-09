@@ -3,10 +3,10 @@ package eventsapi
 import (
 	"context"
 	"fmt"
-	"labs/local-transcoder/helper"
-	"labs/local-transcoder/internal/configs"
-	"labs/local-transcoder/internal/logger"
-	custmqtt "labs/local-transcoder/internal/mqtt"
+	"github.com/CE-Thesis-2023/ltd/helper"
+	"github.com/CE-Thesis-2023/ltd/internal/configs"
+	"github.com/CE-Thesis-2023/ltd/internal/logger"
+	custmqtt "github.com/CE-Thesis-2023/ltd/internal/mqtt"
 	"time"
 
 	"github.com/eclipse/paho.golang/autopaho"

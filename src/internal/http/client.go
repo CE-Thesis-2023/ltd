@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/xml"
 	"io"
-	"labs/local-transcoder/internal/logger"
+	"github.com/CE-Thesis-2023/ltd/internal/logger"
 	"net/http"
 	"time"
 
