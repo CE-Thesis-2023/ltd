@@ -120,7 +120,7 @@ func (s *mediaService) shouldRestartStream(err error, camera *db.Camera, sourceU
 	logger.SDebug("shouldRestartStream",
 		zap.String("source", sourceUrl),
 		zap.String("destination", destinationUrl))
-	_, found := s.onGoingProcesses[camera.Id]
+	_, found := s.onGoingProcesses[camera.CameraId]
 	if found && err != nil {
 		return true
 	}
@@ -128,7 +128,7 @@ func (s *mediaService) shouldRestartStream(err error, camera *db.Camera, sourceU
 }
 
 func (s *mediaService) recordThisStream(ctx context.Context, camera *db.Camera, sourceUrl string, destinationUrl string, proc *exec.Cmd) {
-	s.onGoingProcesses[camera.Id] = &onGoingProcess{
+	s.onGoingProcesses[camera.CameraId] = &onGoingProcess{
 		SourceUrl:      sourceUrl,
 		DestinationUrl: destinationUrl,
 		proc:           proc,
@@ -136,7 +136,7 @@ func (s *mediaService) recordThisStream(ctx context.Context, camera *db.Camera, 
 }
 
 func (s *mediaService) isThisStreamGoing(ctx context.Context, camera *db.Camera, sourceUrl string, destinationUrl string) bool {
-	pr, found := s.onGoingProcesses[camera.Id]
+	pr, found := s.onGoingProcesses[camera.CameraId]
 	if pr != nil {
 		logger.SDebug("isThisStreamGoing: stream already ongoing", zap.Any("process", pr))
 		return true
@@ -158,14 +158,14 @@ func (s *mediaService) isThisStreamGoing(ctx context.Context, camera *db.Camera,
 }
 
 func (s *mediaService) CancelFFmpegRtspToSrt(ctx context.Context, camera *db.Camera) error {
-	logger.SDebug("CancelFFmpegRtspToSrt: cancel", zap.String("cameraId", camera.Id))
-	onGoingProcess, yes := s.onGoingProcesses[camera.Id]
+	logger.SDebug("CancelFFmpegRtspToSrt: cancel", zap.String("cameraId", camera.CameraId))
+	onGoingProcess, yes := s.onGoingProcesses[camera.CameraId]
 	if !yes {
 		logger.SDebug("CancelFFmpegRtspToSrt: stream already canceled or not found")
 		return custerror.ErrorPermissionDenied
 	}
 
-	delete(s.onGoingProcesses, camera.Id)
+	delete(s.onGoingProcesses, camera.CameraId)
 
 	logger.SDebug("CancelFFmpegRtspToSrt: canceling stream process")
 	if err := onGoingProcess.Cancel(ctx); err != nil {
@@ -173,6 +173,6 @@ func (s *mediaService) CancelFFmpegRtspToSrt(ctx context.Context, camera *db.Cam
 		return err
 	}
 
-	logger.SDebug("CancelFFmpegRtspToSrt: stream canceled", zap.String("cameraId", camera.Id))
+	logger.SDebug("CancelFFmpegRtspToSrt: stream canceled", zap.String("cameraId", camera.CameraId))
 	return nil
 }

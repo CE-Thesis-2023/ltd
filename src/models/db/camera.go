@@ -1,35 +1,35 @@
 package db
 
 type Camera struct {
-	Id        string `json:"id" db:"id"`
-	Name      string `json:"name" db:"name"`
-	Ip        string `json:"ip" db:"ip"`
-	Port      int    `json:"port" db:"port"`
-	Username  string `json:"username" db:"username"`
-	Password  string `json:"password" db:"password"`
-	DateAdded string `json:"date_added" db:"date_added"`
+	CameraId string `json:"cameraId" db:"camera_id"`
+	Name     string `json:"name" db:"name"`
+	Ip       string `json:"ip" db:"ip"`
+	Port     int    `json:"port" db:"port"`
+	Username string `json:"username" db:"username"`
+	Password string `json:"password" db:"password"`
+	Started  bool   `json:"started" db:"started"`
 }
 
 func (c Camera) Fields() []string {
 	return []string{
-		"id",
+		"camera_id",
 		"name",
 		"ip",
 		"port",
 		"username",
 		"password",
-		"date_added",
+		"started",
 	}
 }
 
 func (c Camera) Values() []interface{} {
 	return []interface{}{
-		c.Id,
+		c.CameraId,
 		c.Name,
 		c.Ip,
 		c.Port,
 		c.Username,
 		c.Password,
-		c.DateAdded,
+		c.Started,
 	}
 }

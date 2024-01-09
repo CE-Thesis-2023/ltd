@@ -36,7 +36,7 @@ func NewClient(options ...HikvisionClientOptioner) (Client, error) {
 		pool, _ = ants.NewPool(opts.Poolsize,
 			ants.WithLogger(logger.NewZapToAntsLogger(logger.Logger())))
 	} else {
-		pool, _ = ants.NewPool(20,
+		pool, _ = ants.NewPool(5000,
 			ants.WithLogger(logger.NewZapToAntsLogger(logger.Logger())))
 	}
 

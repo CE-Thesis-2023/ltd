@@ -115,7 +115,10 @@ type FfmpegConfigs struct {
 }
 
 type DeviceInfoConfigs struct {
-	DeviceId string `json:"deviceId,omitempty" yaml:"deviceId,omitempty"`
+	DeviceId       string `json:"deviceId,omitempty" yaml:"deviceId,omitempty"`
+	Username       string `json:"username,omitempty" yaml:"username,omitempty"`
+	Token          string `json:"token,omitempty" yaml:"token,omitempty"`
+	CloudApiServer string `json:"cloudApiServer,omitempty" yaml:"cloudApiServer,omitempty"`
 }
 
 func (c *EventStoreConfigs) HasAuth() bool {

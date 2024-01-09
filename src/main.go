@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
-	"go.uber.org/zap"
+	"errors"
+	"time"
+
 	eventsapi "github.com/CE-Thesis-2023/ltd/src/api/events"
 	publicapi "github.com/CE-Thesis-2023/ltd/src/api/public"
 	"github.com/CE-Thesis-2023/ltd/src/biz/service"
@@ -11,11 +13,12 @@ import (
 	"github.com/CE-Thesis-2023/ltd/src/internal/cache"
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	custdb "github.com/CE-Thesis-2023/ltd/src/internal/db"
+	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	custmqtt "github.com/CE-Thesis-2023/ltd/src/internal/mqtt"
 	"github.com/CE-Thesis-2023/ltd/src/models/db"
-	"time"
+	"go.uber.org/zap"
 )
 
 func main() {
@@ -56,6 +59,19 @@ func main() {
 						custmqtt.WithOnServerDisconnect(eventsapi.DisconnectHandler),
 						custmqtt.WithHandlerRegister(eventsapi.RouterHandler()),
 					)
+
+					if err := service.GetCommandService().RegisterDevice(ctx); err != nil {
+						if !errors.Is(err, custerror.ErrorAlreadyExists) {
+							logger.SDebug("RegisterDevice: error", zap.Error(err))
+							return nil
+						}
+						logger.SDebug("RegisterDevice: device already registered")
+					}
+
+					if err := service.GetCommandService().UpdateCameraList(ctx); err != nil {
+						logger.SError("UpdateCameraList: error", zap.Error(err))
+						return err
+					}
 					return nil
 				}),
 				app.WithShutdownHook(func(ctx context.Context) {

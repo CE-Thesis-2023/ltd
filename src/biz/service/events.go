@@ -2,20 +2,26 @@ package service
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/CE-Thesis-2023/ltd/src/helper/factory"
 	"github.com/CE-Thesis-2023/ltd/src/internal/cache"
+	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	custdb "github.com/CE-Thesis-2023/ltd/src/internal/db"
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	"github.com/CE-Thesis-2023/ltd/src/internal/hikvision"
+	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/internal/ome"
 	"github.com/CE-Thesis-2023/ltd/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
 	"github.com/CE-Thesis-2023/ltd/src/models/ms"
 	"github.com/CE-Thesis-2023/ltd/src/models/rest"
-	"time"
+	"github.com/bytedance/sonic"
+	fastshot "github.com/opus-domini/fast-shot"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/dgraph-io/ristretto"
@@ -35,6 +41,8 @@ type CommandServiceInterface interface {
 	EndFfmpegStream(ctx context.Context, req *events.CommandEndStreamInfo) error
 	DebugListStreams(ctx context.Context) (*rest.DebugListStreamsResponse, error)
 	DeleteCamera(ctx context.Context, req *events.CommandDeleteCameraRequest) error
+	UpdateCameraList(ctx context.Context) error
+	RegisterDevice(ctx context.Context) error
 	Shutdown()
 }
 
@@ -45,19 +53,29 @@ type CommandService struct {
 	hikvisionClient hikvision.Client
 	pool            *ants.Pool
 
+	backendHttpPrivateClient fastshot.ClientHttpMethods
+
 	streamManagementService StreamManagementServiceInterface
 }
 
 func NewCommandService() CommandServiceInterface {
+	configs := configs.Get().DeviceInfo
 	p, _ := ants.NewPool(10,
 		ants.WithLogger(logger.NewZapToAntsLogger(logger.Logger())))
+	backendClient := fastshot.NewClient(configs.CloudApiServer).
+		Auth().BasicAuth(configs.Username, configs.Token).
+		Config().SetCustomTransport(&http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}).
+		Build()
 	return &CommandService{
-		db:                      custdb.Layered(),
-		cache:                   cache.Cache(),
-		omeClient:               factory.Ome(),
-		hikvisionClient:         factory.Hikvision(),
-		pool:                    p,
-		streamManagementService: GetStreamManagementService(),
+		db:                       custdb.Layered(),
+		cache:                    cache.Cache(),
+		omeClient:                factory.Ome(),
+		hikvisionClient:          factory.Hikvision(),
+		pool:                     p,
+		streamManagementService:  GetStreamManagementService(),
+		backendHttpPrivateClient: backendClient,
 	}
 }
 
@@ -81,13 +99,13 @@ func (s *CommandService) AddCamera(ctx context.Context, req *events.CommandAddCa
 	}
 
 	insertingCamera := db.Camera{
-		Id:        req.CameraId,
-		Name:      req.Name,
-		Ip:        req.Ip,
-		Port:      req.Port,
-		Username:  req.Username,
-		Password:  req.Password,
-		DateAdded: time.Now().Format(time.RFC3339),
+		CameraId: req.CameraId,
+		Name:     req.Name,
+		Ip:       req.Ip,
+		Port:     req.Port,
+		Username: req.Username,
+		Password: req.Password,
+		Started:  false,
 	}
 
 	if err := s.saveCamera(ctx, insertingCamera); err != nil {
@@ -131,7 +149,7 @@ func (s *CommandService) getCameraByName(ctx context.Context, name string) (*db.
 func (s *CommandService) getCameraById(ctx context.Context, id string) (*db.Camera, error) {
 	sqlExp := squirrel.Select("*").
 		From("cameras").
-		Where("id = ?", id)
+		Where("camera_id = ?", id)
 	var camera db.Camera
 	if err := s.db.Get(ctx, sqlExp, &camera); err != nil {
 		logger.SError("getCameraById: Get error", zap.Error(err))
@@ -345,7 +363,7 @@ func (s *CommandService) DeleteCamera(ctx context.Context, req *events.CommandDe
 		return err
 	}
 
-	if err := s.deleteCamera(ctx, camera.Id); err != nil {
+	if err := s.deleteCamera(ctx, camera.CameraId); err != nil {
 		logger.SError("DeleteCamera: deleteCamera error", zap.Error(err))
 		return err
 	}
@@ -360,6 +378,152 @@ func (s *CommandService) DeleteCamera(ctx context.Context, req *events.CommandDe
 }
 
 func (s *CommandService) deleteCamera(ctx context.Context, id string) error {
-	q := squirrel.Delete("cameras").Where("id = ?", id)
+	q := squirrel.Delete("cameras").Where("camera_id = ?", id)
 	return s.db.Delete(ctx, q)
+}
+
+func (s *CommandService) RegisterDevice(ctx context.Context) error {
+	logger.SDebug("RegisterDevice: starting")
+	deviceId := configs.Get().DeviceInfo.DeviceId
+
+	req := map[string]interface{}{
+		"deviceId": deviceId,
+	}
+
+	resp, err := s.backendHttpPrivateClient.POST("/registers").
+		Body().AsJSON(req).
+		Context().Set(ctx).
+		Send()
+	if err != nil {
+		logger.SError("client.POST /registers: error", zap.Error(err))
+		return err
+	}
+
+	if resp.Is2xxSuccessful() {
+		logger.SInfo("RegisterDevice: success 200 OK")
+		return nil
+	}
+
+	if resp.StatusCode() == http.StatusConflict {
+		return custerror.ErrorAlreadyExists
+	}
+
+	logger.SError("RegisterDevice: received 4xx or 5xx",
+		zap.String("statusText", resp.StatusText()))
+	return custerror.ErrorInternal
+}
+
+func (s *CommandService) UpdateCameraList(ctx context.Context) error {
+	logger.SDebug("UpdateCameraList: starting")
+	deviceId := configs.Get().DeviceInfo.DeviceId
+
+	resp, err := s.backendHttpPrivateClient.GET(fmt.Sprintf("/transcoders/%s/cameras", deviceId)).
+		Context().Set(ctx).
+		Send()
+	if err != nil {
+		logger.SError("client.GET /transcoders/%s/cameras", zap.Error(err))
+		return err
+	}
+
+	receivedCameras := []db.Camera{}
+	if resp.Is2xxSuccessful() {
+		respMap := map[string]interface{}{}
+		if err := custhttp.JSONResponse(&resp, &respMap); err != nil {
+			logger.SError("UpdateCameraList: JSONResponse error", zap.Error(err))
+			return err
+		}
+
+		cameraList := respMap["cameras"]
+		respContent, _ := sonic.Marshal(&cameraList)
+		if err := sonic.Unmarshal(respContent, &receivedCameras); err != nil {
+			logger.SError("mapstructure.Decode: error", zap.Error(err))
+			return err
+		}
+	}
+
+	if resp.Is5xxServerError() {
+		logger.SInfo("UpdateCameraList: status not 200", zap.String("statusText", resp.StatusText()))
+		return custerror.ErrorInternal
+	}
+
+	currentCameras, err := s.getCameras(ctx)
+	if err != nil {
+		logger.SError("getCameras: error", zap.Error(err))
+		return err
+	}
+
+	if err := s.addUpdateOrDeleteCameras(ctx, currentCameras, receivedCameras); err != nil {
+		logger.SError("addUpdateOrDeleteCameras: error", zap.Error(err))
+		return err
+	}
+
+	logger.SInfo("UpdateCameraList: migrated camera list success")
+	return nil
+}
+
+func (s *CommandService) getCameras(ctx context.Context) ([]db.Camera, error) {
+	q := squirrel.Select("*").From("cameras")
+	list := []db.Camera{}
+	if err := s.db.Select(ctx, q, &list); err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
+func (s *CommandService) updateCamera(ctx context.Context, camera *db.Camera) error {
+	valueMap := map[string]interface{}{}
+	fields := camera.Fields()
+	values := camera.Values()
+	for i := 0; i < len(fields); i += 1 {
+		valueMap[fields[i]] = values[i]
+	}
+
+	q := squirrel.Update("cameras").Where("camera_id = ?", camera.CameraId).SetMap(valueMap)
+	sql, args, _ := q.ToSql()
+	logger.SDebug("updateCamera: SQL query",
+		zap.String("query", sql),
+		zap.Any("args", args))
+	if err := s.db.Update(ctx, q); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *CommandService) addUpdateOrDeleteCameras(ctx context.Context, currentList []db.Camera, updatedList []db.Camera) error {
+	updatedMap := map[string]db.Camera{}
+	for _, c := range updatedList {
+		updatedMap[c.CameraId] = c
+	}
+	for _, current := range currentList {
+		id := current.CameraId
+		logger.SDebug("addUpdateOrDeleteCameras: updating camera", zap.String("id", id))
+		updated, found := updatedMap[id]
+		if !found {
+			if err := s.deleteCamera(ctx, current.CameraId); err != nil {
+				logger.SError("deleteCamera: error", zap.Error(err))
+				return err
+			}
+			logger.SDebug("addUpdateOrDeleteCameras: deleted camera", zap.String("id", id))
+		}
+		if err := s.updateCamera(ctx, &updated); err != nil {
+			logger.SError("updateCamera: error", zap.Error(err))
+			return err
+		}
+		logger.SDebug("addUpdateOrDeleteCameras: updated camera", zap.String("id", id))
+	}
+
+	currentMap := map[string]db.Camera{}
+	for _, updated := range updatedList {
+		id := updated.CameraId
+		_, found := currentMap[id]
+		if !found {
+			if err := s.saveCamera(ctx, updated); err != nil {
+				logger.SError("saveCamera: error", zap.Error(err))
+				return err
+			}
+			logger.SDebug("addUpdateOrDeleteCameras: added camera", zap.String("id", id))
+		}
+	}
+
+	return nil
 }

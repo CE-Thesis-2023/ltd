@@ -172,27 +172,30 @@ func (h *StandardEventHandler) ReceiveRemoteCommands(p *paho.Publish) error {
 }
 
 func (h *StandardEventHandler) ReceiveRemoteMovementControl(p *paho.Publish) error {
-	logger.SDebug("ReceiveRemoteMovementControl", zap.String("message", string(p.Payload)))
+	logger.SInfo("ReceiveRemoteMovementControl: received request")
+	h.pool.Submit(func() {
+		logger.SDebug("ReceiveRemoteMovementControl", zap.String("message", string(p.Payload)))
 
-	var msg events.PtzCtrlRequest
-	if err := sonic.Unmarshal(p.Payload, &msg); err != nil {
-		logger.SError("ReceiveRemoteMovementControl: message parsing failed", zap.Error(err))
-		return err
-	}
-
-	dur := time.Second * (time.Duration(*msg.StopAfterSeconds) + 2)
-	ctx, cancel := context.WithTimeout(context.Background(), dur)
-	defer func() {
-		if ctx.Err() != nil {
-			logger.SDebug("ReceiveRemoteMovementControl: context exceeded")
+		var msg events.PtzCtrlRequest
+		if err := sonic.Unmarshal(p.Payload, &msg); err != nil {
+			logger.SError("ReceiveRemoteMovementControl: message parsing failed", zap.Error(err))
+			return
 		}
-		cancel()
-	}()
-	if err := service.GetCommandService().PtzCtrl(ctx, &msg); err != nil {
-		logger.SError("ReceiveRemoteMovementControl: CommandService.PtzCtrl", zap.Error(err))
-		return err
-	}
 
-	logger.SDebug("ReceiveRemoteMovementControl: success")
+		dur := time.Second * (time.Duration(*msg.StopAfterSeconds) + 2)
+		ctx, cancel := context.WithTimeout(context.Background(), dur)
+		defer func() {
+			if ctx.Err() != nil {
+				logger.SDebug("ReceiveRemoteMovementControl: context exceeded")
+			}
+			cancel()
+		}()
+		if err := service.GetCommandService().PtzCtrl(ctx, &msg); err != nil {
+			logger.SError("ReceiveRemoteMovementControl: CommandService.PtzCtrl", zap.Error(err))
+			return
+		}
+
+		logger.SDebug("ReceiveRemoteMovementControl: success")
+	})
 	return nil
 }
