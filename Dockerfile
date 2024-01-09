@@ -7,12 +7,7 @@ COPY go.mod go.mod
 COPY go.sum go.sum
 RUN go mod download
 
-COPY api api
-COPY biz biz
-COPY internal internal
-COPY helper helper
-COPY models models
-
+COPY src src
 COPY main.go main.go
 
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
