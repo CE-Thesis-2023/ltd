@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
-	custhttp "github.com/CE-Thesis-2023/ltd/internal/http"
+	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
 
 	fastshot "github.com/opus-domini/fast-shot"
 	"github.com/panjf2000/ants/v2"

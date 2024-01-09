@@ -2,12 +2,12 @@ package service
 
 import (
 	"context"
-	"github.com/CE-Thesis-2023/ltd/internal/configs"
-	custerror "github.com/CE-Thesis-2023/ltd/internal/error"
-	"github.com/CE-Thesis-2023/ltd/internal/logger"
-	custrtsp "github.com/CE-Thesis-2023/ltd/internal/rtsp"
-	"github.com/CE-Thesis-2023/ltd/models/db"
-	"github.com/CE-Thesis-2023/ltd/models/events"
+	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
+	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
+	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
+	custrtsp "github.com/CE-Thesis-2023/ltd/src/internal/rtsp"
+	"github.com/CE-Thesis-2023/ltd/src/models/db"
+	"github.com/CE-Thesis-2023/ltd/src/models/events"
 	"os/exec"
 	"path/filepath"
 

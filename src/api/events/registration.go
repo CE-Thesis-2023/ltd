@@ -3,10 +3,10 @@ package eventsapi
 import (
 	"context"
 	"fmt"
-	"github.com/CE-Thesis-2023/ltd/helper"
-	"github.com/CE-Thesis-2023/ltd/internal/configs"
-	"github.com/CE-Thesis-2023/ltd/internal/logger"
-	custmqtt "github.com/CE-Thesis-2023/ltd/internal/mqtt"
+	"github.com/CE-Thesis-2023/ltd/src/helper"
+	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
+	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
+	custmqtt "github.com/CE-Thesis-2023/ltd/src/internal/mqtt"
 	"time"
 
 	"github.com/eclipse/paho.golang/autopaho"

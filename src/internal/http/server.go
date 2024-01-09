@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/CE-Thesis-2023/ltd/internal/configs"
-	custerror "github.com/CE-Thesis-2023/ltd/internal/error"
+	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
+	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 
 	"net/http"
 

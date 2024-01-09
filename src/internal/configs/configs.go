@@ -3,7 +3,7 @@ package configs
 import (
 	"context"
 	"encoding/json"
-	custerror "github.com/CE-Thesis-2023/ltd/internal/error"
+	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	"log"
 	"os"
 	"sync"

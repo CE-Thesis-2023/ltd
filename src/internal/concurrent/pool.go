@@ -1,7 +1,7 @@
 package custcon
 
 import (
-	"github.com/CE-Thesis-2023/ltd/internal/logger"
+	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"log"
 
 	"github.com/panjf2000/ants/v2"

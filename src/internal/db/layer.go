@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	custerror "github.com/CE-Thesis-2023/ltd/internal/error"
-	"github.com/CE-Thesis-2023/ltd/internal/logger"
+	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
+	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"sync"
 
 	sq "github.com/Masterminds/squirrel"

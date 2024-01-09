@@ -2,7 +2,7 @@ package ome
 
 import (
 	"fmt"
-	"github.com/CE-Thesis-2023/ltd/internal/configs"
+	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	"net/url"
 	"time"
 

@@ -3,7 +3,7 @@ package custmqtt
 import (
 	"context"
 	"fmt"
-	"github.com/CE-Thesis-2023/ltd/internal/configs"
+	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	"log"
 	"net/url"
 	"sync"

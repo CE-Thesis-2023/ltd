@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 	"errors"
-	custerror "github.com/CE-Thesis-2023/ltd/internal/error"
-	"github.com/CE-Thesis-2023/ltd/internal/hikvision"
-	"github.com/CE-Thesis-2023/ltd/internal/logger"
-	"github.com/CE-Thesis-2023/ltd/models/db"
-	"github.com/CE-Thesis-2023/ltd/models/events"
+	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
+	"github.com/CE-Thesis-2023/ltd/src/internal/hikvision"
+	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
+	"github.com/CE-Thesis-2023/ltd/src/models/db"
+	"github.com/CE-Thesis-2023/ltd/src/models/events"
 	"time"
 
 	"go.uber.org/zap"

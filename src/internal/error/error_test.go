@@ -2,7 +2,7 @@ package custerror_test
 
 import (
 	"errors"
-	custerror "github.com/CE-Thesis-2023/ltd/internal/error"
+	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	"testing"
 )
 

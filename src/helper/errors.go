@@ -1,8 +1,8 @@
 package helper
 
 import (
-	custerror "github.com/CE-Thesis-2023/ltd/internal/error"
-	"github.com/CE-Thesis-2023/ltd/internal/logger"
+	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
+	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 
 	"go.uber.org/zap"
 )

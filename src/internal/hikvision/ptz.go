@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
-	custhttp "github.com/CE-Thesis-2023/ltd/internal/http"
-	"github.com/CE-Thesis-2023/ltd/internal/logger"
+	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
+	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"time"
 
 	fastshot "github.com/opus-domini/fast-shot"

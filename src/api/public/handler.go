@@ -1,9 +1,9 @@
 package publicapi
 
 import (
-	"github.com/CE-Thesis-2023/ltd/biz/service"
-	"github.com/CE-Thesis-2023/ltd/internal/logger"
-	"github.com/CE-Thesis-2023/ltd/models/ms"
+	"github.com/CE-Thesis-2023/ltd/src/biz/service"
+	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
+	"github.com/CE-Thesis-2023/ltd/src/models/ms"
 
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"

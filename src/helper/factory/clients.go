@@ -2,10 +2,10 @@ package factory
 
 import (
 	"context"
-	"github.com/CE-Thesis-2023/ltd/internal/configs"
-	"github.com/CE-Thesis-2023/ltd/internal/hikvision"
-	"github.com/CE-Thesis-2023/ltd/internal/logger"
-	"github.com/CE-Thesis-2023/ltd/internal/ome"
+	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
+	"github.com/CE-Thesis-2023/ltd/src/internal/hikvision"
+	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
+	"github.com/CE-Thesis-2023/ltd/src/internal/ome"
 	"sync"
 
 	"go.uber.org/zap"
