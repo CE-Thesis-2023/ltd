@@ -34,6 +34,7 @@ type CommandServiceInterface interface {
 	StartFfmpegStream(ctx context.Context, req *events.CommandStartStreamInfo) error
 	EndFfmpegStream(ctx context.Context, req *events.CommandEndStreamInfo) error
 	DebugListStreams(ctx context.Context) (*rest.DebugListStreamsResponse, error)
+	DeleteCamera(ctx context.Context, req *events.CommandDeleteCameraRequest) error
 	Shutdown()
 }
 
@@ -128,14 +129,6 @@ func (s *CommandService) getCameraByName(ctx context.Context, name string) (*db.
 }
 
 func (s *CommandService) getCameraById(ctx context.Context, id string) (*db.Camera, error) {
-	val, found := s.cache.Get(fmt.Sprintf("camera-by_id-%s", id))
-	if found {
-		camera, yes := val.(db.Camera)
-		if yes {
-			logger.SDebug("getCameraById: cache hit")
-			return &camera, nil
-		}
-	}
 	sqlExp := squirrel.Select("*").
 		From("cameras").
 		Where("id = ?", id)
@@ -144,15 +137,6 @@ func (s *CommandService) getCameraById(ctx context.Context, id string) (*db.Came
 		logger.SError("getCameraById: Get error", zap.Error(err))
 		return nil, err
 	}
-	logger.SDebug("getCameraById: db hit")
-	s.pool.Submit(func() {
-		set := s.cache.Set("camera-by_id-%s", camera, 100)
-		if set {
-			logger.SDebug("getCameraById: cache set")
-		} else {
-			logger.SError("getCameraById: cache set failed")
-		}
-	})
 	return &camera, nil
 }
 
@@ -164,23 +148,6 @@ func (s *CommandService) saveCamera(ctx context.Context, camera db.Camera) error
 		logger.SError("saveCamera: db.Insert error", zap.Error(err))
 		return err
 	}
-	s.pool.Submit(func() {
-		successName := s.cache.Set(
-			fmt.Sprintf("camera_by_name-%s", camera.Name),
-			camera,
-			100)
-		successId := s.cache.Set(
-			fmt.Sprintf("camera_by-id-%s", camera.Id),
-			camera,
-			101,
-		)
-		success := successName && successId
-		if success {
-			logger.SDebug("saveCamera: cache set")
-		} else {
-			logger.SError("saveCamera: cache set failed")
-		}
-	})
 	logger.SDebug("saveCamera: saved to db")
 	return nil
 }
@@ -368,4 +335,31 @@ func (s *CommandService) DebugListStreams(ctx context.Context) (*rest.DebugListS
 		return nil, err
 	}
 	return streams, nil
+}
+
+func (s *CommandService) DeleteCamera(ctx context.Context, req *events.CommandDeleteCameraRequest) error {
+	logger.SInfo("DeleteCamera: request")
+	camera, err := s.getCameraById(ctx, req.CameraId)
+	if err != nil {
+		logger.SDebug("DeleteCamera: getCameraById error", zap.Error(err))
+		return err
+	}
+
+	if err := s.deleteCamera(ctx, camera.Id); err != nil {
+		logger.SError("DeleteCamera: deleteCamera error", zap.Error(err))
+		return err
+	}
+
+	if err := s.streamManagementService.MediaService().CancelFFmpegRtspToSrt(ctx, camera); err != nil {
+		logger.SError("DeleteCamera: stop stream error", zap.Error(err))
+		return err
+	}
+
+	logger.SInfo("DeleteCamera: camera deleted", zap.String("id", req.CameraId))
+	return nil
+}
+
+func (s *CommandService) deleteCamera(ctx context.Context, id string) error {
+	q := squirrel.Delete("cameras").Where("id = ?", id)
+	return s.db.Delete(ctx, q)
 }

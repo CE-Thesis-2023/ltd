@@ -147,6 +147,19 @@ func (h *StandardEventHandler) ReceiveRemoteCommands(p *paho.Publish) error {
 				return
 			}
 			logger.SInfo("ReceiveRemoteCommands: Command_GetStreamStatus success")
+		case events.Command_DeleteCamera:
+			var info events.CommandDeleteCameraRequest
+			if err := mapstructure.Decode(&msg.Info, &info); err != nil {
+				logger.SError("ReceiveRemoteCommands: Command_DeleteCamera",
+					zap.String("error",
+						"info not type CommandDeleteCameraRequest"))
+				return
+			}
+			if err := biz.DeleteCamera(ctx, &info); err != nil {
+				logger.SError("ReceiveRemoteCommands: biz.DeleteCamera", zap.Error(err))
+				return
+			}
+			logger.SInfo("ReceiveRemoteCommands: Command_DeleteCamera success")
 		default:
 			logger.SError("ReceiveRemoteCommands: unknown command type",
 				zap.String("type", string(msg.CommandType)),
