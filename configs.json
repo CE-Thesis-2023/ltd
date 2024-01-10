@@ -8,10 +8,10 @@
     "encoding": "console"
   },
   "mqttStore": {
-    "host": "localhost",
-    "port": 8083,
+    "host": "103.165.142.44",
+    "port": 7883,
     "enabled": true,
-    "name": "mqtt_gateway",
+    "name": "ltd",
     "username": "",
     "password": "",
     "level": "debug"
@@ -21,7 +21,7 @@
   },
   "deviceInfo": {
     "deviceId": "ltdtestdevice",
-    "cloudApiServer": "https://localhost:8081/api/priv",
+    "cloudApiServer": "https://103.165.142.44:7881/api/priv",
     "username": "dev",
     "password": "dev"
   },

@@ -13,7 +13,7 @@ RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
     go build \
     -a -installsuffix cgo \
     -ldflags "-w -s" \
-    -o main main.go
+    -o main src/main.go
 
 FROM alpine:3.18 AS runner
 
