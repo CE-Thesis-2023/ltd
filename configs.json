@@ -21,7 +21,7 @@
   },
   "deviceInfo": {
     "deviceId": "ltdtestdevice",
-    "cloudApiServer": "https://103.165.142.44:7881/api/priv",
+    "cloudApiServer": "http://103.165.142.44:7881/api/priv",
     "username": "dev",
     "password": "dev"
   },
