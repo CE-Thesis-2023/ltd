@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# Install dependencies
-brew install hivemq/mqtt-cli/mqtt-cli
+BACKEND_HOST=http://103.165.142.44:7880
 
 # Starts the server
 cd ..
@@ -11,44 +10,34 @@ sleep '5s'
 docker compose logs --since '5s'
 
 echo "=============================="
+echo "GET LIST TRANSCODERS"
+echo "=============================="
+
+deviceId='ltdtestdevice'
+
+curl --insecure -XGET $BACKEND_HOST/api/devices
+echo
+sleep '5s'
+
+echo "=============================="
+echo "GET LIST CAMERAS"
+echo "=============================="
+
+deviceId='ltdtestdevice'
+
+curl --insecure -XGET $BACKEND_HOST/api/cameras
+echo
+sleep '5s'
+
+echo "=============================="
 echo "REGISTER CAMERA TO DEVICE"
 echo "=============================="
 
 deviceId='ltdtestdevice'
 
-mqtt pub -t commands/$deviceId \
-    -m '{"commandType":"Command_AddCamera","info":{"cameraId":"32845204","name":"Most Expensive One","ip":"192.168.8.55","port":0,"username":"admin","password":"bkcamera2023"}}' \
-    -h '103.165.142.44' \
-    -p '9093'
-
-sleep '5s'
-docker compose logs --since '5s'
-
-
-echo "=============================="
-echo "GET DEVICE INFO"
-echo "=============================="
-
-deviceId='ltdtestdevice'
-
-mqtt pub -t commands/$deviceId \
-    -m '{"commandType":"Command_GetDeviceInfo","info":{"cameraId":"32845204"}}' \
-    -h '103.165.142.44' \
-    -p '9093'
-
-sleep '5s'
-docker compose logs --since '5s'
-
-echo "=============================="
-echo "GET DEVICE STREAM CHANNELS"
-echo "=============================="
-
-deviceId='ltdtestdevice'
-
-mqtt pub -t commands/$deviceId \
-    -m '{"commandType":"Command_GetStreamChannels","info":{"cameraId":"32845204"}}' \
-    -h '103.165.142.44' \
-    -p '9093'
+cameraId=$(curl --insecure -XPOST \
+    -d '{"name":"Expensive Camera","ip":"192.168.8.55","port":0,"username":"admin","password":"bkcamera2023","transcoderId":"ltdtestdevice"}' \
+    $BACKEND_HOST/api/cameras | jq -r '.cameraId')
 
 sleep '5s'
 docker compose logs --since '5s'
@@ -59,33 +48,31 @@ echo "=============================="
 
 deviceId='ltdtestdevice'
 
-mqtt pub -t commands/$deviceId \
-    -m '{"commandType":"Command_StartFfmpegStream","info":{"cameraId":"32845204","channelId":"1"}}' \
-    -h '103.165.142.44' \
-    -p '9093'
+curl --insecure -XPUT \
+    $BACKEND_HOST/api/cameras/$cameraId/streams?enable=true
+echo
 
 sleep '5s'
 docker compose logs --since '5s'
 
 echo "=============================="
-echo "GET STREAM LIST"
+echo "GET CAMERA LIST"
 echo "=============================="
 
-curl -XGET 'http://localhost:8080/api/debug/streams'
+curl --insecure -XGET $BACKEND_HOST/api/cameras
+echo
 
 sleep '5s'
 docker compose logs --since '5s'
 
 echo "=============================="
-echo "GET STREAM STATUS"
+echo "GET CAMERA STATUS"
 echo "=============================="
 
 deviceId='ltdtestdevice'
 
-mqtt pub -t commands/$deviceId \
-    -m '{"commandType":"Command_GetStreamStatus","info":{"cameraId":"32845204"}}' \
-    -h '103.165.142.44' \
-    -p '9093'
+curl --insecure -XGET $BACKEND_HOST/api/cameras?id=$cameraId
+echo
 
 sleep '5s'
 docker compose logs --since '5s'
@@ -94,23 +81,8 @@ echo "=============================="
 echo "GET STREAMS (CLOUD SERVER)"
 echo "=============================="
 
-curl -XGET -H 'Authorization: Basic dGhlc2lzOnExamsyM2kxOQ==' \
-    'http://103.165.142.44:7956/v1/vhosts/default/apps/camera/streams'
-
-sleep '5s'
-docker compose logs --since '5s'
+curl --insecure -XGET $BACKEND_HOST/api/cameras/$cameraId/streams
 echo
-
-echo "=============================="
-echo "END CAMERA STREAM"
-echo "=============================="
-
-deviceId='ltdtestdevice'
-
-mqtt pub -t commands/$deviceId \
-    -m '{"commandType":"Command_EndFfmpegStream","info":{"cameraId":"32845204"}}' \
-    -h '103.165.142.44' \
-    -p '9093'
 
 sleep '5s'
 docker compose logs --since '5s'
@@ -121,15 +93,31 @@ echo "=============================="
 
 deviceId='ltdtestdevice'
 
-mqtt pub -t ptzctrl/$deviceId \
-    -m '{"cameraId":"32845204","pan":60,"tilt":0,"stopAfterSeconds":10}' \
-    -h '103.165.142.44' \
-    -p '9093'
+reqRotateCamera01='{"cameraId":"'
+reqRotateCamera02='","pan":60,"tilt":30}'
+reqRotateCamera="$reqRotateCamera01$cameraId$reqRotateCamera02"
+echo $reqRotateCamera
+curl --insecure -XPOST \
+    -d $reqRotateCamera \
+    $BACKEND_HOST/api/rc
+echo
 
 sleep '5s'
 docker compose logs --since '5s'
 
 sleep '8s'
+
+echo "=============================="
+echo "DELETE CAMERA"
+echo "=============================="
+
+deviceId='ltdtestdevice'
+
+curl --insecure -XDELETE $BACKEND_HOST/api/cameras?id=$cameraId
+echo
+
+sleep '5s'
+docker compose logs --since '5s'
 
 echo "=============================="
 echo "END DEBUGGING"
