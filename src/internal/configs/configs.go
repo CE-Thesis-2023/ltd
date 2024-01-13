@@ -16,17 +16,16 @@ var once sync.Once
 var globalConfigs *Configs
 
 type Configs struct {
-	Public           HttpConfigs            `json:"public,omitempty" yaml:"public,omitempty"`
-	Private          HttpConfigs            `json:"private,omitempty" yaml:"private,omitempty"`
-	Logger           LoggerConfigs          `json:"logger,omitempty" yaml:"logger,omitempty"`
-	EventStore       EventStoreConfigs      `json:"eventStore,omitempty" yaml:"eventStore,omitempty"`
-	MqttStore        EventStoreConfigs      `json:"mqttStore,omitempty" yaml:"mqttStore,omitempty"`
-	Sqlite           DatabaseConfigs        `json:"sqlite,omitempty" yaml:"sqlite,omitempty"`
-	InfluxConfigs    InfluxConfigs          `json:"influx,omitempty" yaml:"influx,omitempty"`
-	LocalTranscoder  OvenMediaEngineConfigs `json:"localTranscoder,omitempty" yaml:"localTranscoder,omitempty"`
-	CloudMediaServer OvenMediaEngineConfigs `json:"cloudMediaServer,omitempty" yaml:"cloudMediaServer,omitempty"`
-	DeviceInfo       DeviceInfoConfigs      `json:"deviceInfo,omitempty" yaml:"deviceInfo,omitempty"`
-	Ffmpeg           FfmpegConfigs          `json:"ffmpeg,omitempty" yaml:"ffmpeg,omitempty"`
+	Public           HttpConfigs       `json:"public,omitempty" yaml:"public,omitempty"`
+	Private          HttpConfigs       `json:"private,omitempty" yaml:"private,omitempty"`
+	Logger           LoggerConfigs     `json:"logger,omitempty" yaml:"logger,omitempty"`
+	EventStore       EventStoreConfigs `json:"eventStore,omitempty" yaml:"eventStore,omitempty"`
+	MqttStore        EventStoreConfigs `json:"mqttStore,omitempty" yaml:"mqttStore,omitempty"`
+	Sqlite           DatabaseConfigs   `json:"sqlite,omitempty" yaml:"sqlite,omitempty"`
+	InfluxConfigs    InfluxConfigs     `json:"influx,omitempty" yaml:"influx,omitempty"`
+	CloudMediaServer MediaMtxConfigs   `json:"cloudMediaServer,omitempty" yaml:"cloudMediaServer,omitempty"`
+	DeviceInfo       DeviceInfoConfigs `json:"deviceInfo,omitempty" yaml:"deviceInfo,omitempty"`
+	Ffmpeg           FfmpegConfigs     `json:"ffmpeg,omitempty" yaml:"ffmpeg,omitempty"`
 }
 
 func (c Configs) String() string {
@@ -101,13 +100,18 @@ type DatabaseConfigs struct {
 	Connection string `json:"connection,omitempty" yaml:"connection,omitempty"`
 }
 
-type OvenMediaEngineConfigs struct {
-	Host            string `json:"host,omitempty" yaml:"host,omitempty"`
-	Port            int    `json:"port,omitempty" yaml:"port,omitempty"`
-	Username        string `json:"username,omitempty" yaml:"username,omitempty"`
-	Password        string `json:"password,omitempty" yaml:"password,omitempty"`
-	VirtualHostName string `json:"virtualHostName,omitempty" yaml:"virtualHostName,omitempty"`
-	ApplicationName string `json:"applicationName,omitempty" yaml:"applicationName,omitempty"`
+type MediaMtxConfigs struct {
+	Host         string        `json:"host,omitempty" yaml:"host,omitempty"`
+	Port         int           `json:"port,omitempty" yaml:"port,omitempty"`
+	Username     string        `json:"username,omitempty" yaml:"username,omitempty"`
+	Password     string        `json:"password,omitempty" yaml:"password,omitempty"`
+	PublishPorts MediaMtxPorts `json:"publishPorts,omitempty" yaml:"publishPorts,omitempty"`
+}
+
+type MediaMtxPorts struct {
+	WebRtc int `json:"webRtc,omitempty" yaml:"webRtc,omitempty"`
+	Srt    int `json:"srt,omitempty" yaml:"srt,omitempty"`
+	Rtmp   int `json:"rtmp,omitempty" yaml:"rtmp,omitempty"`
 }
 
 type FfmpegConfigs struct {

@@ -2,14 +2,18 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"net/url"
+	"os/exec"
+	"path/filepath"
+
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	custrtsp "github.com/CE-Thesis-2023/ltd/src/internal/rtsp"
 	"github.com/CE-Thesis-2023/ltd/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
-	"os/exec"
-	"path/filepath"
+	"github.com/CE-Thesis-2023/ltd/src/models/ms"
 
 	"github.com/avast/retry-go"
 	"github.com/bluenviron/gortsplib/v4/pkg/base"
@@ -24,7 +28,9 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 	logger.SDebug("RequestFFmpegRtspToSrt: source RTSP",
 		zap.String("source/", sourceUrl))
 
-	destinationUrl := s.buildRtspStreamUrl(camera, req)
+	destinationUrl := s.buildPushSrtUrl(ctx, &ms.PushStreamingRequest{
+		StreamName: req.CameraId,
+	})
 	logger.SDebug("RequestFFmpegRtspToSrt: destination SRT", zap.String("destination", destinationUrl))
 
 	if s.isThisStreamGoing(ctx, camera, sourceUrl, destinationUrl) {
@@ -175,4 +181,18 @@ func (s *mediaService) CancelFFmpegRtspToSrt(ctx context.Context, camera *db.Cam
 
 	logger.SDebug("CancelFFmpegRtspToSrt: stream canceled", zap.String("cameraId", camera.CameraId))
 	return nil
+}
+
+func (s *mediaService) buildRtspStreamUrl(camera *db.Camera, req *events.CommandStartStreamInfo) string {
+	u := &url.URL{}
+	u.Scheme = "rtsp"
+	u.Host = camera.Ip
+	if camera.Port != 0 {
+		u.Host = fmt.Sprintf("%s:%d", camera.Ip, camera.Port)
+	}
+	u = u.JoinPath("/ISAPI", "/Streaming", "channels", "101")
+	u.User = url.UserPassword(camera.Username, camera.Password)
+	url := u.String()
+	logger.SDebug("buildRtspStreamUrl: stream url", zap.String("url", url))
+	return url
 }

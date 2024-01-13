@@ -15,10 +15,8 @@ import (
 	"github.com/CE-Thesis-2023/ltd/src/internal/hikvision"
 	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
-	"github.com/CE-Thesis-2023/ltd/src/internal/ome"
 	"github.com/CE-Thesis-2023/ltd/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
-	"github.com/CE-Thesis-2023/ltd/src/models/ms"
 	"github.com/CE-Thesis-2023/ltd/src/models/rest"
 	"github.com/bytedance/sonic"
 	fastshot "github.com/opus-domini/fast-shot"
@@ -35,8 +33,6 @@ type CommandServiceInterface interface {
 	StreamChannels(ctx context.Context, req *events.CommandRetrieveStreamChannels) error
 	StreamStatus(ctx context.Context, req *events.CommandGetStreamStatusRequest) error
 	AddCamera(ctx context.Context, req *events.CommandAddCameraInfo) error
-	StartStream(ctx context.Context, req *events.CommandStartStreamInfo) error
-	EndStream(ctx context.Context, req *events.CommandEndStreamInfo) error
 	StartFfmpegStream(ctx context.Context, req *events.CommandStartStreamInfo) error
 	EndFfmpegStream(ctx context.Context, req *events.CommandEndStreamInfo) error
 	DebugListStreams(ctx context.Context) (*rest.DebugListStreamsResponse, error)
@@ -49,7 +45,6 @@ type CommandServiceInterface interface {
 type CommandService struct {
 	db              *custdb.LayeredDb
 	cache           *ristretto.Cache
-	omeClient       ome.OmeClientInterface
 	hikvisionClient hikvision.Client
 	pool            *ants.Pool
 
@@ -71,7 +66,6 @@ func NewCommandService() CommandServiceInterface {
 	return &CommandService{
 		db:                       custdb.Layered(),
 		cache:                    cache.Cache(),
-		omeClient:                factory.Ome(),
 		hikvisionClient:          factory.Hikvision(),
 		pool:                     p,
 		streamManagementService:  GetStreamManagementService(),
@@ -195,43 +189,6 @@ func (s *CommandService) DeviceInfo(ctx context.Context, req *events.CommandRetr
 	}
 
 	logger.SInfo("StreamStatus: device info", logger.Json("info", info))
-	return nil
-}
-
-func (s *CommandService) StartStream(ctx context.Context, req *events.CommandStartStreamInfo) error {
-	camera, err := s.getCameraById(ctx, req.CameraId)
-	if err != nil {
-		if errors.Is(err, custerror.ErrorNotFound) {
-			logger.SError("StartStream: camera not found",
-				zap.String("id", req.CameraId),
-				zap.Error(err))
-			return err
-		}
-		logger.SError("StartStream: getCameraById error", zap.Error(err))
-		return err
-	}
-
-	logger.SDebug("StartStream: camera", zap.Any("camera", camera))
-	m := s.streamManagementService.MediaService()
-	if err := m.RequestPullRtsp(ctx, camera, req); err != nil {
-		logger.SError("StartStream: request stream error",
-			zap.Error(err))
-		return err
-	}
-
-	resp, err := m.RequestPushSrt(ctx, &ms.PushStreamingRequest{
-		StreamName: req.CameraId,
-	})
-	if err != nil {
-		logger.SError("RequestPushSrt: request push srt", zap.Error(err))
-		return err
-	}
-
-	logger.SInfo("StartStream: sucess", zap.Any("pushStreaming", resp))
-	return nil
-}
-
-func (s *CommandService) EndStream(ctx context.Context, req *events.CommandEndStreamInfo) error {
 	return nil
 }
 

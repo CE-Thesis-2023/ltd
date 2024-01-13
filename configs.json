@@ -30,10 +30,11 @@
     "port": 7958,
     "username": "thesis",
     "password": "q1jk23i19",
-    "virtualHostName": "default",
-    "applicationName": "camera"
+    "publishPorts": {
+      "srt": 8890
+    }
   },
   "ffmpeg": {
-    "binaryPath": "/usr/local/bin/ffmpeg"
+    "binaryPath": "/usr/bin/ffmpeg"
   }
 }

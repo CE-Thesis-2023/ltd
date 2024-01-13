@@ -74,30 +74,6 @@ func (h *StandardEventHandler) ReceiveRemoteCommands(p *paho.Publish) error {
 				return
 			}
 			logger.SInfo("ReceiveRemoteCommands: Command_AddCamera success")
-		case events.Command_StartStream:
-			var info events.CommandStartStreamInfo
-			if err := mapstructure.Decode(&msg.Info, &info); err != nil {
-				logger.SError("ReceiveRemoteCommands: Command_StartStream",
-					zap.String("error", "info not type CameraStartStreamInfo"))
-				return
-			}
-			if err := biz.StartStream(ctx, &info); err != nil {
-				logger.SError("ReceiveRemoteCommands: biz.StartStream", zap.Error(err))
-				return
-			}
-			logger.SInfo("ReceiveRemoteCommands: Command_StartStream success")
-		case events.Command_EndStream:
-			var info events.CommandEndStreamInfo
-			if err := mapstructure.Decode(&msg.Info, &info); err != nil {
-				logger.SError("ReceiveRemoteCommands: Command_EndStream",
-					zap.String("error", "info not type CommmandEndStreamInfo"))
-				return
-			}
-			if err := biz.EndStream(ctx, &info); err != nil {
-				logger.SError("ReceiveRemoteCommands: biz.EndStream", zap.Error(err))
-				return
-			}
-			logger.SInfo("ReceiveRemoteCommands: Command_EndStream success")
 		case events.Command_StartFfmpegStream:
 			var info events.CommandStartStreamInfo
 			if err := mapstructure.Decode(&msg.Info, &info); err != nil {
