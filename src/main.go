@@ -72,6 +72,10 @@ func main() {
 						logger.SError("UpdateCameraList: error", zap.Error(err))
 						return err
 					}
+
+					if err := service.GetCommandService().StartAllEnabledStreams(ctx); err != nil {
+						logger.SError("StartAllEnabledStreams: error", zap.Error(err))
+					}
 					return nil
 				}),
 				app.WithShutdownHook(func(ctx context.Context) {

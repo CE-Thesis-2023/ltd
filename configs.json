@@ -35,6 +35,6 @@
     }
   },
   "ffmpeg": {
-    "binaryPath": "/usr/local/bin/ffmpeg"
+    "binaryPath": "/usr/bin/ffmpeg"
   }
 }

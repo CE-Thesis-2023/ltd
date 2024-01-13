@@ -39,6 +39,7 @@ type CommandServiceInterface interface {
 	DeleteCamera(ctx context.Context, req *events.CommandDeleteCameraRequest) error
 	UpdateCameraList(ctx context.Context) error
 	RegisterDevice(ctx context.Context) error
+	StartAllEnabledStreams(ctx context.Context) error
 	Shutdown()
 }
 
@@ -483,4 +484,47 @@ func (s *CommandService) addUpdateOrDeleteCameras(ctx context.Context, currentLi
 	}
 
 	return nil
+}
+
+func (s *CommandService) StartAllEnabledStreams(ctx context.Context) error {
+	logger.SInfo("StartAllEnabledStreams: started")
+
+	streams, err := s.getEnabledStreams(ctx)
+	if err != nil {
+		if errors.Is(err, custerror.ErrorNotFound); err != nil {
+			logger.SDebug("StartAllEnabledStreams: no enabled or started streams found")
+			return nil
+		}
+		logger.SError("StartAllEnabledStreams: error", zap.Error(err))
+		return err
+	}
+
+	for _, stream := range streams {
+		if err := s.streamManagementService.MediaService().RequestFFmpegRtspToSrt(ctx, &stream, &events.CommandStartStreamInfo{
+			CameraId:  stream.CameraId,
+			ChannelId: "1",
+		}); err != nil {
+			logger.SError("StartAllEnabledStreams: RequestFfmpegRtspToSrt failed",
+				zap.Error(err),
+				zap.String("cameraId", stream.CameraId))
+			return err
+		}
+	}
+
+	logger.SInfo("StartAllEnabledStreams: completed")
+	return nil
+}
+
+func (s *CommandService) getEnabledStreams(ctx context.Context) ([]db.Camera, error) {
+	logger.SDebug("getEnabledStreams: started")
+
+	q := squirrel.Select("*").From("cameras").Where("started = ?", true)
+
+	var enabledStreams []db.Camera
+	if err := s.db.Select(ctx, q, &enabledStreams); err != nil {
+		logger.SError("getEnabledStreams: Select error", zap.Error(err))
+		return nil, err
+	}
+
+	return enabledStreams, nil
 }
