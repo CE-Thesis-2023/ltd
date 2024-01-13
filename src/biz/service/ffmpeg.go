@@ -98,15 +98,14 @@ func (s *mediaService) buildFfmpegRestreamingCommand(sourceUrl string, destinati
 		"rtsp_transport": "tcp",
 	}).
 		Output(destinationUrl, ffmpeg_go.KwArgs{
-			"c:v":       "libx264",
-			"c:a":       "aac",
-			"f":         "mpegts",
-			"tune":      "zerolatency",
-			"profile:v": "baseline",
-			"s":         "1920x1080",
-			"filter:v":  "fps=25",
-			"timeout":   5000000,
-			"v":         "debug",
+			"c:v":      "libx264",
+			"c:a":      "aac",
+			"f":        "mpegts",
+			"tune":     "zerolatency",
+			"preset":   "faster",
+			"s":        "1280x720",
+			"filter:v": "fps=25",
+			"timeout":  5000000,
 		}).ErrorToStdOut().
 		WithCpuCoreLimit(2)
 	configs := configs.Get()
