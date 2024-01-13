@@ -14,14 +14,12 @@ func (s *mediaService) buildPushSrtUrl(ctx context.Context, req *ms.PushStreamin
 	streamUrl := &url.URL{}
 	streamUrl.Scheme = "srt"
 	streamUrl.Host = configs.Host
-	if configs.Port != 0 {
-		streamUrl.Host = fmt.Sprintf("%s:%d", configs.Host, configs.Port)
+	if configs.PublishPorts.Srt != 0 {
+		streamUrl.Host = fmt.Sprintf("%s:%d", configs.Host, configs.PublishPorts.Srt)
 	}
-	streamUrl = streamUrl.JoinPath(req.StreamName)
-	encodedStreamId := streamUrl.String()
 
 	queries := streamUrl.Query()
-	queries.Add("streamid", encodedStreamId)
+	queries.Add("streamid", fmt.Sprintf("publish:%s", req.StreamName))
 	streamUrl.RawQuery = queries.Encode()
 
 	url := streamUrl.String()

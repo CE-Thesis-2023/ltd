@@ -94,22 +94,21 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 }
 
 func (s *mediaService) buildFfmpegRestreamingCommand(sourceUrl string, destinationUrl string) *ffmpeg_go.Stream {
-	cmd := ffmpeg_go.Input(sourceUrl).
+	cmd := ffmpeg_go.Input(sourceUrl, ffmpeg_go.KwArgs{
+		"rtsp_transport": "tcp",
+	}).
 		Output(destinationUrl, ffmpeg_go.KwArgs{
-			"c:v":            "libx264",
-			"c:a":            "aac",
-			"f":              "mpegts",
-			"preset":         "veryfast",
-			"tune":           "zerolatency",
-			"profile:v":      "baseline",
-			"s":              "1280x720",
-			"filter:v":       "fps=24",
-			"timeout":        5000000,
-			"v":              "debug",
-			"rtsp_transport": "tcp",
+			"c:v":       "libx264",
+			"c:a":       "aac",
+			"f":         "mpegts",
+			"tune":      "zerolatency",
+			"profile:v": "baseline",
+			"s":         "1920x1080",
+			"filter:v":  "fps=25",
+			"timeout":   5000000,
+			"v":         "debug",
 		}).ErrorToStdOut().
 		WithCpuCoreLimit(2)
-
 	configs := configs.Get()
 	if configs.Ffmpeg.BinaryPath != "" {
 		absPath, err := filepath.Abs(configs.Ffmpeg.BinaryPath)
