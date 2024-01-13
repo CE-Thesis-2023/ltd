@@ -8,7 +8,6 @@ import (
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
-	"github.com/CE-Thesis-2023/ltd/src/models/ms"
 	"github.com/CE-Thesis-2023/ltd/src/models/rest"
 	"os/exec"
 
@@ -67,23 +66,6 @@ type MediaServiceInterface interface {
 	CancelFFmpegRtspToSrt(ctx context.Context, camera *db.Camera) error
 	ListOngoingStreams(ctx context.Context) (*rest.DebugListStreamsResponse, error)
 	Shutdown()
-}
-
-func (s *mediaService) isOutgoing(req *ms.AdmissionWebhookRequest) bool {
-	return req.Request.Direction == ms.DirectionOutgoing
-}
-
-func (s *mediaService) isClosing(req *ms.AdmissionWebhookRequest) bool {
-	return req.Request.Status == ms.StatusClosing
-}
-
-func (s *mediaService) isAllowedToUseThisTranscoder(req *ms.AdmissionWebhookRequest) bool {
-	return true
-}
-
-func (s *mediaService) startSrtPushStreaming(ctx context.Context, req *ms.AdmissionWebhookRequest) error {
-	logger.SDebug("startSrtPushStreaming", zap.String("ip", req.Client.Address))
-	return nil
 }
 
 func (s *mediaService) ListOngoingStreams(ctx context.Context) (*rest.DebugListStreamsResponse, error) {
