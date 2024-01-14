@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/CE-Thesis-2023/ltd/src/helper/factory"
 	"github.com/CE-Thesis-2023/ltd/src/internal/cache"
@@ -513,6 +514,7 @@ func (s *CommandService) StartAllEnabledStreams(ctx context.Context) error {
 			logger.SInfo("StartAllEnabledStreams: stream started",
 				zap.String("id", stream.CameraId),
 				zap.String("ip", stream.Ip))
+			time.Sleep(time.Second * 2)
 		}
 	}
 
