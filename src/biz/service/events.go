@@ -500,14 +500,19 @@ func (s *CommandService) StartAllEnabledStreams(ctx context.Context) error {
 	}
 
 	for _, stream := range streams {
-		if err := s.streamManagementService.MediaService().RequestFFmpegRtspToSrt(ctx, &stream, &events.CommandStartStreamInfo{
-			CameraId:  stream.CameraId,
-			ChannelId: "1",
-		}); err != nil {
-			logger.SError("StartAllEnabledStreams: RequestFfmpegRtspToSrt failed",
-				zap.Error(err),
-				zap.String("cameraId", stream.CameraId))
-			return err
+		if stream.Started {
+			if err := s.streamManagementService.MediaService().RequestFFmpegRtspToSrt(ctx, &stream, &events.CommandStartStreamInfo{
+				CameraId:  stream.CameraId,
+				ChannelId: "1",
+			}); err != nil {
+				logger.SError("StartAllEnabledStreams: RequestFfmpegRtspToSrt failed",
+					zap.Error(err),
+					zap.String("cameraId", stream.CameraId))
+				return err
+			}
+			logger.SInfo("StartAllEnabledStreams: stream started",
+				zap.String("id", stream.CameraId),
+				zap.String("ip", stream.Ip))
 		}
 	}
 
