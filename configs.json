@@ -36,5 +36,10 @@
   },
   "ffmpeg": {
     "binaryPath": "/usr/bin/ffmpeg"
+  },
+  "webSocket": {
+    "host": "103.165.142.44",
+    "port": 7883,
+    "upgradePath": "/ws/ltd"
   }
 }

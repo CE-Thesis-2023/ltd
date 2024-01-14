@@ -19,6 +19,11 @@ type CommandRequest struct {
 	Info        map[string]interface{} `json:"info"`
 }
 
+type CommandResponse struct {
+	CommandType CommandType            `json:"commandType"`
+	Info        map[string]interface{} `json:"info"`
+}
+
 type CommandRetrieveDeviceInfo struct {
 	CameraId string `json:"cameraId"`
 }

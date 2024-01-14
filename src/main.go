@@ -7,6 +7,7 @@ import (
 
 	eventsapi "github.com/CE-Thesis-2023/ltd/src/api/events"
 	publicapi "github.com/CE-Thesis-2023/ltd/src/api/public"
+	wsapi "github.com/CE-Thesis-2023/ltd/src/api/websocket"
 	"github.com/CE-Thesis-2023/ltd/src/biz/service"
 	"github.com/CE-Thesis-2023/ltd/src/helper/factory"
 	"github.com/CE-Thesis-2023/ltd/src/internal/app"
@@ -17,6 +18,7 @@ import (
 	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	custmqtt "github.com/CE-Thesis-2023/ltd/src/internal/mqtt"
+	"github.com/CE-Thesis-2023/ltd/src/internal/ws"
 	"github.com/CE-Thesis-2023/ltd/src/models/db"
 	"go.uber.org/zap"
 )
@@ -31,6 +33,11 @@ func main() {
 					custhttp.WithErrorHandler(custhttp.GlobalErrorHandler()),
 					custhttp.WithRegistration(publicapi.ServiceRegistration()),
 					custhttp.WithMiddleware(custhttp.CommonPublicMiddlewares(&configs.Public)...),
+				)),
+				app.WithWebSocketClient(ws.NewWebSocketClient(
+					ws.WithDeviceId(configs.DeviceInfo.DeviceId),
+					ws.WithGlobalConfigs(&configs.WebSocket),
+					ws.WithMessageHandler(wsapi.GetStandardHandler()),
 				)),
 				app.WithFactoryHook(func() error {
 					ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

@@ -2,18 +2,19 @@ package eventsapi
 
 import (
 	"context"
+	"time"
+
+	"github.com/CE-Thesis-2023/ltd/src/biz/handlers"
 	"github.com/CE-Thesis-2023/ltd/src/biz/service"
 	"github.com/CE-Thesis-2023/ltd/src/internal/cache"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
-	"time"
 
 	"github.com/CE-Thesis-2023/ltd/src/internal/concurrent"
 
 	"github.com/bytedance/sonic"
 	"github.com/dgraph-io/ristretto"
 	"github.com/eclipse/paho.golang/paho"
-	"github.com/mitchellh/mapstructure"
 	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 )
@@ -48,98 +49,15 @@ func (h *StandardEventHandler) ReceiveRemoteCommands(p *paho.Publish) error {
 			cancel()
 		}()
 
-		biz := service.GetCommandService()
-		switch msg.CommandType {
-		case events.Command_GetDeviceInfo:
-			var info events.CommandRetrieveDeviceInfo
-			if err := mapstructure.Decode(&msg.Info, &info); err != nil {
-				logger.SError("ReceiveRemoteCommands: Command_GetDeviceInfo",
-					zap.String("error", "info not type CommandRetrieveDeviceInfo"))
-				return
-			}
-			if err := biz.DeviceInfo(ctx, &info); err != nil {
-				logger.SError("ReceiveRemoteCommands: biz.DeviceInfo", zap.Error(err))
-				return
-			}
-			logger.SInfo("ReceiveRemoteCommands: Command_GetDeviceInfo success")
-		case events.Command_AddCamera:
-			var info events.CommandAddCameraInfo
-			if err := mapstructure.Decode(&msg.Info, &info); err != nil {
-				logger.SError("ReceiveRemoteCommands: Command_AddCamera",
-					zap.String("error", "info not type CommandAddCameraInfo"))
-				return
-			}
-			if err := biz.AddCamera(ctx, &info); err != nil {
-				logger.SError("ReceiveRemoteCommands: biz.AddCamera", zap.Error(err))
-				return
-			}
-			logger.SInfo("ReceiveRemoteCommands: Command_AddCamera success")
-		case events.Command_StartFfmpegStream:
-			var info events.CommandStartStreamInfo
-			if err := mapstructure.Decode(&msg.Info, &info); err != nil {
-				logger.SError("ReceiveRemoteCommands: Command_StartFfmpegStream",
-					zap.String("error", "info not type CameraStartStreamInfo"))
-				return
-			}
-			if err := biz.StartFfmpegStream(ctx, &info); err != nil {
-				logger.SError("ReceiveRemoteCommands: biz.StartFfmpegStream", zap.Error(err))
-				return
-			}
-			logger.SInfo("ReceiveRemoteCommands: Command_StartFfmpegStream success")
-		case events.Command_EndFfmpegStream:
-			var info events.CommandEndStreamInfo
-			if err := mapstructure.Decode(&msg.Info, &info); err != nil {
-				logger.SError("ReceiveRemoteCommands: Command_EndFfmpegStream",
-					zap.String("error", "info not type CommmandEndStreamInfo"))
-				return
-			}
-			if err := biz.EndFfmpegStream(ctx, &info); err != nil {
-				logger.SError("ReceiveRemoteCommands: biz.EndFfmpegStream", zap.Error(err))
-				return
-			}
-			logger.SInfo("ReceiveRemoteCommands: Command_EndFfmpegStream success")
-		case events.Command_GetStreamChannels:
-			var info events.CommandRetrieveStreamChannels
-			if err := mapstructure.Decode(&msg.Info, &info); err != nil {
-				logger.SError("ReceiveRemoteCommands: Command_GetStreamChannels",
-					zap.String("error", "info not type CommandRetrieveStreamChannels"))
-				return
-			}
-			if err := biz.StreamChannels(ctx, &info); err != nil {
-				logger.SError("ReceiveRemoteCommands: biz.StreamChannels", zap.Error(err))
-				return
-			}
-			logger.SInfo("ReceiveRemoteCommands: Command_GetStreamChannels success")
-		case events.Command_GetStreamStatus:
-			var info events.CommandGetStreamStatusRequest
-			if err := mapstructure.Decode(&msg.Info, &info); err != nil {
-				logger.SError("ReceiveRemoteCommands: Command_GetStreamStatus",
-					zap.String("error",
-						"info not type CommandGetStreamStatusRequest"))
-				return
-			}
-			if err := biz.StreamStatus(ctx, &info); err != nil {
-				logger.SError("ReceiveRemoteCommands: biz.StreamStatus", zap.Error(err))
-				return
-			}
-			logger.SInfo("ReceiveRemoteCommands: Command_GetStreamStatus success")
-		case events.Command_DeleteCamera:
-			var info events.CommandDeleteCameraRequest
-			if err := mapstructure.Decode(&msg.Info, &info); err != nil {
-				logger.SError("ReceiveRemoteCommands: Command_DeleteCamera",
-					zap.String("error",
-						"info not type CommandDeleteCameraRequest"))
-				return
-			}
-			if err := biz.DeleteCamera(ctx, &info); err != nil {
-				logger.SError("ReceiveRemoteCommands: biz.DeleteCamera", zap.Error(err))
-				return
-			}
-			logger.SInfo("ReceiveRemoteCommands: Command_DeleteCamera success")
-		default:
-			logger.SError("ReceiveRemoteCommands: unknown command type",
-				zap.String("type", string(msg.CommandType)),
-				zap.String("do", "skipping"))
+		resp, err := handlers.CommandHandlers(ctx, &msg)
+		if err != nil {
+			logger.SError("ReceiveRemoteCommands: CommandHandlers error", zap.Error(err))
+			return
+		}
+
+		if resp != nil {
+			logger.SDebug("ReceiveRemoteCommands: CommandHandlers response", zap.Any("response", resp))
+			return
 		}
 	})
 

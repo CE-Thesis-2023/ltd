@@ -3,18 +3,20 @@ package app
 import (
 	"context"
 	"errors"
-	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
-	custcron "github.com/CE-Thesis-2023/ltd/src/internal/cron"
-	"github.com/CE-Thesis-2023/ltd/src/internal/events"
-	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
-	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
-	custmqtt "github.com/CE-Thesis-2023/ltd/src/internal/mqtt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"sync"
 	"time"
+
+	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
+	custcron "github.com/CE-Thesis-2023/ltd/src/internal/cron"
+	"github.com/CE-Thesis-2023/ltd/src/internal/events"
+	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
+	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
+	custmqtt "github.com/CE-Thesis-2023/ltd/src/internal/mqtt"
+	"github.com/CE-Thesis-2023/ltd/src/internal/ws"
 
 	"go.uber.org/zap"
 )
@@ -55,9 +57,9 @@ func Run(shutdownTimeout time.Duration, registration RegistrationFunc) {
 	for _, s := range opts.natsServers {
 		s := s
 		go func() {
-			logger.Infof("Run: start embedded NATS server name = %s", s.Name())
+			logger.Info("Run: start embedded NATS server", zap.String("name", s.Name()))
 			if err := s.Start(); err != nil {
-				logger.Infof("Run: start embedded NATS server err = %s", err)
+				logger.Infof("Run: start embedded NATS server error", zap.Error(err))
 			}
 		}()
 	}
@@ -65,9 +67,9 @@ func Run(shutdownTimeout time.Duration, registration RegistrationFunc) {
 	for _, s := range opts.mqttServers {
 		s := s
 		go func() {
-			logger.Infof("Run: start embedded MQTT server name = %s", s.Name())
+			logger.Infof("Run: start embedded MQTT server", zap.String("name", s.Name()))
 			if err := s.Start(); err != nil {
-				logger.Infof("Run: start embedded MQTT server err = %s", err)
+				logger.Infof("Run: start embedded MQTT server error", zap.Error(err))
 			}
 		}()
 	}
@@ -75,9 +77,19 @@ func Run(shutdownTimeout time.Duration, registration RegistrationFunc) {
 	for _, s := range opts.schedulers {
 		s := s
 		go func() {
-			logger.Infof("Run: start scheduler name = %s", s.Name())
+			logger.Infof("Run: start scheduler", zap.String("name", s.Name()))
 			if err := s.Start(); err != nil {
-				logger.Infof("Run: start scheduler err = %s", err)
+				logger.Info("Run: start scheduler error", zap.Error(err))
+			}
+		}()
+	}
+
+	for _, s := range opts.webSocketClients {
+		s := s
+		go func() {
+			logger.Infof("Run: start WebSocket client")
+			if err := s.Run(); err != nil {
+				logger.Info("Run: start WebSocket client error", zap.Error(err))
 			}
 		}()
 	}
@@ -99,7 +111,7 @@ func Run(shutdownTimeout time.Duration, registration RegistrationFunc) {
 
 	var wg sync.WaitGroup
 
-	wg.Add(4)
+	wg.Add(5)
 
 	go func() {
 		defer wg.Done()
@@ -145,6 +157,17 @@ func Run(shutdownTimeout time.Duration, registration RegistrationFunc) {
 		}
 	}()
 
+	go func() {
+		defer wg.Done()
+		for _, s := range opts.webSocketClients {
+			s := s
+			logger.Infof("Run: stop WebSocket")
+			if err := s.Stop(ctx); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}()
+
 	wg.Wait()
 
 	zap.L().Sync()
@@ -156,10 +179,11 @@ type FactoryHook func() error
 type ShutdownHook func(ctx context.Context)
 
 type Options struct {
-	httpServers []*custhttp.HttpServer
-	natsServers []*events.EmbeddedNats
-	mqttServers []*custmqtt.EmbeddedMqtt
-	schedulers  []*custcron.Scheduler
+	httpServers      []*custhttp.HttpServer
+	natsServers      []*events.EmbeddedNats
+	mqttServers      []*custmqtt.EmbeddedMqtt
+	schedulers       []*custcron.Scheduler
+	webSocketClients []*ws.WebSocketClient
 
 	factoryHook  FactoryHook
 	shutdownHook ShutdownHook
@@ -206,5 +230,11 @@ func WithShutdownHook(cb ShutdownHook) Optioner {
 func WithScheduling(scheduler *custcron.Scheduler) Optioner {
 	return func(opts *Options) {
 		opts.schedulers = append(opts.schedulers, scheduler)
+	}
+}
+
+func WithWebSocketClient(client *ws.WebSocketClient) Optioner {
+	return func(opts *Options) {
+		opts.webSocketClients = append(opts.webSocketClients, client)
 	}
 }

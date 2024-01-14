@@ -16,16 +16,17 @@ var once sync.Once
 var globalConfigs *Configs
 
 type Configs struct {
-	Public           HttpConfigs       `json:"public,omitempty" yaml:"public,omitempty"`
-	Private          HttpConfigs       `json:"private,omitempty" yaml:"private,omitempty"`
-	Logger           LoggerConfigs     `json:"logger,omitempty" yaml:"logger,omitempty"`
-	EventStore       EventStoreConfigs `json:"eventStore,omitempty" yaml:"eventStore,omitempty"`
-	MqttStore        EventStoreConfigs `json:"mqttStore,omitempty" yaml:"mqttStore,omitempty"`
-	Sqlite           DatabaseConfigs   `json:"sqlite,omitempty" yaml:"sqlite,omitempty"`
-	InfluxConfigs    InfluxConfigs     `json:"influx,omitempty" yaml:"influx,omitempty"`
-	CloudMediaServer MediaMtxConfigs   `json:"cloudMediaServer,omitempty" yaml:"cloudMediaServer,omitempty"`
-	DeviceInfo       DeviceInfoConfigs `json:"deviceInfo,omitempty" yaml:"deviceInfo,omitempty"`
-	Ffmpeg           FfmpegConfigs     `json:"ffmpeg,omitempty" yaml:"ffmpeg,omitempty"`
+	Public           HttpConfigs          `json:"public,omitempty" yaml:"public,omitempty"`
+	Private          HttpConfigs          `json:"private,omitempty" yaml:"private,omitempty"`
+	Logger           LoggerConfigs        `json:"logger,omitempty" yaml:"logger,omitempty"`
+	EventStore       EventStoreConfigs    `json:"eventStore,omitempty" yaml:"eventStore,omitempty"`
+	MqttStore        EventStoreConfigs    `json:"mqttStore,omitempty" yaml:"mqttStore,omitempty"`
+	Sqlite           DatabaseConfigs      `json:"sqlite,omitempty" yaml:"sqlite,omitempty"`
+	InfluxConfigs    InfluxConfigs        `json:"influx,omitempty" yaml:"influx,omitempty"`
+	CloudMediaServer MediaMtxConfigs      `json:"cloudMediaServer,omitempty" yaml:"cloudMediaServer,omitempty"`
+	DeviceInfo       DeviceInfoConfigs    `json:"deviceInfo,omitempty" yaml:"deviceInfo,omitempty"`
+	Ffmpeg           FfmpegConfigs        `json:"ffmpeg,omitempty" yaml:"ffmpeg,omitempty"`
+	WebSocket        WebSocketFeedConfigs `json:"webSocket,omitempty" yaml:"webSocket,omitempty"`
 }
 
 func (c Configs) String() string {
@@ -123,6 +124,12 @@ type DeviceInfoConfigs struct {
 	Username       string `json:"username,omitempty" yaml:"username,omitempty"`
 	Token          string `json:"token,omitempty" yaml:"token,omitempty"`
 	CloudApiServer string `json:"cloudApiServer,omitempty" yaml:"cloudApiServer,omitempty"`
+}
+
+type WebSocketFeedConfigs struct {
+	Host        string `json:"host,omitempty" yaml:"host,omitempty"`
+	Port        uint64 `json:"port,omitempty" yaml:"port,omitempty"`
+	UpgradePath string `json:"upgradePath,omitempty" yaml:"upgradePath,omitempty"`
 }
 
 func (c *EventStoreConfigs) HasAuth() bool {
