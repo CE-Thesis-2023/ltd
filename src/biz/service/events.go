@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -19,7 +20,6 @@ import (
 	"github.com/CE-Thesis-2023/ltd/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
 	"github.com/CE-Thesis-2023/ltd/src/models/rest"
-	"github.com/bytedance/sonic"
 	fastshot "github.com/opus-domini/fast-shot"
 
 	"github.com/Masterminds/squirrel"
@@ -393,8 +393,8 @@ func (s *CommandService) UpdateCameraList(ctx context.Context) error {
 		}
 
 		cameraList := respMap["cameras"]
-		respContent, _ := sonic.Marshal(&cameraList)
-		if err := sonic.Unmarshal(respContent, &receivedCameras); err != nil {
+		respContent, _ := json.Marshal(&cameraList)
+		if err := json.Unmarshal(respContent, &receivedCameras); err != nil {
 			logger.SError("mapstructure.Decode: error", zap.Error(err))
 			return err
 		}

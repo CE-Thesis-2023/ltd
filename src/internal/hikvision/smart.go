@@ -14,8 +14,8 @@ type SmartApiInterface interface {
 }
 
 type smartApiClient struct {
-	restClient  fastshot.ClientHttpMethods
-	pool        *ants.Pool
+	restClient fastshot.ClientHttpMethods
+	pool       *ants.Pool
 }
 
 func (c *smartApiClient) getBaseUrl() string {

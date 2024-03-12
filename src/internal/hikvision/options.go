@@ -9,5 +9,5 @@ func WithPoolSize(size int) HikvisionClientOptioner {
 }
 
 type hikvisionOptions struct {
-	Poolsize int    `json:"poolSize"`
+	Poolsize int `json:"poolSize"`
 }
