@@ -2,6 +2,7 @@ package ws
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -14,7 +15,6 @@ import (
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
-	"github.com/bytedance/sonic"
 	"github.com/gorilla/websocket"
 	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
@@ -70,7 +70,7 @@ func NewWebSocketClient(options ...WebSocketClientOptioner) *WebSocketClient {
 	}
 	client := &WebSocketClient{
 		options: opts,
-		pool:    custcon.New(opts.poolSize),
+		pool:    custcon.New(opts.configs.PoolSize),
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 	defer cancel()
@@ -93,11 +93,12 @@ func (c *WebSocketClient) Connect(ctx context.Context) error {
 		path = fmt.Sprintf("%s/%s", c.options.configs.UpgradePath, c.options.deviceId)
 	}
 	u := url.URL{
-		Scheme: "http",
+		Scheme: "ws",
 		Host:   host,
 		Path:   path,
 	}
 	encoded := u.String()
+	fmt.Println("encoded:", encoded)
 	conn, resp, err := websocket.DefaultDialer.DialContext(
 		ctx, encoded, http.Header{})
 	if err != nil {
@@ -146,7 +147,7 @@ func (c *WebSocketClient) Run() error {
 				defer cancel()
 
 				var msgWithId WebSocketMessageRequest
-				if err := sonic.Unmarshal(msg, &msgWithId); err != nil {
+				if err := json.Unmarshal(msg, &msgWithId); err != nil {
 					logger.SError("WebSocketClient.Run: unmarshal error", zap.Error(err))
 					return
 				}
@@ -163,7 +164,7 @@ func (c *WebSocketClient) Run() error {
 					Response:  resp,
 				}
 
-				sendMessage, err := sonic.Marshal(respWithId)
+				sendMessage, err := json.Marshal(respWithId)
 				if err != nil {
 					logger.SError("WebSocketClient.Run: marshal message error",
 						zap.Error(err),

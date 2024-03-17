@@ -40,6 +40,7 @@
   "webSocket": {
     "host": "103.165.142.44",
     "port": 7883,
-    "upgradePath": "/ws/ltd"
+    "upgradePath": "/ws/ltd",
+    "poolSize": 10
   }
 }

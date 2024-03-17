@@ -21,7 +21,7 @@ func SetupConfigsTest(contents []byte, filePath string, test ConfigsTest) {
 		return
 	}
 
-	defer func ()  {
+	defer func() {
 		if err := os.Remove(filePath); err != nil {
 			log.Fatalf("SetupConfigsTest: remove err = %s", err)
 		}

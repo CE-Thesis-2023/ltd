@@ -1,7 +1,8 @@
 package logger
 
 import (
-	"github.com/bytedance/sonic"
+	"encoding/json"
+
 	"go.uber.org/zap"
 )
 
@@ -26,6 +27,6 @@ func SFatal(msg string, args ...zap.Field) {
 }
 
 func Json(key string, val interface{}) zap.Field {
-	resBytes, _ := sonic.Marshal(val)
+	resBytes, _ := json.Marshal(val)
 	return zap.String(key, string(resBytes))
 }

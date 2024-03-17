@@ -4,15 +4,16 @@ import (
 	"context"
 	"time"
 
+	"encoding/json"
+
 	"github.com/CE-Thesis-2023/ltd/src/biz/handlers"
 	"github.com/CE-Thesis-2023/ltd/src/biz/service"
 	"github.com/CE-Thesis-2023/ltd/src/internal/cache"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
 
-	"github.com/CE-Thesis-2023/ltd/src/internal/concurrent"
+	custcon "github.com/CE-Thesis-2023/ltd/src/internal/concurrent"
 
-	"github.com/bytedance/sonic"
 	"github.com/dgraph-io/ristretto"
 	"github.com/eclipse/paho.golang/paho"
 	"github.com/panjf2000/ants/v2"
@@ -35,7 +36,7 @@ func (h *StandardEventHandler) ReceiveRemoteCommands(p *paho.Publish) error {
 	logger.SDebug("ReceiveRemoteCommands", zap.String("message", string(p.Payload)))
 
 	var msg events.CommandRequest
-	if err := sonic.Unmarshal(p.Payload, &msg); err != nil {
+	if err := json.Unmarshal(p.Payload, &msg); err != nil {
 		logger.SError("ReceiveRemoteCommands: message parsing failed", zap.Error(err))
 		return err
 	}
@@ -71,7 +72,7 @@ func (h *StandardEventHandler) ReceiveRemoteMovementControl(p *paho.Publish) err
 		logger.SDebug("ReceiveRemoteMovementControl", zap.String("message", string(p.Payload)))
 
 		var msg events.PtzCtrlRequest
-		if err := sonic.Unmarshal(p.Payload, &msg); err != nil {
+		if err := json.Unmarshal(p.Payload, &msg); err != nil {
 			logger.SError("ReceiveRemoteMovementControl: message parsing failed", zap.Error(err))
 			return
 		}
