@@ -106,8 +106,9 @@ func (s *mediaService) buildFfmpegRestreamingCommand(sourceUrl string, destinati
 			"s":        "1280x720",
 			"filter:v": "fps=25",
 			"timeout":  5000000,
-		}).ErrorToStdOut().
-		WithCpuCoreLimit(2)
+		}).ErrorToStdOut()
+	// }).ErrorToStdOut().
+	// WithCpuCoreLimit(2)
 	configs := configs.Get()
 	if configs.Ffmpeg.BinaryPath != "" {
 		absPath, err := filepath.Abs(configs.Ffmpeg.BinaryPath)

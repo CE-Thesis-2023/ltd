@@ -70,7 +70,7 @@ func NewWebSocketClient(options ...WebSocketClientOptioner) *WebSocketClient {
 	}
 	client := &WebSocketClient{
 		options: opts,
-		pool:    custcon.New(opts.poolSize),
+		pool:    custcon.New(opts.configs.PoolSize),
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 	defer cancel()
@@ -93,11 +93,12 @@ func (c *WebSocketClient) Connect(ctx context.Context) error {
 		path = fmt.Sprintf("%s/%s", c.options.configs.UpgradePath, c.options.deviceId)
 	}
 	u := url.URL{
-		Scheme: "http",
+		Scheme: "ws",
 		Host:   host,
 		Path:   path,
 	}
 	encoded := u.String()
+	fmt.Println("encoded:", encoded)
 	conn, resp, err := websocket.DefaultDialer.DialContext(
 		ctx, encoded, http.Header{})
 	if err != nil {

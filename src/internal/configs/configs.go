@@ -3,10 +3,11 @@ package configs
 import (
 	"context"
 	"encoding/json"
-	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	"log"
 	"os"
 	"sync"
+
+	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 
 	"gopkg.in/yaml.v3"
 )
@@ -130,6 +131,7 @@ type WebSocketFeedConfigs struct {
 	Host        string `json:"host,omitempty" yaml:"host,omitempty"`
 	Port        uint64 `json:"port,omitempty" yaml:"port,omitempty"`
 	UpgradePath string `json:"upgradePath,omitempty" yaml:"upgradePath,omitempty"`
+	PoolSize    int    `json:"poolSize,omitempty" yaml:"poolSize,omitempty"`
 }
 
 func (c *EventStoreConfigs) HasAuth() bool {
