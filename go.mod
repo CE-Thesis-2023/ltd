@@ -9,7 +9,6 @@ require (
 	github.com/gofiber/fiber/v2 v2.51.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/motemen/go-loghttp v0.0.0-20231107055348-29ae44b293f4
 	github.com/opus-domini/fast-shot v0.9.0
 	github.com/u2takey/ffmpeg-go v0.5.0
 )
@@ -24,7 +23,6 @@ require (
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/minio/highwayhash v1.0.2 // indirect
-	github.com/motemen/go-nuts v0.0.0-20220604134737-2658d0104f31 // indirect
 	github.com/nats-io/jwt/v2 v2.5.3 // indirect
 	github.com/nats-io/nkeys v0.4.6 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
