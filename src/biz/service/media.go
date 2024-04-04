@@ -2,15 +2,12 @@ package service
 
 import (
 	"context"
-	"github.com/CE-Thesis-2023/ltd/src/internal/cache"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
 	"github.com/CE-Thesis-2023/ltd/src/models/rest"
-	"os/exec"
-
-	"github.com/dgraph-io/ristretto"
 	"go.uber.org/zap"
+	"os/exec"
 )
 
 type onGoingProcess struct {
@@ -27,13 +24,11 @@ func (c *onGoingProcess) Cancel(ctx context.Context) error {
 }
 
 type mediaService struct {
-	cache            *ristretto.Cache
 	onGoingProcesses map[string]*onGoingProcess
 }
 
 func newMediaService() MediaServiceInterface {
 	return &mediaService{
-		cache:            cache.Cache(),
 		onGoingProcesses: map[string]*onGoingProcess{},
 	}
 }

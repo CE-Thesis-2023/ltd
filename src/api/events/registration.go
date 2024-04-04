@@ -60,7 +60,7 @@ func RouterHandler() custmqtt.RouterRegister {
 		)
 		router.RegisterHandler(
 			fmt.Sprintf("ptzctrl/%s", configs.Get().DeviceInfo.DeviceId),
-			WrapForHandlers(handlers.ReceiveRemoteMovementControl),
+			WrapForHandlers(handlers.ReceiveRemoteCommands),
 		)
 	}
 }

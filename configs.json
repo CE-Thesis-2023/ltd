@@ -1,6 +1,6 @@
 {
   "public": {
-    "port": 8080,
+    "port": 8700,
     "name": "public_api"
   },
   "logger": {
@@ -8,38 +8,29 @@
     "encoding": "console"
   },
   "mqttStore": {
-    "host": "103.165.142.44",
-    "port": 7883,
+    "host": "mosquitto.mqtt.ntranlab.com",
+    "port": 8883,
     "enabled": true,
-    "name": "ltd",
-    "username": "",
-    "password": "",
+    "username": "admin",
+    "password": "ctportal2024",
     "level": "debug"
   },
-  "sqlite": {
-    "connection": "./db/emb.db"
-  },
   "deviceInfo": {
-    "deviceId": "ltdtestdevice",
-    "cloudApiServer": "http://103.165.142.44:7881/api/priv",
+    "deviceId": "test-device",
+    "cloudApiServer": "https://api.ctportal.ntranlab.com",
     "username": "dev",
     "password": "dev"
   },
   "cloudMediaServer": {
-    "host": "103.165.142.44",
-    "port": 7958,
-    "username": "thesis",
-    "password": "q1jk23i19",
+    "host": "api.mediamtx.ntranlab.com",
+    "port": 443,
+    "username": "admin",
+    "password": "ctportal2024",
     "publishPorts": {
       "srt": 8890
     }
   },
   "ffmpeg": {
     "binaryPath": "/usr/bin/ffmpeg"
-  },
-  "webSocket": {
-    "host": "103.165.142.44",
-    "port": 7883,
-    "upgradePath": "/ws/ltd"
   }
 }
