@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bytedance/sonic"
+	"encoding/json"
 	"github.com/motemen/go-loghttp"
 	"github.com/opus-domini/fast-shot"
 	"go.uber.org/zap"
@@ -111,8 +111,8 @@ func JSONResponse(resp *fastshot.Response, dest interface{}) error {
 		return err
 	}
 
-	if err := sonic.Unmarshal(bodyBytes, dest); err != nil {
-		logger.SDebug("ParseResponseBody: sonic.Unmarshal",
+	if err := json.Unmarshal(bodyBytes, dest); err != nil {
+		logger.SDebug("ParseResponseBody: json.Unmarshal",
 			zap.Error(err))
 		return err
 	}

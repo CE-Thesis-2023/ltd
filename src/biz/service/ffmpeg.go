@@ -10,13 +10,11 @@ import (
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
-	custrtsp "github.com/CE-Thesis-2023/ltd/src/internal/rtsp"
 	"github.com/CE-Thesis-2023/ltd/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
 	"github.com/CE-Thesis-2023/ltd/src/models/ms"
 
 	"github.com/avast/retry-go"
-	"github.com/bluenviron/gortsplib/v4/pkg/base"
 	ffmpeg_go "github.com/u2takey/ffmpeg-go"
 	"go.uber.org/zap"
 )
@@ -41,26 +39,6 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 	command := s.buildFfmpegRestreamingCommand(sourceUrl, destinationUrl)
 	logger.SDebug("RequestFFmpegRtspToSrt: commanđ", zap.String("command", command.String()))
 
-	srcUrlParsed, err := base.ParseURL(sourceUrl)
-	if err != nil {
-		logger.SError("RequestFFmpegRtspToSrt: base.ParseURL of sourceUrl", zap.Error(err))
-		return err
-	}
-
-	client := custrtsp.New()
-	if err := client.Start(srcUrlParsed.Scheme, srcUrlParsed.Host); err != nil {
-		logger.SError("RequestFFmpegRtspToSrt: client.Start", zap.Error(err))
-		return err
-	}
-	defer client.Close()
-
-	sess, _, err := client.Describe(srcUrlParsed)
-	if err != nil {
-		logger.SError("RequestFFmpegRtspToSrt: rtspClient.Describe", zap.Error(err))
-		return err
-	}
-
-	logger.SInfo("RequestFFmpegRtspToSrt: source DESCRIBE information", logger.Json("describeResp", sess))
 	s.streamingPool.Submit(func() {
 		retry.Do(func() error {
 			compiledGoCommand := command.Compile()

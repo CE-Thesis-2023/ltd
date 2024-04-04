@@ -11,7 +11,6 @@ import (
 	"github.com/CE-Thesis-2023/ltd/src/helper/factory"
 	"github.com/CE-Thesis-2023/ltd/src/internal/cache"
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
-	custdb "github.com/CE-Thesis-2023/ltd/src/internal/db"
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	"github.com/CE-Thesis-2023/ltd/src/internal/hikvision"
 	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
@@ -19,7 +18,6 @@ import (
 	"github.com/CE-Thesis-2023/ltd/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
 	"github.com/CE-Thesis-2023/ltd/src/models/rest"
-	"github.com/bytedance/sonic"
 	fastshot "github.com/opus-domini/fast-shot"
 
 	"github.com/Masterminds/squirrel"
@@ -45,7 +43,6 @@ type CommandServiceInterface interface {
 }
 
 type CommandService struct {
-	db              *custdb.LayeredDb
 	cache           *ristretto.Cache
 	hikvisionClient hikvision.Client
 	pool            *ants.Pool
@@ -66,7 +63,6 @@ func NewCommandService() CommandServiceInterface {
 	}).
 		Build()
 	return &CommandService{
-		db:                       custdb.Layered(),
 		cache:                    cache.Cache(),
 		hikvisionClient:          factory.Hikvision(),
 		pool:                     p,
@@ -110,59 +106,6 @@ func (s *CommandService) AddCamera(ctx context.Context, req *events.CommandAddCa
 	}
 
 	logger.SInfo("AddCamera: camera added successfully", zap.Any("camera", insertingCamera))
-	return nil
-}
-
-func (s *CommandService) getCameraByName(ctx context.Context, name string) (*db.Camera, error) {
-	val, found := s.cache.Get(fmt.Sprintf("camera-by_name-%s", name))
-	if found {
-		camera, yes := val.(db.Camera)
-		if yes {
-			logger.SDebug("getCameraByName: cache hit")
-			return &camera, nil
-		}
-	}
-	sqlExp := squirrel.Select("*").
-		From("cameras").
-		Where("name = ?", name)
-	var camera db.Camera
-	if err := s.db.Get(ctx, sqlExp, &camera); err != nil {
-		logger.SError("getCameraByName: Get error", zap.Error(err))
-		return nil, err
-	}
-	logger.SDebug("getCameraByName: db hit")
-	s.pool.Submit(func() {
-		set := s.cache.Set("camera-by_name-%s", camera, 100)
-		if set {
-			logger.SDebug("getCameraByName: cache set")
-		} else {
-			logger.SError("getCameraByName: cache set failed")
-		}
-	})
-	return &camera, nil
-}
-
-func (s *CommandService) getCameraById(ctx context.Context, id string) (*db.Camera, error) {
-	sqlExp := squirrel.Select("*").
-		From("cameras").
-		Where("camera_id = ?", id)
-	var camera db.Camera
-	if err := s.db.Get(ctx, sqlExp, &camera); err != nil {
-		logger.SError("getCameraById: Get error", zap.Error(err))
-		return nil, err
-	}
-	return &camera, nil
-}
-
-func (s *CommandService) saveCamera(ctx context.Context, camera db.Camera) error {
-	sqlExp := squirrel.Insert("cameras").
-		Columns(camera.Fields()...).
-		Values(camera.Values()...)
-	if err := s.db.Insert(ctx, sqlExp); err != nil {
-		logger.SError("saveCamera: db.Insert error", zap.Error(err))
-		return err
-	}
-	logger.SDebug("saveCamera: saved to db")
 	return nil
 }
 

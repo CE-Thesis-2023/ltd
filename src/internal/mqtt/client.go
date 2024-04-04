@@ -2,12 +2,14 @@ package custmqtt
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
-	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	"log"
 	"net/url"
 	"sync"
 	"time"
+
+	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 
 	"github.com/eclipse/paho.golang/autopaho"
 	"github.com/eclipse/paho.golang/paho"
@@ -100,6 +102,25 @@ func InitClient(ctx context.Context, options ...ClientOptioner) {
 
 		mqttClient = connManager
 	})
+}
+
+func makeTlsConfigs(globalConfigs *configs.EventStoreConfigs) (*tls.Config, error) {
+	tlsConfigs := globalConfigs.Tls
+	if !tlsConfigs.Enabled() {
+		return nil, nil
+	}
+
+	credentials, err := tls.LoadX509KeyPair(tlsConfigs.Cert, tlsConfigs.Key)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tls.Config{
+		InsecureSkipVerify: true,
+		Certificates: []tls.Certificate{
+			credentials,
+		},
+	}, nil
 }
 
 func Client() *autopaho.ConnectionManager {

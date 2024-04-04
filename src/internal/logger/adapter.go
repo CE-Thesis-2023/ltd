@@ -1,11 +1,9 @@
 package logger
 
 import (
-	"log/slog"
 
 	"github.com/nats-io/nats-server/v2/server"
 	"github.com/panjf2000/ants/v2"
-	"go.mrchanchal.com/zaphandler"
 	"go.uber.org/zap"
 )
 
@@ -41,10 +39,6 @@ func NewZapToNatsLogger(logger *zap.SugaredLogger) server.Logger {
 	return &ZapToNatsLogger{
 		logger: logger,
 	}
-}
-
-func NewZapToSlogHandler(logger *zap.Logger) slog.Handler {
-	return zaphandler.New(logger)
 }
 
 type ZapToAntsLogger struct {

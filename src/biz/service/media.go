@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/CE-Thesis-2023/ltd/src/internal/cache"
 	custcon "github.com/CE-Thesis-2023/ltd/src/internal/concurrent"
-	custdb "github.com/CE-Thesis-2023/ltd/src/internal/db"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
@@ -30,7 +29,6 @@ func (c *onGoingProcess) Cancel(ctx context.Context) error {
 }
 
 type mediaService struct {
-	db               *custdb.LayeredDb
 	streamingPool    *ants.Pool
 	cache            *ristretto.Cache
 	onGoingProcesses map[string]*onGoingProcess
@@ -38,7 +36,6 @@ type mediaService struct {
 
 func newMediaService() MediaServiceInterface {
 	return &mediaService{
-		db:               custdb.Layered(),
 		streamingPool:    custcon.New(20),
 		cache:            cache.Cache(),
 		onGoingProcesses: map[string]*onGoingProcess{},

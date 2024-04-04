@@ -17,7 +17,6 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	mqtt "github.com/mochi-mqtt/server/v2"
 	"github.com/panjf2000/ants/v2"
 )
 
@@ -130,14 +129,6 @@ func GlobalErrorHandler() func(c *fiber.Ctx, err error) error {
 				ants.ErrLackPoolFunc,
 				ants.ErrPoolClosed,
 				ants.ErrPoolOverload:
-				customError = custerror.ErrorInternal
-			case mqtt.ErrConnectionClosed,
-				mqtt.ErrListenerIDExists,
-				mqtt.ErrMinimumKeepalive,
-				mqtt.ErrConnectionClosed,
-				mqtt.ErrInlineClientNotEnabled,
-				mqtt.ErrInvalidConfigType,
-				mqtt.ErrConnectionClosed:
 				customError = custerror.ErrorInternal
 			default:
 				customError = custerror.ErrorInternal
