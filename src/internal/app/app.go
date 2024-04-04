@@ -10,7 +10,6 @@ import (
 
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
-	"github.com/CE-Thesis-2023/ltd/src/internal/ws"
 	"go.uber.org/zap"
 )
 
@@ -36,15 +35,10 @@ func Run(shutdownTimeout time.Duration, registration RegistrationFunc) {
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
+	reconcilerContext, cancel := context.WithCancel(context.Background())
 
-	for _, s := range opts.webSocketClients {
-		s := s
-		go func() {
-			logger.Infof("Run: start WebSocket client")
-			if err := s.Run(); err != nil {
-				logger.Info("Run: start WebSocket client error", zap.Error(err))
-			}
-		}()
+	if opts.reconciler != nil {
+		opts.reconciler(reconcilerContext)
 	}
 
 	if opts.factoryHook != nil {
@@ -55,7 +49,8 @@ func Run(shutdownTimeout time.Duration, registration RegistrationFunc) {
 	}
 
 	<-quit
-	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	cancel()
+	ctx, cancel = context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
 	if opts.shutdownHook != nil {
@@ -63,19 +58,6 @@ func Run(shutdownTimeout time.Duration, registration RegistrationFunc) {
 	}
 
 	var wg sync.WaitGroup
-
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		for _, s := range opts.webSocketClients {
-			s := s
-			logger.Infof("Run: stop WebSocket")
-			if err := s.Stop(ctx); err != nil {
-				log.Fatal(err)
-			}
-		}
-	}()
 
 	wg.Wait()
 
@@ -88,10 +70,9 @@ type FactoryHook func() error
 type ShutdownHook func(ctx context.Context)
 
 type Options struct {
-	webSocketClients []*ws.WebSocketClient
-
 	factoryHook  FactoryHook
 	shutdownHook ShutdownHook
+	reconciler   func(ctx context.Context)
 }
 
 type Optioner func(opts *Options)
@@ -108,8 +89,8 @@ func WithShutdownHook(cb ShutdownHook) Optioner {
 	}
 }
 
-func WithWebSocketClient(client *ws.WebSocketClient) Optioner {
+func WithReconciler(r func(ctx context.Context)) Optioner {
 	return func(opts *Options) {
-		opts.webSocketClients = append(opts.webSocketClients, client)
+		opts.reconciler = r
 	}
 }

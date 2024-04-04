@@ -5,7 +5,6 @@ import (
 	"time"
 
 	eventsapi "github.com/CE-Thesis-2023/ltd/src/api/events"
-	wsapi "github.com/CE-Thesis-2023/ltd/src/api/websocket"
 	"github.com/CE-Thesis-2023/ltd/src/biz/reconciler"
 	"github.com/CE-Thesis-2023/ltd/src/biz/service"
 	"github.com/CE-Thesis-2023/ltd/src/helper/factory"
@@ -13,7 +12,6 @@ import (
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	custmqtt "github.com/CE-Thesis-2023/ltd/src/internal/mqtt"
-	"github.com/CE-Thesis-2023/ltd/src/internal/ws"
 	"go.uber.org/zap"
 )
 
@@ -22,11 +20,9 @@ func main() {
 		time.Second*10,
 		func(configs *configs.Configs, zl *zap.Logger) []app.Optioner {
 			return []app.Optioner{
-				app.WithWebSocketClient(ws.NewWebSocketClient(
-					ws.WithDeviceId(configs.DeviceInfo.DeviceId),
-					ws.WithGlobalConfigs(&configs.WebSocket),
-					ws.WithMessageHandler(wsapi.GetStandardHandler()),
-				)),
+				app.WithReconciler(reconciler.
+					GetReconciler().
+					Run),
 				app.WithFactoryHook(func() error {
 					ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 					defer cancel()
@@ -41,13 +37,13 @@ func main() {
 						custmqtt.WithClientGlobalConfigs(&configs.MqttStore),
 						custmqtt.WithOnReconnection(eventsapi.Register),
 						custmqtt.WithOnConnectError(func(err error) {
-							logger.Error("MQTT Connection failed", zap.Error(err))
+							logger.Error("MQTT connection failed",
+								zap.Error(err))
 						}),
 						custmqtt.WithClientError(eventsapi.ClientErrorHandler),
 						custmqtt.WithOnServerDisconnect(eventsapi.DisconnectHandler),
 						custmqtt.WithHandlerRegister(eventsapi.RouterHandler()),
 					)
-
 					return nil
 				}),
 				app.WithShutdownHook(func(ctx context.Context) {

@@ -25,7 +25,7 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 	logger.SDebug("RequestFFmpegRtspToSrt: source RTSP",
 		zap.String("source/", sourceUrl))
 
-	destinationUrl := s.buildPushSrtUrl(ctx, &ms.PushStreamingRequest{
+	destinationUrl := s.buildPushSrtUrl(&ms.PushStreamingRequest{
 		StreamName: req.CameraId,
 	})
 	logger.SDebug("RequestFFmpegRtspToSrt: destination SRT", zap.String("destination", destinationUrl))

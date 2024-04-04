@@ -18,7 +18,7 @@ func Register(cm *autopaho.ConnectionManager, connack *paho.Connack) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	subs := makeSubsciptions(ctx, cm, connack)
+	subs := makeSubsciptions()
 	if _, err := cm.Subscribe(ctx, &paho.Subscribe{
 		Subscriptions: subs,
 	}); err != nil {
@@ -32,7 +32,7 @@ func Register(cm *autopaho.ConnectionManager, connack *paho.Connack) {
 	logger.SInfo("MQTT subscriptions made success", zap.Any("subs", subs))
 }
 
-func makeSubsciptions(ctx context.Context, cm *autopaho.ConnectionManager, connack *paho.Connack) []paho.SubscribeOptions {
+func makeSubsciptions() []paho.SubscribeOptions {
 	return []paho.SubscribeOptions{
 		{Topic: fmt.Sprintf("commands/%s", configs.Get().DeviceInfo.DeviceId), QoS: 1},
 		{Topic: fmt.Sprintf("ptzctrl/%s", configs.Get().DeviceInfo.DeviceId), QoS: 1},

@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/url"
 
@@ -11,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (s *mediaService) buildPushSrtUrl(ctx context.Context, req *ms.PushStreamingRequest) string {
+func (s *mediaService) buildPushSrtUrl(req *ms.PushStreamingRequest) string {
 	configs := configs.Get().CloudMediaServer
 
 	streamUrl := &url.URL{}
