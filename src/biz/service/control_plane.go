@@ -33,7 +33,7 @@ func NewControlPlaneService(configs *configs.DeviceInfoConfigs) *ControlPlaneSer
 			InsecureSkipVerify: true,
 		},
 	})
-	return &ControlPlaneService{client: builder.Build(), basePath: "/api/private"}
+	return &ControlPlaneService{client: builder.Build(), basePath: "/private"}
 }
 
 type RegistrationRequest struct {
