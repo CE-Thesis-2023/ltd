@@ -3,8 +3,6 @@ package custerror
 import (
 	"fmt"
 	"net/http"
-
-	"github.com/gofiber/fiber/v2"
 )
 
 type CustomError struct {
@@ -51,12 +49,6 @@ func (e *CustomError) Parent() *CustomError {
 	default:
 		return ErrorInternal
 	}
-}
-
-func (e *CustomError) Fiber(ctx *fiber.Ctx) error {
-	return ctx.
-		Status(int(e.Code)).
-		JSON(e.Response())
 }
 
 func (e *CustomError) Response() *ErrorResponse {

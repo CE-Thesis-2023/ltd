@@ -6,7 +6,6 @@ import (
 	"time"
 
 	eventsapi "github.com/CE-Thesis-2023/ltd/src/api/events"
-	publicapi "github.com/CE-Thesis-2023/ltd/src/api/public"
 	wsapi "github.com/CE-Thesis-2023/ltd/src/api/websocket"
 	"github.com/CE-Thesis-2023/ltd/src/biz/service"
 	"github.com/CE-Thesis-2023/ltd/src/helper/factory"
@@ -14,7 +13,6 @@ import (
 	"github.com/CE-Thesis-2023/ltd/src/internal/cache"
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
-	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	custmqtt "github.com/CE-Thesis-2023/ltd/src/internal/mqtt"
 	"github.com/CE-Thesis-2023/ltd/src/internal/ws"
@@ -26,12 +24,6 @@ func main() {
 		time.Second*10,
 		func(configs *configs.Configs, zl *zap.Logger) []app.Optioner {
 			return []app.Optioner{
-				app.WithHttpServer(custhttp.New(
-					custhttp.WithGlobalConfigs(&configs.Public),
-					custhttp.WithErrorHandler(custhttp.GlobalErrorHandler()),
-					custhttp.WithRegistration(publicapi.ServiceRegistration()),
-					custhttp.WithMiddleware(custhttp.CommonPublicMiddlewares(&configs.Public)...),
-				)),
 				app.WithWebSocketClient(ws.NewWebSocketClient(
 					ws.WithDeviceId(configs.DeviceInfo.DeviceId),
 					ws.WithGlobalConfigs(&configs.WebSocket),

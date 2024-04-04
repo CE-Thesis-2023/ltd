@@ -5,7 +5,6 @@ go 1.21.4
 require (
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/eclipse/paho.golang v0.12.0
-	github.com/gofiber/fiber/v2 v2.51.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/opus-domini/fast-shot v0.9.0
@@ -25,10 +24,8 @@ require (
 	github.com/nats-io/jwt/v2 v2.5.3 // indirect
 	github.com/nats-io/nkeys v0.4.6 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
-	github.com/philhofer/fwd v1.1.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
-	github.com/tinylib/msgp v1.1.8 // indirect
 	github.com/u2takey/go-utils v0.3.1 // indirect
 	golang.org/x/crypto v0.16.0 // indirect
 	golang.org/x/net v0.19.0 // indirect
@@ -38,18 +35,9 @@ require (
 )
 
 require (
-	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/dgraph-io/ristretto v0.1.1
-	github.com/google/uuid v1.5.0 // indirect
 	github.com/klauspost/compress v1.17.2 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/nats-io/nats-server/v2 v2.10.5
-	github.com/rivo/uniseg v0.4.4 // indirect
-	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasthttp v1.50.0 // indirect
-	github.com/valyala/tcplisten v1.0.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.26.0
 	golang.org/x/sys v0.15.0 // indirect
