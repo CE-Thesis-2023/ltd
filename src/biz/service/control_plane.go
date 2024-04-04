@@ -21,6 +21,10 @@ type ControlPlaneService struct {
 
 func NewControlPlaneService(configs *configs.DeviceInfoConfigs) *ControlPlaneService {
 	builder := fastshot.NewClient(configs.CloudApiServer)
+	authConfigs := builder.Auth()
+	if configs.Username != "" && configs.Password != "" {
+		authConfigs.BasicAuth(configs.Username, configs.Password)
+	}
 	clientConfigs := builder.Config()
 	clientConfigs.SetTimeout(10 * time.Second)
 	clientConfigs.SetFollowRedirects(true)

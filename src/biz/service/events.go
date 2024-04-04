@@ -27,7 +27,7 @@ type CommandService struct {
 func NewCommandService() *CommandService {
 	configs := configs.Get().DeviceInfo
 	backendClient := fastshot.NewClient(configs.CloudApiServer).
-		Auth().BasicAuth(configs.Username, configs.Token).
+		Auth().BasicAuth(configs.Username, configs.Password).
 		Config().SetCustomTransport(&http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}).

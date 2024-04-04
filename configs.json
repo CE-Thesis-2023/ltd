@@ -20,7 +20,7 @@
   },
   "deviceInfo": {
     "deviceId": "test-device",
-    "cloudApiServer": "https://api.ctportal.ntranlab.com",
+    "cloudApiServer": "https://private.api.ctportal.ntranlab.com",
     "username": "dev",
     "password": "dev"
   },
