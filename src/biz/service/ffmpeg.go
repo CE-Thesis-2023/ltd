@@ -7,14 +7,13 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/CE-Thesis-2023/ltd/src/helper"
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
 	"github.com/CE-Thesis-2023/ltd/src/models/ms"
-
-	"github.com/avast/retry-go"
 	ffmpeg_go "github.com/u2takey/ffmpeg-go"
 	"go.uber.org/zap"
 )
@@ -40,7 +39,7 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 	logger.SDebug("RequestFFmpegRtspToSrt: commanđ", zap.String("command", command.String()))
 
 	go func() {
-		retry.Do(func() error {
+		helper.Do(func() error {
 			compiledGoCommand := command.Compile()
 
 			s.recordThisStream(ctx, camera, sourceUrl, destinationUrl, compiledGoCommand)
@@ -54,8 +53,8 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 			logger.SInfo("RequestFFmpegRtspToSrt: FFMPEG process finished")
 
 			return nil
-		}, retry.Attempts(3),
-			retry.RetryIf(func(err error) bool {
+		}, helper.Attempts(3),
+			helper.RetryIf(func(err error) bool {
 				if s.shouldRestartStream(err, camera, sourceUrl, destinationUrl) {
 					logger.SInfo("RequestFFmpegRtspToSrt: restarting stream")
 					return true

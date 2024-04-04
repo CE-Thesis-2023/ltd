@@ -4,7 +4,6 @@ go 1.21.4
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/eclipse/paho.golang v0.12.0
 	github.com/gofiber/fiber/v2 v2.51.0
 	github.com/gorilla/websocket v1.5.0
