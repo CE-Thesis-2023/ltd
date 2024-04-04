@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
-	custcron "github.com/CE-Thesis-2023/ltd/src/internal/cron"
 	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/internal/ws"
@@ -51,16 +50,6 @@ func Run(shutdownTimeout time.Duration, registration RegistrationFunc) {
 		}()
 	}
 
-	for _, s := range opts.schedulers {
-		s := s
-		go func() {
-			logger.Infof("Run: start scheduler", zap.String("name", s.Name()))
-			if err := s.Start(); err != nil {
-				logger.Info("Run: start scheduler error", zap.Error(err))
-			}
-		}()
-	}
-
 	for _, s := range opts.webSocketClients {
 		s := s
 		go func() {
@@ -88,24 +77,13 @@ func Run(shutdownTimeout time.Duration, registration RegistrationFunc) {
 
 	var wg sync.WaitGroup
 
-	wg.Add(3)
+	wg.Add(2)
 
 	go func() {
 		defer wg.Done()
 		for _, s := range opts.httpServers {
 			s := s
 			logger.Infof("Run: stop HTTP server name = %s", s.Name())
-			if err := s.Stop(ctx); err != nil {
-				log.Fatal(err)
-			}
-		}
-	}()
-
-	go func() {
-		defer wg.Done()
-		for _, s := range opts.schedulers {
-			s := s
-			logger.Infof("Run: stop scheduler name = %s", s.Name())
 			if err := s.Stop(ctx); err != nil {
 				log.Fatal(err)
 			}
@@ -135,7 +113,6 @@ type ShutdownHook func(ctx context.Context)
 
 type Options struct {
 	httpServers      []*custhttp.HttpServer
-	schedulers       []*custcron.Scheduler
 	webSocketClients []*ws.WebSocketClient
 
 	factoryHook  FactoryHook
@@ -161,12 +138,6 @@ func WithFactoryHook(cb FactoryHook) Optioner {
 func WithShutdownHook(cb ShutdownHook) Optioner {
 	return func(opts *Options) {
 		opts.shutdownHook = cb
-	}
-}
-
-func WithScheduling(scheduler *custcron.Scheduler) Optioner {
-	return func(opts *Options) {
-		opts.schedulers = append(opts.schedulers, scheduler)
 	}
 }
 
