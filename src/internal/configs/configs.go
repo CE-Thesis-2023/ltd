@@ -13,17 +13,13 @@ import (
 var globalConfigs *Configs
 
 type Configs struct {
-	Public           HttpConfigs          `json:"public,omitempty" yaml:"public,omitempty"`
-	Private          HttpConfigs          `json:"private,omitempty" yaml:"private,omitempty"`
-	Logger           LoggerConfigs        `json:"logger,omitempty" yaml:"logger,omitempty"`
-	EventStore       EventStoreConfigs    `json:"eventStore,omitempty" yaml:"eventStore,omitempty"`
-	MqttStore        EventStoreConfigs    `json:"mqttStore,omitempty" yaml:"mqttStore,omitempty"`
-	Sqlite           DatabaseConfigs      `json:"sqlite,omitempty" yaml:"sqlite,omitempty"`
-	InfluxConfigs    InfluxConfigs        `json:"influx,omitempty" yaml:"influx,omitempty"`
-	CloudMediaServer MediaMtxConfigs      `json:"cloudMediaServer,omitempty" yaml:"cloudMediaServer,omitempty"`
-	DeviceInfo       DeviceInfoConfigs    `json:"deviceInfo,omitempty" yaml:"deviceInfo,omitempty"`
-	Ffmpeg           FfmpegConfigs        `json:"ffmpeg,omitempty" yaml:"ffmpeg,omitempty"`
-	WebSocket        WebSocketFeedConfigs `json:"webSocket,omitempty" yaml:"webSocket,omitempty"`
+	Public           HttpConfigs       `json:"public,omitempty" yaml:"public,omitempty"`
+	Private          HttpConfigs       `json:"private,omitempty" yaml:"private,omitempty"`
+	Logger           LoggerConfigs     `json:"logger,omitempty" yaml:"logger,omitempty"`
+	MqttStore        EventStoreConfigs `json:"mqttStore,omitempty" yaml:"mqttStore,omitempty"`
+	CloudMediaServer MediaMtxConfigs   `json:"cloudMediaServer,omitempty" yaml:"cloudMediaServer,omitempty"`
+	DeviceInfo       DeviceInfoConfigs `json:"deviceInfo,omitempty" yaml:"deviceInfo,omitempty"`
+	Ffmpeg           FfmpegConfigs     `json:"ffmpeg,omitempty" yaml:"ffmpeg,omitempty"`
 }
 
 func (c Configs) String() string {
@@ -55,10 +51,14 @@ type TlsConfig struct {
 	Cert      string `json:"cert,omitempty" yaml:"cert,omitempty"`
 	Key       string `json:"key,omitempty" yaml:"key,omitempty"`
 	Authority string `json:"authority,omitempty" yaml:"authority,omitempty"`
+	Enabled   bool   `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 }
 
-func (c TlsConfig) Enabled() bool {
+func (c TlsConfig) IsEnabled() bool {
 	if len(c.Cert) > 0 && len(c.Key) > 0 {
+		return true
+	}
+	if c.Enabled {
 		return true
 	}
 	return false
@@ -85,17 +85,6 @@ type EventStoreConfigs struct {
 	Level    string    `json:"level,omitempty" yaml:"level,omitempty"`
 }
 
-type InfluxConfigs struct {
-	Host  string `json:"host,omitempty" yaml:"host,omitempty"`
-	Port  int    `json:"port,omitempty" yaml:"port,omitempty"`
-	Token string `json:"token,omitempty" yaml:"token,omitempty"`
-	Name  string `json:"applicationName,omitempty" yaml:"applicationName,omitempty"`
-}
-
-type DatabaseConfigs struct {
-	Connection string `json:"connection,omitempty" yaml:"connection,omitempty"`
-}
-
 type MediaMtxConfigs struct {
 	Host         string        `json:"host,omitempty" yaml:"host,omitempty"`
 	Port         int           `json:"port,omitempty" yaml:"port,omitempty"`
@@ -119,12 +108,6 @@ type DeviceInfoConfigs struct {
 	Username       string `json:"username,omitempty" yaml:"username,omitempty"`
 	Token          string `json:"token,omitempty" yaml:"token,omitempty"`
 	CloudApiServer string `json:"cloudApiServer,omitempty" yaml:"cloudApiServer,omitempty"`
-}
-
-type WebSocketFeedConfigs struct {
-	Host        string `json:"host,omitempty" yaml:"host,omitempty"`
-	Port        uint64 `json:"port,omitempty" yaml:"port,omitempty"`
-	UpgradePath string `json:"upgradePath,omitempty" yaml:"upgradePath,omitempty"`
 }
 
 func (c *EventStoreConfigs) HasAuth() bool {

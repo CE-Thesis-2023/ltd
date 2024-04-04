@@ -4,12 +4,13 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"log"
 	"net/url"
 	"sync"
 	"time"
 
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
+	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
+	"go.uber.org/zap"
 
 	"github.com/eclipse/paho.golang/autopaho"
 	"github.com/eclipse/paho.golang/paho"
@@ -28,12 +29,7 @@ func InitClient(ctx context.Context, options ...ClientOptioner) {
 
 		globalConfigs := opts.globalConfigs
 		connUrl := url.URL{}
-		if globalConfigs.Tls.Enabled() {
-			connUrl.Scheme = "tls"
-		} else {
-			connUrl.Scheme = "mqtt"
-		}
-
+		connUrl.Scheme = "mqtt"
 		hostname := globalConfigs.Host
 
 		if globalConfigs.Port > 0 {
@@ -51,7 +47,6 @@ func InitClient(ctx context.Context, options ...ClientOptioner) {
 			KeepAlive:         20,
 			ConnectRetryDelay: time.Second * 5,
 			ConnectTimeout:    time.Second * 2,
-
 			BrokerUrls: []*url.URL{
 				&connUrl,
 			},
@@ -60,10 +55,10 @@ func InitClient(ctx context.Context, options ...ClientOptioner) {
 			},
 		}
 
-		if globalConfigs.Tls.Enabled() {
+		if globalConfigs.Tls.IsEnabled() {
 			tlsConfigs, err := makeTlsConfigs(globalConfigs)
 			if err != nil {
-				log.Fatalf("mqtt.InitClient: makeTlsConfigs err = %s", err)
+				logger.SFatal("create TLS configuration failed", zap.Error(err))
 				return
 			}
 			clientConfigs.TlsCfg = tlsConfigs
@@ -91,12 +86,14 @@ func InitClient(ctx context.Context, options ...ClientOptioner) {
 
 		connManager, err := autopaho.NewConnection(ctx, clientConfigs)
 		if err != nil {
-			log.Fatalf("mqtt.InitClient: autopaho.NewConnection err = %s", err)
+			logger.SFatal("MQTT connection failed",
+				zap.Error(err))
 			return
 		}
 
 		if err := connManager.AwaitConnection(ctx); err != nil {
-			log.Fatalf("mqtt.InitClient: AwaitConnection err = %s", err)
+			logger.SFatal("MQTT waiting for connection failed",
+				zap.Error(err))
 			return
 		}
 
@@ -106,21 +103,23 @@ func InitClient(ctx context.Context, options ...ClientOptioner) {
 
 func makeTlsConfigs(globalConfigs *configs.EventStoreConfigs) (*tls.Config, error) {
 	tlsConfigs := globalConfigs.Tls
-	if !tlsConfigs.Enabled() {
+	if !tlsConfigs.IsEnabled() {
 		return nil, nil
 	}
 
-	credentials, err := tls.LoadX509KeyPair(tlsConfigs.Cert, tlsConfigs.Key)
-	if err != nil {
-		return nil, err
+	t := &tls.Config{
+		InsecureSkipVerify: true,
 	}
 
-	return &tls.Config{
-		InsecureSkipVerify: true,
-		Certificates: []tls.Certificate{
-			credentials,
-		},
-	}, nil
+	if tlsConfigs.Cert != "" && tlsConfigs.Key != "" {
+		credentials, err := tls.LoadX509KeyPair(tlsConfigs.Cert, tlsConfigs.Key)
+		if err != nil {
+			return nil, err
+		}
+		t.Certificates = []tls.Certificate{credentials}
+	}
+
+	return t, nil
 }
 
 func Client() *autopaho.ConnectionManager {
