@@ -2,12 +2,12 @@ package app
 
 import (
 	"context"
-	"log"
+	"encoding/json"
 	"os"
 	"os/signal"
-	"sync"
 	"time"
 
+	"github.com/CE-Thesis-2023/ltd/src/biz/reconciler"
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"go.uber.org/zap"
@@ -18,34 +18,43 @@ func Run(shutdownTimeout time.Duration, registration RegistrationFunc) {
 	configs.Init(ctx)
 
 	globalConfigs := configs.Get()
+	configsBytes, _ := json.Marshal(globalConfigs)
 
 	loggerConfigs := globalConfigs.Logger
 	logger.Init(ctx, logger.WithGlobalConfigs(&loggerConfigs))
 
-	options := registration(globalConfigs, logger.Logger())
+	options := registration(
+		globalConfigs,
+		logger.Logger())
 
 	opts := Options{}
 	for _, optioner := range options {
 		optioner(&opts)
 	}
 
-	logger := zap.L().Sugar()
+	logger := zap.L()
+	logger.Info("application starting",
+		zap.Any("configs", json.RawMessage(configsBytes)))
 
-	logger.Infof("Run: configs = %s", globalConfigs.String())
+	if opts.factoryHook != nil {
+		if err := opts.factoryHook(ctx); err != nil {
+			logger.Fatal("failed to run factory hook",
+				zap.Error(err))
+			return
+		}
+	}
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
 	reconcilerContext, cancel := context.WithCancel(context.Background())
 
-	if opts.reconciler != nil {
-		opts.reconciler(reconcilerContext)
+	var reconciler reconciler.BaseReconciler
+	if opts.reconcilerFactory != nil {
+		reconciler = opts.reconcilerFactory()
 	}
 
-	if opts.factoryHook != nil {
-		if err := opts.factoryHook(); err != nil {
-			logger.Fatalf("Run: factoryHook err = %s", err)
-			return
-		}
+	if reconciler != nil {
+		go reconciler.Run(reconcilerContext)
 	}
 
 	<-quit
@@ -57,22 +66,19 @@ func Run(shutdownTimeout time.Duration, registration RegistrationFunc) {
 		opts.shutdownHook(ctx)
 	}
 
-	var wg sync.WaitGroup
-
-	wg.Wait()
-
-	zap.L().Sync()
-	log.Print("Run: shutdown complete")
+	zap.L().
+		Sync()
+	logger.Info("application shutdown complete")
 }
 
 type RegistrationFunc func(configs *configs.Configs, logger *zap.Logger) []Optioner
-type FactoryHook func() error
+type FactoryHook func(ctx context.Context) error
 type ShutdownHook func(ctx context.Context)
 
 type Options struct {
-	factoryHook  FactoryHook
-	shutdownHook ShutdownHook
-	reconciler   func(ctx context.Context)
+	factoryHook       FactoryHook
+	shutdownHook      ShutdownHook
+	reconcilerFactory func() reconciler.BaseReconciler
 }
 
 type Optioner func(opts *Options)
@@ -89,8 +95,8 @@ func WithShutdownHook(cb ShutdownHook) Optioner {
 	}
 }
 
-func WithReconciler(r func(ctx context.Context)) Optioner {
+func WithReconcilerFactory(r func() reconciler.BaseReconciler) Optioner {
 	return func(opts *Options) {
-		opts.reconciler = r
+		opts.reconcilerFactory = r
 	}
 }

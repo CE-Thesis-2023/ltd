@@ -23,6 +23,14 @@ type Reconciler struct {
 }
 
 func NewReconciler(controlPlaneService *service.ControlPlaneService, deviceInfo *configs.DeviceInfoConfigs) *Reconciler {
+	if controlPlaneService == nil {
+		logger.SFatal("control plane service is nil",
+			zap.String("error", "control plane service is nil"))
+	}
+	if deviceInfo == nil {
+		logger.SFatal("device info is nil",
+			zap.String("error", "device info is nil"))
+	}
 	return &Reconciler{
 		cameras:             make(map[string]*db.Camera),
 		controlPlaneService: controlPlaneService,
@@ -51,7 +59,9 @@ func (c *Reconciler) Run(ctx context.Context) {
 func (c *Reconciler) initApplication(ctx context.Context) error {
 	err := c.controlPlaneService.
 		RegisterDevice(ctx, &service.RegistrationRequest{
-			DeviceId: c.deviceInfo.DeviceId,
+			DeviceId: c.
+				deviceInfo.
+				DeviceId,
 		})
 	switch err {
 	case custerror.ErrorAlreadyExists:

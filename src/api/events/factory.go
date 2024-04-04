@@ -1,7 +1,6 @@
 package eventsapi
 
 import (
-	"context"
 	"sync"
 )
 
@@ -9,7 +8,7 @@ var once sync.Once
 
 var standardEventsHandler *StandardEventHandler
 
-func Init(ctx context.Context) {
+func Init() {
 	once.Do(func() {
 		standardEventsHandler = NewStandardEventHandler()
 	})

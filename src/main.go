@@ -20,17 +20,16 @@ func main() {
 		time.Second*10,
 		func(configs *configs.Configs, zl *zap.Logger) []app.Optioner {
 			return []app.Optioner{
-				app.WithReconciler(reconciler.
-					GetReconciler().
-					Run),
-				app.WithFactoryHook(func() error {
-					ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-					defer cancel()
-
-					factory.Init(ctx, configs)
+				app.WithReconcilerFactory(func() reconciler.BaseReconciler {
+					return reconciler.NewReconciler(
+						service.GetControlPlaneService(),
+						&configs.DeviceInfo)
+				}),
+				app.WithFactoryHook(func(ctx context.Context) error {
+					factory.Init(configs)
 					service.Init()
 					reconciler.Init()
-					eventsapi.Init(ctx)
+					eventsapi.Init()
 
 					custmqtt.InitClient(
 						context.Background(),

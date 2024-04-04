@@ -6,12 +6,9 @@ import (
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	"log"
 	"os"
-	"sync"
 
 	"gopkg.in/yaml.v3"
 )
-
-var once sync.Once
 
 var globalConfigs *Configs
 
@@ -35,14 +32,12 @@ func (c Configs) String() string {
 }
 
 func Init(ctx context.Context) {
-	once.Do(func() {
-		configs, err := readConfig()
-		if err != nil {
-			log.Fatal(err)
-			return
-		}
-		globalConfigs = configs
-	})
+	configs, err := readConfig()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	globalConfigs = configs
 }
 
 func Get() *Configs {

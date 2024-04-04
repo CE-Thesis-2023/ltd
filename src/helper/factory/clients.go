@@ -1,7 +1,6 @@
 package factory
 
 import (
-	"context"
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	"github.com/CE-Thesis-2023/ltd/src/internal/hikvision"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
@@ -16,7 +15,7 @@ var (
 	hikvisionClient hikvision.Client
 )
 
-func Init(ctx context.Context, configs *configs.Configs) {
+func Init(configs *configs.Configs) {
 	once.Do(func() {
 		hikvi, err := hikvision.NewClient(
 			hikvision.WithPoolSize(20),
