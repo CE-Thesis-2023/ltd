@@ -1,9 +1,7 @@
 package logger
 
 import (
-
 	"github.com/nats-io/nats-server/v2/server"
-	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 )
 
@@ -47,10 +45,4 @@ type ZapToAntsLogger struct {
 
 func (l *ZapToAntsLogger) Printf(format string, args ...interface{}) {
 	l.logger.Infof(format, args...)
-}
-
-func NewZapToAntsLogger(logger *zap.Logger) ants.Logger {
-	return &ZapToAntsLogger{
-		logger: logger.Sugar(),
-	}
 }

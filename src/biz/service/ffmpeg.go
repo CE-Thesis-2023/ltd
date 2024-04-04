@@ -39,7 +39,7 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 	command := s.buildFfmpegRestreamingCommand(sourceUrl, destinationUrl)
 	logger.SDebug("RequestFFmpegRtspToSrt: commanđ", zap.String("command", command.String()))
 
-	s.streamingPool.Submit(func() {
+	go func() {
 		retry.Do(func() error {
 			compiledGoCommand := command.Compile()
 
@@ -65,7 +65,7 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 			}))
 		logger.SInfo("RequestFFmpegRtspToSrt: stream attempted 3 times, will disappear")
 		delete(s.onGoingProcesses, req.CameraId)
-	})
+	}()
 
 	logger.SDebug("RequestFFmpegRtspToSrt: assigned task")
 	return nil

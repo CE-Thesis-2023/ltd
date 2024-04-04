@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -22,7 +23,6 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/dgraph-io/ristretto"
-	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 )
 
@@ -45,7 +45,6 @@ type CommandServiceInterface interface {
 type CommandService struct {
 	cache           *ristretto.Cache
 	hikvisionClient hikvision.Client
-	pool            *ants.Pool
 
 	backendHttpPrivateClient fastshot.ClientHttpMethods
 
@@ -54,8 +53,6 @@ type CommandService struct {
 
 func NewCommandService() CommandServiceInterface {
 	configs := configs.Get().DeviceInfo
-	p, _ := ants.NewPool(10,
-		ants.WithLogger(logger.NewZapToAntsLogger(logger.Logger())))
 	backendClient := fastshot.NewClient(configs.CloudApiServer).
 		Auth().BasicAuth(configs.Username, configs.Token).
 		Config().SetCustomTransport(&http.Transport{
@@ -65,7 +62,6 @@ func NewCommandService() CommandServiceInterface {
 	return &CommandService{
 		cache:                    cache.Cache(),
 		hikvisionClient:          factory.Hikvision(),
-		pool:                     p,
 		streamManagementService:  GetStreamManagementService(),
 		backendHttpPrivateClient: backendClient,
 	}
@@ -73,7 +69,6 @@ func NewCommandService() CommandServiceInterface {
 
 func (s *CommandService) Shutdown() {
 	logger.SInfo("CommandService: shutdown requested")
-	s.pool.Release()
 }
 
 func (s *CommandService) AddCamera(ctx context.Context, req *events.CommandAddCameraInfo) error {
@@ -336,8 +331,8 @@ func (s *CommandService) UpdateCameraList(ctx context.Context) error {
 		}
 
 		cameraList := respMap["cameras"]
-		respContent, _ := sonic.Marshal(&cameraList)
-		if err := sonic.Unmarshal(respContent, &receivedCameras); err != nil {
+		respContent, _ := json.Marshal(&cameraList)
+		if err := json.Unmarshal(respContent, &receivedCameras); err != nil {
 			logger.SError("mapstructure.Decode: error", zap.Error(err))
 			return err
 		}

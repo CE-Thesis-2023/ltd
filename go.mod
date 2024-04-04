@@ -11,7 +11,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/motemen/go-loghttp v0.0.0-20231107055348-29ae44b293f4
 	github.com/opus-domini/fast-shot v0.9.0
-	github.com/panjf2000/ants/v2 v2.9.0
 	github.com/u2takey/ffmpeg-go v0.5.0
 )
 

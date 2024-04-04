@@ -9,21 +9,18 @@ import (
 	"sync"
 	"time"
 
-	custcon "github.com/CE-Thesis-2023/ltd/src/internal/concurrent"
+	"encoding/json"
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
-	"encoding/json"
 	"github.com/gorilla/websocket"
-	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 )
 
 type WebSocketClient struct {
 	options *WebSocketClientOptions
 	conn    *websocket.Conn
-	pool    *ants.Pool
 	mu      sync.Mutex
 }
 
@@ -70,7 +67,6 @@ func NewWebSocketClient(options ...WebSocketClientOptioner) *WebSocketClient {
 	}
 	client := &WebSocketClient{
 		options: opts,
-		pool:    custcon.New(opts.poolSize),
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 	defer cancel()
@@ -141,7 +137,7 @@ func (c *WebSocketClient) Run() error {
 			return err
 		}
 		if c.options.messageHandler != nil {
-			c.pool.Submit(func() {
+			go func() {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 				defer cancel()
 
@@ -180,7 +176,7 @@ func (c *WebSocketClient) Run() error {
 				c.mu.Unlock()
 
 				logger.SInfo("WebSocketClient.Run: message sent", zap.Uint64("messageId", msgWithId.MessageId))
-			})
+			}()
 		}
 	}
 }

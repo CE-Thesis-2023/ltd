@@ -6,7 +6,6 @@ import (
 	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
 
 	fastshot "github.com/opus-domini/fast-shot"
-	"github.com/panjf2000/ants/v2"
 )
 
 type EventApiInterface interface {
@@ -16,7 +15,6 @@ type EventApiInterface interface {
 
 type eventApiClient struct {
 	restClient fastshot.ClientHttpMethods
-	pool       *ants.Pool
 }
 
 func (c *eventApiClient) getBaseUrl() string {

@@ -7,7 +7,6 @@ import (
 	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
 
 	fastshot "github.com/opus-domini/fast-shot"
-	"github.com/panjf2000/ants/v2"
 )
 
 type StreamsApiInterface interface {
@@ -17,7 +16,6 @@ type StreamsApiInterface interface {
 
 type streamApiClient struct {
 	restClient fastshot.ClientHttpMethods
-	pool       *ants.Pool
 }
 
 func (c *streamApiClient) getBaseUrl() string {

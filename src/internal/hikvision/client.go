@@ -8,7 +8,6 @@ import (
 	"time"
 
 	fastshot "github.com/opus-domini/fast-shot"
-	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 )
 
@@ -22,7 +21,6 @@ type Client interface {
 
 type client struct {
 	options *hikvisionOptions
-	pool    *ants.Pool
 }
 
 func NewClient(options ...HikvisionClientOptioner) (Client, error) {
@@ -30,19 +28,8 @@ func NewClient(options ...HikvisionClientOptioner) (Client, error) {
 	for _, o := range options {
 		o(&opts)
 	}
-
-	var pool *ants.Pool
-	if opts.Poolsize != 0 {
-		pool, _ = ants.NewPool(opts.Poolsize,
-			ants.WithLogger(logger.NewZapToAntsLogger(logger.Logger())))
-	} else {
-		pool, _ = ants.NewPool(5000,
-			ants.WithLogger(logger.NewZapToAntsLogger(logger.Logger())))
-	}
-
 	return &client{
 		options: &opts,
-		pool:    pool,
 	}, nil
 }
 
@@ -90,34 +77,29 @@ func (c *client) getRestClient(opts *Credentials) fastshot.ClientHttpMethods {
 func (c *client) PtzCtrl(credentials *Credentials) PtzApiClientInterface {
 	return &ptzApiClient{
 		restClient: c.getRestClient(credentials),
-		pool:       c.pool,
 	}
 }
 
 func (c *client) Smart(credentials *Credentials) SmartApiInterface {
 	return &smartApiClient{
 		restClient: c.getRestClient(credentials),
-		pool:       c.pool,
 	}
 }
 
 func (c *client) Event(credentials *Credentials) EventApiInterface {
 	return &eventApiClient{
 		restClient: c.getRestClient(credentials),
-		pool:       c.pool,
 	}
 }
 
 func (c *client) System(credentials *Credentials) SystemApiInterface {
 	return &systemApiClient{
 		restClient: c.getRestClient(credentials),
-		pool:       c.pool,
 	}
 }
 
 func (c *client) Streams(credentials *Credentials) StreamsApiInterface {
 	return &streamApiClient{
 		restClient: c.getRestClient(credentials),
-		pool:       c.pool,
 	}
 }

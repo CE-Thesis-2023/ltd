@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"github.com/CE-Thesis-2023/ltd/src/internal/cache"
-	custcon "github.com/CE-Thesis-2023/ltd/src/internal/concurrent"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
@@ -11,7 +10,6 @@ import (
 	"os/exec"
 
 	"github.com/dgraph-io/ristretto"
-	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 )
 
@@ -29,14 +27,12 @@ func (c *onGoingProcess) Cancel(ctx context.Context) error {
 }
 
 type mediaService struct {
-	streamingPool    *ants.Pool
 	cache            *ristretto.Cache
 	onGoingProcesses map[string]*onGoingProcess
 }
 
 func newMediaService() MediaServiceInterface {
 	return &mediaService{
-		streamingPool:    custcon.New(20),
 		cache:            cache.Cache(),
 		onGoingProcesses: map[string]*onGoingProcess{},
 	}
@@ -54,7 +50,6 @@ func (s mediaService) Shutdown() {
 		delete(s.onGoingProcesses, cameraId)
 		logger.SDebug("mediaService.Shutdown: canceled stream", zap.String("cameraId", cameraId))
 	}
-	s.streamingPool.Release()
 	logger.SDebug("mediaService.Shutdown: released streaming pool")
 }
 

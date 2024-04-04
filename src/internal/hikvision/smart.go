@@ -6,7 +6,6 @@ import (
 	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
 
 	fastshot "github.com/opus-domini/fast-shot"
-	"github.com/panjf2000/ants/v2"
 )
 
 type SmartApiInterface interface {
@@ -15,7 +14,6 @@ type SmartApiInterface interface {
 
 type smartApiClient struct {
 	restClient  fastshot.ClientHttpMethods
-	pool        *ants.Pool
 }
 
 func (c *smartApiClient) getBaseUrl() string {

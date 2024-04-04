@@ -10,23 +10,18 @@ import (
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
 
-	"github.com/CE-Thesis-2023/ltd/src/internal/concurrent"
-
 	"encoding/json"
 	"github.com/dgraph-io/ristretto"
 	"github.com/eclipse/paho.golang/paho"
-	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 )
 
 type StandardEventHandler struct {
-	pool  *ants.Pool
 	cache *ristretto.Cache
 }
 
 func NewStandardEventHandler() *StandardEventHandler {
 	return &StandardEventHandler{
-		pool:  custcon.New(100),
 		cache: cache.Cache(),
 	}
 }
@@ -40,7 +35,7 @@ func (h *StandardEventHandler) ReceiveRemoteCommands(p *paho.Publish) error {
 		return err
 	}
 
-	h.pool.Submit(func() {
+	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 		defer func() {
 			if ctx.Err() != nil {
@@ -59,7 +54,7 @@ func (h *StandardEventHandler) ReceiveRemoteCommands(p *paho.Publish) error {
 			logger.SDebug("ReceiveRemoteCommands: CommandHandlers response", zap.Any("response", resp))
 			return
 		}
-	})
+	}()
 
 	logger.SDebug("ReceiveRemoteCommands: goroutine assigned")
 	return nil
@@ -67,7 +62,7 @@ func (h *StandardEventHandler) ReceiveRemoteCommands(p *paho.Publish) error {
 
 func (h *StandardEventHandler) ReceiveRemoteMovementControl(p *paho.Publish) error {
 	logger.SInfo("ReceiveRemoteMovementControl: received request")
-	h.pool.Submit(func() {
+	go func() {
 		logger.SDebug("ReceiveRemoteMovementControl", zap.String("message", string(p.Payload)))
 
 		var msg events.PtzCtrlRequest
@@ -90,6 +85,6 @@ func (h *StandardEventHandler) ReceiveRemoteMovementControl(p *paho.Publish) err
 		}
 
 		logger.SDebug("ReceiveRemoteMovementControl: success")
-	})
+	}()
 	return nil
 }

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	fastshot "github.com/opus-domini/fast-shot"
-	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
 )
 
@@ -22,7 +21,6 @@ type PtzApiClientInterface interface {
 
 type ptzApiClient struct {
 	restClient fastshot.ClientHttpMethods
-	pool       *ants.Pool
 }
 
 func (c *ptzApiClient) getBaseUrl() string {
@@ -130,7 +128,7 @@ func (c *ptzApiClient) ContinousWithReset(ctx context.Context, req *PtzCtrlConti
 
 	callbackChan := make(chan bool, 1)
 	// do this first to make sure a goroutine is available, or else it blocks
-	c.pool.Submit(func() {
+	go func() {
 		<-callbackChan
 		<-time.After(req.ResetAfter)
 		logger.SDebug("hikvision.ContinousWithReset: start reset now")
@@ -155,7 +153,7 @@ func (c *ptzApiClient) ContinousWithReset(ctx context.Context, req *PtzCtrlConti
 		logger.SDebug("hikvision.ContinousWithReset: reset completed",
 			zap.String("channelId", req.ChannelId),
 			zap.Duration("after", req.ResetAfter))
-	})
+	}()
 
 	forwardRequestBody, err := xml.Marshal(req.Options)
 	if err != nil {
