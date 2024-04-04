@@ -164,7 +164,7 @@ func (c *Reconciler) ProcessInputEvent(ctx context.Context, msg *events.CommandR
 			return err
 		}
 		logger.SInfo("get device info command success",
-			zap.Any("response", resp))
+			zap.Reflect("response", resp))
 	default:
 		logger.SError("unknown command type",
 			zap.String("type", string(msg.CommandType)),

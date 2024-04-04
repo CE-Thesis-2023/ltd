@@ -66,6 +66,6 @@ func (s *mediaService) ListOngoingStreams(ctx context.Context) (*rest.DebugListS
 			DestinationUrl: s.DestinationUrl,
 		})
 	}
-	logger.SDebug("ListOngoingStreams: streams", zap.Any("streams", resp))
+	logger.SDebug("ListOngoingStreams: streams", zap.Reflect("streams", resp))
 	return resp, nil
 }

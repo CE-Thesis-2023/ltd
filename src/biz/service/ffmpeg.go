@@ -119,7 +119,7 @@ func (s *mediaService) recordThisStream(ctx context.Context, camera *db.Camera, 
 func (s *mediaService) isThisStreamGoing(ctx context.Context, camera *db.Camera, sourceUrl string, destinationUrl string) bool {
 	pr, found := s.onGoingProcesses[camera.CameraId]
 	if pr != nil {
-		logger.SDebug("isThisStreamGoing: stream already ongoing", zap.Any("process", pr))
+		logger.SDebug("isThisStreamGoing: stream already ongoing", zap.Reflect("process", pr))
 		return true
 	}
 	if found {

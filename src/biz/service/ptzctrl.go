@@ -13,7 +13,7 @@ import (
 
 func (s *CommandService) PtzCtrl(ctx context.Context, camera *db.Camera, req *events.PtzCtrlRequest) error {
 	logger.SInfo("requested to perform PTZ Control",
-		zap.Any("request", req),
+		zap.Reflect("request", req),
 		zap.String("camera_id", req.CameraId))
 
 	if err := s.requestRemoteControl(ctx, camera, req); err != nil {

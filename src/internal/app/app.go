@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"os/signal"
 	"time"
@@ -18,10 +17,10 @@ func Run(shutdownTimeout time.Duration, registration RegistrationFunc) {
 	configs.Init(ctx)
 
 	globalConfigs := configs.Get()
-	configsBytes, _ := json.Marshal(globalConfigs)
 
 	loggerConfigs := globalConfigs.Logger
-	logger.Init(ctx, logger.WithGlobalConfigs(&loggerConfigs))
+	logger.Init(ctx,
+		logger.WithGlobalConfigs(&loggerConfigs))
 
 	options := registration(
 		globalConfigs,
@@ -32,9 +31,8 @@ func Run(shutdownTimeout time.Duration, registration RegistrationFunc) {
 		optioner(&opts)
 	}
 
-	logger := zap.L()
-	logger.Info("application starting",
-		zap.Any("configs", json.RawMessage(configsBytes)))
+	logger.SInfo("application starting",
+		zap.Reflect("configs", globalConfigs))
 
 	if opts.factoryHook != nil {
 		if err := opts.factoryHook(ctx); err != nil {
@@ -65,9 +63,6 @@ func Run(shutdownTimeout time.Duration, registration RegistrationFunc) {
 	if opts.shutdownHook != nil {
 		opts.shutdownHook(ctx)
 	}
-
-	zap.L().
-		Sync()
 	logger.Info("application shutdown complete")
 }
 

@@ -45,7 +45,7 @@ func (s *CommandService) Shutdown() {
 
 func (s *CommandService) DeviceInfo(ctx context.Context, camera *db.Camera) (*hikvision.SystemDeviceInfoResponse, error) {
 	logger.SDebug("requested retrieving device info",
-		zap.Any("camera_id", camera.CameraId))
+		zap.Reflect("camera_id", camera.CameraId))
 	info, err := s.hikvisionClient.System(&hikvision.Credentials{
 		Ip:       camera.Ip,
 		Username: camera.Username,
@@ -57,15 +57,15 @@ func (s *CommandService) DeviceInfo(ctx context.Context, camera *db.Camera) (*hi
 		return nil, err
 	}
 	logger.SInfo("retrieved device info",
-		zap.Any("info", info),
-		zap.Any("camera_id", camera.CameraId))
+		zap.Reflect("info", info),
+		zap.Reflect("camera_id", camera.CameraId))
 	return info, nil
 }
 
 func (s *CommandService) StartFfmpegStream(ctx context.Context, camera *db.Camera, req *events.CommandStartStreamInfo) error {
 	logger.SDebug("requested to start RTSP to SRT transcoding stream",
-		zap.Any("camera_id", camera.CameraId),
-		zap.Any("request", req))
+		zap.Reflect("camera_id", camera.CameraId),
+		zap.Reflect("request", req))
 
 	m := GetStreamManagementService().
 		MediaService()
@@ -76,13 +76,13 @@ func (s *CommandService) StartFfmpegStream(ctx context.Context, camera *db.Camer
 	}
 
 	logger.SInfo("started transcoding stream",
-		zap.Any("camera_id", req.CameraId))
+		zap.Reflect("camera_id", req.CameraId))
 	return nil
 }
 
 func (s *CommandService) EndFfmpegStream(ctx context.Context, camera *db.Camera, req *events.CommandEndStreamInfo) error {
 	logger.SDebug("requested to end transcoding stream",
-		zap.Any("camera", camera))
+		zap.Reflect("camera", camera))
 
 	m := GetStreamManagementService().
 		MediaService()
@@ -92,6 +92,6 @@ func (s *CommandService) EndFfmpegStream(ctx context.Context, camera *db.Camera,
 			zap.Error(err))
 		return nil
 	}
-	logger.SInfo("ended transcoding stream", zap.Any("cameraId", req.CameraId))
+	logger.SInfo("ended transcoding stream", zap.Reflect("cameraId", req.CameraId))
 	return nil
 }
