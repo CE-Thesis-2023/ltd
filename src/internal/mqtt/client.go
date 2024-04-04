@@ -29,7 +29,11 @@ func InitClient(ctx context.Context, options ...ClientOptioner) {
 
 		globalConfigs := opts.globalConfigs
 		connUrl := url.URL{}
-		connUrl.Scheme = "mqtt"
+		if globalConfigs.Tls.IsEnabled() {
+			connUrl.Scheme = "tls"
+		} else {
+			connUrl.Scheme = "mqtt"
+		}
 		hostname := globalConfigs.Host
 
 		if globalConfigs.Port > 0 {

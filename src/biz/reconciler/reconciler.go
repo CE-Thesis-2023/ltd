@@ -52,7 +52,7 @@ func (c *Reconciler) Run(ctx context.Context) {
 				zap.Error(err))
 			return
 		}
-		time.Sleep(10 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
 }
 

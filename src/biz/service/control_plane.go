@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"io"
+	"net/http"
 	"time"
 
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
@@ -22,6 +24,11 @@ func NewControlPlaneService(configs *configs.DeviceInfoConfigs) *ControlPlaneSer
 	clientConfigs := builder.Config()
 	clientConfigs.SetTimeout(10 * time.Second)
 	clientConfigs.SetFollowRedirects(true)
+	clientConfigs.SetCustomTransport(&http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	})
 	return &ControlPlaneService{client: builder.Build(), basePath: "/api/private"}
 }
 
