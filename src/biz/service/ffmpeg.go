@@ -51,7 +51,7 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 			command)
 
 		logger.SInfo("starting transcoding stream")
-		if err := command.Run(); err != nil {
+		if err := command.Start(); err != nil {
 			logger.SError("failed to run FFmpeg process", zap.Error(err))
 			return err
 		}
@@ -75,6 +75,7 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 		delete(s.onGoingProcesses, req.CameraId)
 		return err
 	}
+
 	return nil
 }
 
@@ -125,7 +126,7 @@ func (s *mediaService) buildFfmpegRestreamingCommand(sourceUrl string, destinati
 
 	logger.SDebug("FFmpeg command", zap.String("command", execCmd))
 
-	return exec.Command(execCmd)
+	return exec.Command("/bin/bash", "-c", execCmd)
 }
 
 func (s *mediaService) shouldRestartStream(err error, camera *db.Camera) bool {

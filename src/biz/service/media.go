@@ -37,18 +37,20 @@ func NewMediaService() MediaServiceInterface {
 }
 
 func (s *mediaService) Shutdown() {
-	logger.SInfo("mediaService.Shutdown: shutdown received")
+	logger.SInfo("shutting down media service")
 	for cameraId, p := range s.onGoingProcesses {
 		if p.proc != nil {
-			if err := p.proc.Cancel(); err != nil {
-				logger.SDebug("mediaService.Shutdown: cancel process", zap.Error(err))
-				continue
+			if p.proc.Cancel != nil {
+				if err := p.proc.Cancel(); err != nil {
+					logger.SDebug("error shutting down FFmpeg process", zap.Error(err))
+					continue
+				}
+				delete(s.onGoingProcesses, cameraId)
+				logger.SDebug("shutdown FFmpeg process", zap.String("cameraId", cameraId))
 			}
 		}
-		delete(s.onGoingProcesses, cameraId)
-		logger.SDebug("mediaService.Shutdown: canceled stream", zap.String("cameraId", cameraId))
 	}
-	logger.SDebug("mediaService.Shutdown: released streaming pool")
+	logger.SDebug("released streaming pool")
 }
 
 type MediaServiceInterface interface {

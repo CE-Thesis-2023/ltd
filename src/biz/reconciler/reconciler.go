@@ -44,7 +44,6 @@ func NewReconciler(controlPlaneService *service.ControlPlaneService, deviceInfo 
 	}
 }
 
-// Runs an event loop that listens for events and processes them
 func (c *Reconciler) Run(ctx context.Context) {
 	logger.SInfo("reconciler loop started")
 	if err := c.initApplication(ctx); err != nil {
@@ -140,9 +139,6 @@ func (c *Reconciler) matchCameras(updatedCameras []db.Camera, onRemove func(c *d
 			}
 		}
 	}
-	logger.SDebug("cameras merged",
-		zap.Reflect("old", c.cameras),
-		zap.Reflect("new", merged))
 	c.cameras = merged
 	return nil
 }
