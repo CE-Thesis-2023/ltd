@@ -14,14 +14,11 @@ import (
 
 type CommandService struct {
 	hikvisionClient hikvision.Client
-
-	streamManagementService StreamManagementServiceInterface
 }
 
 func NewCommandService() *CommandService {
 	return &CommandService{
 		hikvisionClient:         factory.Hikvision(),
-		streamManagementService: GetStreamManagementService(),
 	}
 }
 

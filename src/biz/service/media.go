@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"os/exec"
+	"sync"
+
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
 	"github.com/CE-Thesis-2023/ltd/src/models/rest"
 	"go.uber.org/zap"
-	"os/exec"
 )
 
 type onGoingProcess struct {
@@ -25,6 +27,7 @@ func (c *onGoingProcess) Cancel(ctx context.Context) error {
 
 type mediaService struct {
 	onGoingProcesses map[string]*onGoingProcess
+	mu               sync.Mutex
 }
 
 func newMediaService() MediaServiceInterface {
@@ -33,7 +36,7 @@ func newMediaService() MediaServiceInterface {
 	}
 }
 
-func (s mediaService) Shutdown() {
+func (s *mediaService) Shutdown() {
 	logger.SInfo("mediaService.Shutdown: shutdown received")
 	for cameraId, p := range s.onGoingProcesses {
 		if p.proc != nil {

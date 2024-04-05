@@ -9,7 +9,6 @@ import (
 
 	"github.com/CE-Thesis-2023/ltd/src/helper"
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
-	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
@@ -19,54 +18,59 @@ import (
 )
 
 func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Camera, req *events.CommandStartStreamInfo) error {
-	logger.SDebug("RequestFFmpegRtspToSrt", zap.String("request", req.CameraId))
+	logger.SInfo("requested starting to perform RTSP to SRT transcoding stream", zap.String("request", req.CameraId))
 
-	sourceUrl := s.buildRtspStreamUrl(camera, req)
-	logger.SDebug("RequestFFmpegRtspToSrt: source RTSP",
-		zap.String("source/", sourceUrl))
+	sourceUrl := s.buildRtspStreamUrl(camera)
+	logger.SDebug("RTSP source stream URL",
+		zap.String("source", sourceUrl))
 
 	destinationUrl := s.buildPushSrtUrl(&ms.PushStreamingRequest{
 		StreamName: req.CameraId,
 	})
-	logger.SDebug("RequestFFmpegRtspToSrt: destination SRT", zap.String("destination", destinationUrl))
+	logger.SDebug("SRT destination stream URL",
+		zap.String("destination", destinationUrl))
 
-	if s.isThisStreamGoing(ctx, camera, sourceUrl, destinationUrl) {
+	if s.isThisStreamGoing(camera) {
 		logger.SInfo("RequestFFmpegRtspToSrt: stream already exists")
 		return nil
 	}
 
 	command := s.buildFfmpegRestreamingCommand(sourceUrl, destinationUrl)
-	logger.SDebug("RequestFFmpegRtspToSrt: commanđ", zap.String("command", command.String()))
+	logger.SDebug("transcoding stream FFmpeg command",
+		zap.String("command", command.String()))
 
 	go func() {
 		helper.Do(func() error {
 			compiledGoCommand := command.Compile()
 
-			s.recordThisStream(ctx, camera, sourceUrl, destinationUrl, compiledGoCommand)
-			logger.SDebug("RequestFFmpegRtspToSrt: reported this stream into memory")
+			s.recordThisStream(camera,
+				sourceUrl,
+				destinationUrl,
+				compiledGoCommand)
 
-			logger.SDebug("RequestFFmpegRtspToSrt: start FFMPEG process")
+			logger.SInfo("starting transcoding stream")
 			if err := compiledGoCommand.Run(); err != nil {
-				logger.SError("RequestFFmpegRtspToSrt: FFMPEG process error", zap.Error(err))
+				logger.SError("failed to run FFmpeg process", zap.Error(err))
 				return err
 			}
-			logger.SInfo("RequestFFmpegRtspToSrt: FFMPEG process finished")
+			logger.SInfo("transcoding stream ended")
 
 			return nil
-		}, helper.Attempts(3),
+		},
+			helper.Attempts(3),
 			helper.RetryIf(func(err error) bool {
-				if s.shouldRestartStream(err, camera, sourceUrl, destinationUrl) {
-					logger.SInfo("RequestFFmpegRtspToSrt: restarting stream")
+				if s.shouldRestartStream(err, camera) {
+					logger.SInfo("will restart transcoding stream",
+						zap.String("camera_id", camera.CameraId))
 					return true
 				}
-				logger.SInfo("RequestFFmpegRtspToSrt: will not restart stream")
+				logger.SInfo("transcoding stream will not restart",
+					zap.String("camera_id", camera.CameraId))
 				return false
 			}))
-		logger.SInfo("RequestFFmpegRtspToSrt: stream attempted 3 times, will disappear")
 		delete(s.onGoingProcesses, req.CameraId)
 	}()
 
-	logger.SDebug("RequestFFmpegRtspToSrt: assigned task")
 	return nil
 }
 
@@ -97,10 +101,7 @@ func (s *mediaService) buildFfmpegRestreamingCommand(sourceUrl string, destinati
 	return cmd
 }
 
-func (s *mediaService) shouldRestartStream(err error, camera *db.Camera, sourceUrl string, destinationUrl string) bool {
-	logger.SDebug("shouldRestartStream",
-		zap.String("source", sourceUrl),
-		zap.String("destination", destinationUrl))
+func (s *mediaService) shouldRestartStream(err error, camera *db.Camera) bool {
 	_, found := s.onGoingProcesses[camera.CameraId]
 	if found && err != nil {
 		return true
@@ -108,7 +109,9 @@ func (s *mediaService) shouldRestartStream(err error, camera *db.Camera, sourceU
 	return false
 }
 
-func (s *mediaService) recordThisStream(ctx context.Context, camera *db.Camera, sourceUrl string, destinationUrl string, proc *exec.Cmd) {
+func (s *mediaService) recordThisStream(camera *db.Camera, sourceUrl string, destinationUrl string, proc *exec.Cmd) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.onGoingProcesses[camera.CameraId] = &onGoingProcess{
 		SourceUrl:      sourceUrl,
 		DestinationUrl: destinationUrl,
@@ -116,7 +119,7 @@ func (s *mediaService) recordThisStream(ctx context.Context, camera *db.Camera, 
 	}
 }
 
-func (s *mediaService) isThisStreamGoing(ctx context.Context, camera *db.Camera, sourceUrl string, destinationUrl string) bool {
+func (s *mediaService) isThisStreamGoing(camera *db.Camera) bool {
 	pr, found := s.onGoingProcesses[camera.CameraId]
 	if pr != nil {
 		logger.SDebug("isThisStreamGoing: stream already ongoing", zap.Reflect("process", pr))
@@ -139,26 +142,32 @@ func (s *mediaService) isThisStreamGoing(ctx context.Context, camera *db.Camera,
 }
 
 func (s *mediaService) CancelFFmpegRtspToSrt(ctx context.Context, camera *db.Camera) error {
-	logger.SDebug("CancelFFmpegRtspToSrt: cancel", zap.String("cameraId", camera.CameraId))
+	logger.SInfo("requested canceling RTSP to SRT transcoding stream",
+		zap.String("camera_id", camera.CameraId))
+
 	onGoingProcess, yes := s.onGoingProcesses[camera.CameraId]
 	if !yes {
-		logger.SDebug("CancelFFmpegRtspToSrt: stream already canceled or not found")
-		return custerror.ErrorPermissionDenied
+		logger.SError("transcoding stream not found",
+			zap.String("camera_id", camera.CameraId))
+		return nil
 	}
-
 	delete(s.onGoingProcesses, camera.CameraId)
 
-	logger.SDebug("CancelFFmpegRtspToSrt: canceling stream process")
+	logger.SDebug("canceling transcoding stream",
+		zap.String("camera_id", camera.CameraId))
 	if err := onGoingProcess.Cancel(ctx); err != nil {
-		logger.SError("CancelFFmpegRtspToSrt: Cancel", zap.Error(err))
+		logger.SError("failed to cancel transcoding stream",
+			zap.String("camera_id", camera.CameraId),
+			zap.Error(err))
 		return err
 	}
 
-	logger.SDebug("CancelFFmpegRtspToSrt: stream canceled", zap.String("cameraId", camera.CameraId))
+	logger.SInfo("canceled transcoding stream",
+		zap.String("camera_id", camera.CameraId))
 	return nil
 }
 
-func (s *mediaService) buildRtspStreamUrl(camera *db.Camera, req *events.CommandStartStreamInfo) string {
+func (s *mediaService) buildRtspStreamUrl(camera *db.Camera) string {
 	u := &url.URL{}
 	u.Scheme = "rtsp"
 	u.Host = camera.Ip

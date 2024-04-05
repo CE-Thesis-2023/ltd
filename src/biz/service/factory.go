@@ -9,14 +9,13 @@ import (
 var once sync.Once
 
 var (
-	streamManagementService *StreamManagementService
-	commandService          *CommandService
-	controlPlaneService     *ControlPlaneService
+	sms                 *StreamManagementService
+	commandService      *CommandService
+	controlPlaneService *ControlPlaneService
 )
 
 func Init() {
 	once.Do(func() {
-		streamManagementService = NewStreamManagementService()
 		commandService = NewCommandService()
 		controlPlaneService = NewControlPlaneService(&configs.Get().DeviceInfo)
 	})
@@ -27,7 +26,7 @@ func GetCommandService() *CommandService {
 }
 
 func GetStreamManagementService() *StreamManagementService {
-	return streamManagementService
+	return sms
 }
 
 func GetControlPlaneService() *ControlPlaneService {
@@ -35,7 +34,7 @@ func GetControlPlaneService() *ControlPlaneService {
 }
 
 func Shutdown() {
-	GetStreamManagementService().
+	sms.
 		MediaService().
 		Shutdown()
 }
