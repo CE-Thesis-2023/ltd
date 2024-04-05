@@ -49,8 +49,7 @@ func (s *CommandService) StartFfmpegStream(ctx context.Context, camera *db.Camer
 		zap.Reflect("camera_id", camera.CameraId),
 		zap.Reflect("request", req))
 
-	m := GetStreamManagementService().
-		MediaService()
+	m := GetMediaService()
 	err := m.RequestFFmpegRtspToSrt(ctx, camera, req)
 	if err != nil {
 		logger.SError("failed to start RTSP to SRT transcoding stream", zap.Error(err))
@@ -66,8 +65,7 @@ func (s *CommandService) EndFfmpegStream(ctx context.Context, camera *db.Camera,
 	logger.SDebug("requested to end transcoding stream",
 		zap.Reflect("camera", camera))
 
-	m := GetStreamManagementService().
-		MediaService()
+	m := GetMediaService()
 	err := m.CancelFFmpegRtspToSrt(ctx, camera)
 	if err != nil {
 		logger.SError("failed to end RTSP to SRT transcoding stream",

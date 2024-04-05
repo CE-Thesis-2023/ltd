@@ -30,7 +30,7 @@ type mediaService struct {
 	mu               sync.Mutex
 }
 
-func newMediaService() MediaServiceInterface {
+func NewMediaService() MediaServiceInterface {
 	return &mediaService{
 		onGoingProcesses: map[string]*onGoingProcess{},
 	}

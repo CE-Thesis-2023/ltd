@@ -109,33 +109,40 @@ func (c *Reconciler) reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (c *Reconciler) matchCameras(updatedCameras []db.Camera, onRemove func(c *db.Camera) error, checkUpdates func(old *db.Camera, updated *db.Camera) error, onAddition func(c *db.Camera)) error {
+func (c *Reconciler) matchCameras(updatedCameras []db.Camera, onRemove func(c *db.Camera) error, checkUpdates func(old *db.Camera, updated *db.Camera) error, onAddition func(c *db.Camera) error) error {
 	mappedUpdatedDevices := make(map[string]*db.Camera)
 	for _, camera := range updatedCameras {
 		mappedUpdatedDevices[camera.CameraId] = &camera
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	for cameraId, camera := range mappedUpdatedDevices {
-		if old, found := c.cameras[cameraId]; !found {
-			onAddition(camera)
-		} else {
-			if err := checkUpdates(old, camera); err != nil {
-				return err
+	merged := make(map[string]*db.Camera)
+	for cameraId, new := range mappedUpdatedDevices {
+		if old, found := c.cameras[cameraId]; found {
+			if err := checkUpdates(old, new); err != nil {
+				merged[cameraId] = old
+			} else {
+				merged[cameraId] = new
 			}
-			delete(c.cameras, cameraId)
+		} else {
+			if err := onAddition(new); err != nil {
+			} else {
+				merged[cameraId] = new
+			}
 		}
 	}
-	for _, camera := range c.cameras {
-		if err := onRemove(camera); err != nil {
-			return err
+	for cameraId, old := range c.cameras {
+		if _, found := mappedUpdatedDevices[cameraId]; !found {
+			if err := onRemove(old); err != nil {
+				merged[cameraId] = old
+			}
 		}
 	}
-	c.cameras = mappedUpdatedDevices
+	c.cameras = merged
 	return nil
 }
 
-func (c *Reconciler) onAddition(camera *db.Camera) {
+func (c *Reconciler) onAddition(camera *db.Camera) error {
 	logger.SInfo("camera added",
 		zap.String("id", camera.CameraId))
 
@@ -147,8 +154,9 @@ func (c *Reconciler) onAddition(camera *db.Camera) {
 		}); err != nil {
 		logger.SError("failed to start ffmpeg stream",
 			zap.Error(err))
-		return
+		return err
 	}
+	return nil
 }
 
 func (c *Reconciler) onRemove(camera *db.Camera) error {

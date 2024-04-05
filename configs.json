@@ -32,8 +32,5 @@
     "publishPorts": {
       "srt": 8890
     }
-  },
-  "ffmpeg": {
-    "binaryPath": "/usr/bin/ffmpeg"
   }
 }

@@ -23,7 +23,10 @@ func (s *mediaService) buildPushSrtUrl(req *ms.PushStreamingRequest) string {
 	queries := streamUrl.Query()
 	queries.Add("streamid", fmt.Sprintf("publish:%s", req.StreamName))
 	rawQuery, err := url.QueryUnescape(queries.Encode())
-	logger.SError("buildPushSrtUrl: err = %s", zap.Error(err))
+	if err != nil {
+		logger.SError("failed to unescape SRT input stream parameters",
+			zap.Error(err))
+	}
 	streamUrl.RawQuery = rawQuery
 
 	url := streamUrl.String()

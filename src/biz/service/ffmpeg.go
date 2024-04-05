@@ -44,36 +44,36 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 		return custerror.FormatInternalError("failed to build FFmpeg os/exec command")
 	}
 
-	go func() {
-		helper.Do(func() error {
-			s.recordThisStream(camera,
-				sourceUrl,
-				destinationUrl,
-				command)
+	if err := helper.Do(func() error {
+		s.recordThisStream(camera,
+			sourceUrl,
+			destinationUrl,
+			command)
 
-			logger.SInfo("starting transcoding stream")
-			if err := command.Run(); err != nil {
-				logger.SError("failed to run FFmpeg process", zap.Error(err))
-				return err
-			}
-			logger.SInfo("transcoding stream ended")
+		logger.SInfo("starting transcoding stream")
+		if err := command.Run(); err != nil {
+			logger.SError("failed to run FFmpeg process", zap.Error(err))
+			return err
+		}
+		logger.SInfo("transcoding stream ended")
 
-			return nil
-		},
-			helper.Attempts(3),
-			helper.RetryIf(func(err error) bool {
-				if s.shouldRestartStream(err, camera) {
-					logger.SInfo("will restart transcoding stream",
-						zap.String("camera_id", camera.CameraId))
-					return true
-				}
-				logger.SInfo("transcoding stream will not restart",
+		return nil
+	},
+		helper.Attempts(3),
+		helper.RetryIf(func(err error) bool {
+			if s.shouldRestartStream(err, camera) {
+				logger.SInfo("will restart transcoding stream",
 					zap.String("camera_id", camera.CameraId))
-				return false
-			}))
+				return true
+			}
+			logger.SInfo("transcoding stream will not restart",
+				zap.String("camera_id", camera.CameraId))
+			return false
+		})); err != nil {
+		logger.SError("failed to start transcoding stream",
+			zap.Error(err))
 		delete(s.onGoingProcesses, req.CameraId)
-	}()
-
+	}
 	return nil
 }
 
