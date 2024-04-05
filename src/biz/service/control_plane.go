@@ -1,40 +1,45 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"time"
-
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
+	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/models/db"
-	fastshot "github.com/opus-domini/fast-shot"
+	"go.uber.org/zap"
+	"io"
+	"net/http"
+	"net/url"
 )
 
 type ControlPlaneService struct {
-	client   fastshot.ClientHttpMethods
-	basePath string
+	baseUrl           *url.URL
+	httpClient        *http.Client
+	basicAuthUser     string
+	basicAuthPassword string
 }
 
 func NewControlPlaneService(configs *configs.DeviceInfoConfigs) *ControlPlaneService {
-	builder := fastshot.NewClient(configs.CloudApiServer)
-	authConfigs := builder.Auth()
-	if configs.Username != "" && configs.Password != "" {
-		authConfigs.BasicAuth(configs.Username, configs.Password)
+	baseUrl, err := url.Parse(configs.CloudApiServer + "/private")
+	if err != nil {
+		logger.SFatal("unable to parse base url", zap.Error(err))
 	}
-	clientConfigs := builder.Config()
-	clientConfigs.SetTimeout(10 * time.Second)
-	clientConfigs.SetFollowRedirects(true)
-	clientConfigs.SetCustomTransport(&http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
+	client := http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
 		},
-	})
-	return &ControlPlaneService{client: builder.Build(), basePath: "/private"}
+	}
+	return &ControlPlaneService{
+		baseUrl:           baseUrl,
+		httpClient:        &client,
+		basicAuthUser:     configs.Username,
+		basicAuthPassword: configs.Password}
 }
 
 type RegistrationRequest struct {
@@ -42,21 +47,40 @@ type RegistrationRequest struct {
 }
 
 func (s *ControlPlaneService) RegisterDevice(ctx context.Context, req *RegistrationRequest) error {
-	response, err := s.client.POST(s.basePath+"/registers").
-		Context().Set(ctx).
-		Body().AsJSON(req).
-		Retry().Set(2, 5*time.Second).
-		Send()
+	logger.SDebug("registering device",
+		zap.String("device_id", req.DeviceId),
+		zap.Reflect("request", req))
+
+	bodyBytes, err := json.Marshal(req)
+	if err != nil {
+		return custerror.FormatInternalError("unable to marshal request: %s", err)
+	}
+	body := bytes.NewReader(bodyBytes)
+	httpRequest, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		s.baseUrl.String()+"/registers",
+		body)
+	if err != nil {
+		return custerror.FormatInternalError("unable to create http request: %s", err)
+	}
+	httpRequest.SetBasicAuth(s.basicAuthUser, s.basicAuthPassword)
+	httpRequest.Header.Set("Content-Type", "application/json")
+
+	response, err := s.httpClient.Do(httpRequest)
 	if err != nil {
 		return err
 	}
-	if response.Is2xxSuccessful() {
+	switch response.StatusCode {
+	case 200:
 		return nil
-	}
-	if response.Is4xxClientError() {
+	case 400:
+		return custerror.ErrorInvalidArgument
+	case 409:
 		return custerror.ErrorAlreadyExists
+	default:
+		return custerror.ErrorInternal
 	}
-	return custerror.ErrorInternal
 }
 
 type GetAssignedDevicesRequest struct {
@@ -68,25 +92,39 @@ type GetAssignedDevicesResponse struct {
 }
 
 func (s *ControlPlaneService) GetAssignedDevices(ctx context.Context, req *GetAssignedDevicesRequest) (*GetAssignedDevicesResponse, error) {
-	path := s.basePath + fmt.Sprintf("/transcoders/%s/cameras", req.DeviceId)
-	response, err := s.client.GET(path).
-		Context().Set(ctx).
-		Query().AddParam("id", req.DeviceId).
-		Retry().Set(2, 5*time.Second).
-		Send()
+	path := s.baseUrl.JoinPath(fmt.Sprintf("/transcoders/%s/cameras", req.DeviceId))
+	request, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		path.String(),
+		nil)
 	if err != nil {
 		return nil, err
 	}
-	if response.StatusCode() != 200 {
+	request.SetBasicAuth(s.basicAuthUser, s.basicAuthPassword)
+	response, err := s.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	switch response.StatusCode {
+	case 200:
+		defer response.
+			Body.
+			Close()
+		bodyBytes, err := io.ReadAll(response.Body)
+		if err != nil {
+			return nil, custerror.FormatInternalError("unable to read response body: %s", err)
+		}
+		var resp GetAssignedDevicesResponse
+		if err := json.Unmarshal(bodyBytes, &resp); err != nil {
+			return nil, err
+		}
+		return &resp, nil
+	case 400:
+		return nil, custerror.ErrorInvalidArgument
+	case 404:
+		return nil, custerror.ErrorNotFound
+	default:
 		return nil, custerror.ErrorInternal
 	}
-	bodyBytes, err := io.ReadAll(response.RawBody())
-	if err != nil {
-		return nil, custerror.FormatInternalError("unable to read response body: %s", err)
-	}
-	var resp GetAssignedDevicesResponse
-	if err := json.Unmarshal(bodyBytes, &resp); err != nil {
-		return nil, err
-	}
-	return &resp, nil
 }
