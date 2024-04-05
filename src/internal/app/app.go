@@ -52,18 +52,31 @@ func Run(shutdownTimeout time.Duration, registration RegistrationFunc) {
 	}
 
 	if reconciler != nil {
-		go reconciler.Run(reconcilerContext)
+		go func() {
+			reconciler.Run(reconcilerContext)
+			cancel()
+		}()
 	}
 
-	<-quit
-	cancel()
-	ctx, cancel = context.WithTimeout(context.Background(), shutdownTimeout)
-	defer cancel()
+	defer func() {
+		cancel()
+		ctx, cancel = context.WithTimeout(context.Background(), shutdownTimeout)
+		defer cancel()
 
-	if opts.shutdownHook != nil {
-		opts.shutdownHook(ctx)
+		if opts.shutdownHook != nil {
+			opts.shutdownHook(ctx)
+		}
+		logger.Info("application shutdown complete")
+	}()
+
+	for {
+		select {
+		case <-quit:
+			return
+		case <-reconcilerContext.Done():
+			return
+		}
 	}
-	logger.Info("application shutdown complete")
 }
 
 type RegistrationFunc func(configs *configs.Configs, logger *zap.Logger) []Optioner

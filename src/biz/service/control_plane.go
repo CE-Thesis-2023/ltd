@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -67,7 +68,8 @@ type GetAssignedDevicesResponse struct {
 }
 
 func (s *ControlPlaneService) GetAssignedDevices(ctx context.Context, req *GetAssignedDevicesRequest) (*GetAssignedDevicesResponse, error) {
-	response, err := s.client.GET(s.basePath+"/transcoders/:id/cameras").
+	path := s.basePath + fmt.Sprintf("/transcoders/%s/cameras", req.DeviceId)
+	response, err := s.client.GET(path).
 		Context().Set(ctx).
 		Query().AddParam("id", req.DeviceId).
 		Retry().Set(2, 5*time.Second).
