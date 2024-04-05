@@ -2,16 +2,12 @@ package service
 
 import (
 	"context"
-	"crypto/tls"
-	"net/http"
 
 	"github.com/CE-Thesis-2023/ltd/src/helper/factory"
-	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	"github.com/CE-Thesis-2023/ltd/src/internal/hikvision"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
-	fastshot "github.com/opus-domini/fast-shot"
 
 	"go.uber.org/zap"
 )
@@ -19,28 +15,17 @@ import (
 type CommandService struct {
 	hikvisionClient hikvision.Client
 
-	backendHttpPrivateClient fastshot.ClientHttpMethods
-
 	streamManagementService StreamManagementServiceInterface
 }
 
 func NewCommandService() *CommandService {
-	configs := configs.Get().DeviceInfo
-	backendClient := fastshot.NewClient(configs.CloudApiServer).
-		Auth().BasicAuth(configs.Username, configs.Password).
-		Config().SetCustomTransport(&http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}).
-		Build()
 	return &CommandService{
-		hikvisionClient:          factory.Hikvision(),
-		streamManagementService:  GetStreamManagementService(),
-		backendHttpPrivateClient: backendClient,
+		hikvisionClient:         factory.Hikvision(),
+		streamManagementService: GetStreamManagementService(),
 	}
 }
 
 func (s *CommandService) Shutdown() {
-	return
 }
 
 func (s *CommandService) DeviceInfo(ctx context.Context, camera *db.Camera) (*hikvision.SystemDeviceInfoResponse, error) {

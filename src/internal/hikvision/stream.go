@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
-	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
+	"net/http"
+	"net/url"
 
-	fastshot "github.com/opus-domini/fast-shot"
+	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
 )
 
 type StreamsApiInterface interface {
@@ -15,7 +16,9 @@ type StreamsApiInterface interface {
 }
 
 type streamApiClient struct {
-	restClient fastshot.ClientHttpMethods
+	httpClient *http.Client
+	username   string
+	password   string
 }
 
 func (c *streamApiClient) getBaseUrl() string {
@@ -32,24 +35,33 @@ type StreamingChannelList struct {
 }
 
 func (c *streamApiClient) Channels(ctx context.Context, req *StreamChannelsRequest) (*StreamingChannelList, error) {
-	url := fmt.Sprintf("%s/channels", c.getBaseUrl())
+	baseUrl := fmt.Sprintf("%s/channels", c.getBaseUrl())
 	if req.ChannelId != "" {
-		url = fmt.Sprintf("%s/%s", url, req.ChannelId)
+		baseUrl = fmt.Sprintf("%s/%s", baseUrl, req.ChannelId)
 	}
+	p, _ := url.Parse(baseUrl)
 
-	resp, err := c.restClient.GET(url).
-		Context().Set(ctx).
-		Send()
+	request, err := custhttp.NewHttpRequest(
+		ctx,
+		p,
+		http.MethodGet,
+		custhttp.WithBasicAuth(c.username, c.password),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := handleError(&resp); err != nil {
+	resp, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := handleError(resp); err != nil {
 		return nil, err
 	}
 
 	var parsedResp StreamingChannelList
-	if err := custhttp.XMLResponse(&resp, &parsedResp); err != nil {
+	if err := custhttp.XMLResponse(resp, &parsedResp); err != nil {
 		return nil, err
 	}
 
@@ -57,21 +69,29 @@ func (c *streamApiClient) Channels(ctx context.Context, req *StreamChannelsReque
 }
 
 func (c *streamApiClient) Status(ctx context.Context, req *StreamingStatusRequest) (*StreamingStatusResponse, error) {
-	url := fmt.Sprintf("%s/status", c.getBaseUrl())
+	p, _ := url.Parse(fmt.Sprintf("%s/status", c.getBaseUrl()))
 
-	resp, err := c.restClient.GET(url).
-		Context().Set(ctx).
-		Send()
+	request, err := custhttp.NewHttpRequest(
+		ctx,
+		p,
+		http.MethodGet,
+		custhttp.WithBasicAuth(c.username, c.password),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := handleError(&resp); err != nil {
+	resp, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := handleError(resp); err != nil {
 		return nil, err
 	}
 
 	var parsedResp StreamingStatusResponse
-	if err := custhttp.XMLResponse(&resp, &parsedResp); err != nil {
+	if err := custhttp.XMLResponse(resp, &parsedResp); err != nil {
 		return nil, err
 	}
 

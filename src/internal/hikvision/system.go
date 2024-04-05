@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
+	"net/http"
+	"net/url"
 	"time"
 
 	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
-
-	fastshot "github.com/opus-domini/fast-shot"
 )
 
 type SystemApiInterface interface {
@@ -19,7 +19,9 @@ type SystemApiInterface interface {
 }
 
 type systemApiClient struct {
-	restClient fastshot.ClientHttpMethods
+	httpClient *http.Client
+	username   string
+	password   string
 }
 
 func (c *systemApiClient) getBaseUrl() string {
@@ -30,21 +32,29 @@ type SystemCapabilitiesResponse struct {
 }
 
 func (c *systemApiClient) Capabilities(ctx context.Context) (*SystemCapabilitiesResponse, error) {
-	p := fmt.Sprintf("%s/capabilities", c.getBaseUrl())
+	p, _ := url.Parse(fmt.Sprintf("%s/capabilities", c.getBaseUrl()))
 
-	resp, err := c.restClient.GET(p).
-		Context().Set(ctx).
-		Send()
+	request, err := custhttp.NewHttpRequest(
+		ctx,
+		p,
+		http.MethodGet,
+		custhttp.WithBasicAuth(c.username, c.password),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := handleError(&resp); err != nil {
+	resp, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := handleError(resp); err != nil {
 		return nil, err
 	}
 
 	var parsedResp SystemCapabilitiesResponse
-	if err := custhttp.XMLResponse(&resp, &parsedResp); err != nil {
+	if err := custhttp.XMLResponse(resp, &parsedResp); err != nil {
 		return nil, err
 	}
 
@@ -52,21 +62,29 @@ func (c *systemApiClient) Capabilities(ctx context.Context) (*SystemCapabilities
 }
 
 func (c *systemApiClient) DeviceInfo(ctx context.Context) (*SystemDeviceInfoResponse, error) {
-	p := fmt.Sprintf("%s/deviceinfo", c.getBaseUrl())
+	p, _ := url.Parse(fmt.Sprintf("%s/deviceinfo", c.getBaseUrl()))
 
-	resp, err := c.restClient.GET(p).
-		Context().Set(ctx).
-		Send()
+	request, err := custhttp.NewHttpRequest(
+		ctx,
+		p,
+		http.MethodGet,
+		custhttp.WithBasicAuth(c.username, c.password),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := handleError(&resp); err != nil {
+	resp, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := handleError(resp); err != nil {
 		return nil, err
 	}
 
 	var parsedResp SystemDeviceInfoResponse
-	if err := custhttp.XMLResponse(&resp, &parsedResp); err != nil {
+	if err := custhttp.XMLResponse(resp, &parsedResp); err != nil {
 		return nil, err
 	}
 
@@ -77,20 +95,28 @@ type SystemHardwareResponse struct {
 }
 
 func (c *systemApiClient) Hardware(ctx context.Context) (*SystemHardwareResponse, error) {
-	p := fmt.Sprintf("%s/Hardware", c.getBaseUrl())
-	resp, err := c.restClient.GET(p).
-		Context().Set(ctx).
-		Send()
+	p, _ := url.Parse(fmt.Sprintf("%s/Hardware", c.getBaseUrl()))
+	request, err := custhttp.NewHttpRequest(
+		ctx,
+		p,
+		http.MethodGet,
+		custhttp.WithBasicAuth(c.username, c.password),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := handleError(&resp); err != nil {
+	resp, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := handleError(resp); err != nil {
 		return nil, err
 	}
 
 	var parsedResp SystemHardwareResponse
-	if err := custhttp.XMLResponse(&resp, &parsedResp); err != nil {
+	if err := custhttp.XMLResponse(resp, &parsedResp); err != nil {
 		return nil, err
 	}
 
@@ -98,20 +124,28 @@ func (c *systemApiClient) Hardware(ctx context.Context) (*SystemHardwareResponse
 }
 
 func (c *systemApiClient) Status(ctx context.Context) (*SystemStatus, error) {
-	p := fmt.Sprintf("%s/status", c.getBaseUrl())
-	resp, err := c.restClient.GET(p).
-		Context().Set(ctx).
-		Send()
+	p, _ := url.Parse(fmt.Sprintf("%s/status", c.getBaseUrl()))
+	request, err := custhttp.NewHttpRequest(
+		ctx,
+		p,
+		http.MethodGet,
+		custhttp.WithBasicAuth(c.username, c.password),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := handleError(&resp); err != nil {
+	resp, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := handleError(resp); err != nil {
 		return nil, err
 	}
 
 	var parsedResp SystemStatus
-	if err := custhttp.XMLResponse(&resp, &parsedResp); err != nil {
+	if err := custhttp.XMLResponse(resp, &parsedResp); err != nil {
 		return nil, err
 	}
 

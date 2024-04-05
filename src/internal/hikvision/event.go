@@ -3,9 +3,10 @@ package hikvision
 import (
 	"context"
 	"fmt"
-	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
+	"net/http"
+	"net/url"
 
-	fastshot "github.com/opus-domini/fast-shot"
+	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
 )
 
 type EventApiInterface interface {
@@ -14,7 +15,9 @@ type EventApiInterface interface {
 }
 
 type eventApiClient struct {
-	restClient fastshot.ClientHttpMethods
+	httpClient *http.Client
+	username   string
+	password   string
 }
 
 func (c *eventApiClient) getBaseUrl() string {
@@ -29,21 +32,28 @@ type EventCapabilitiesResponse struct {
 }
 
 func (c *eventApiClient) Capabilities(ctx context.Context) (*EventCapabilitiesResponse, error) {
-	p := fmt.Sprintf("%s/capabilities", c.getBaseUrl())
+	p, _ := url.Parse(fmt.Sprintf("%s/capabilities", c.getBaseUrl()))
 
-	resp, err := c.restClient.GET(p).
-		Context().Set(ctx).
-		Send()
+	request, err := custhttp.NewHttpRequest(
+		ctx,
+		p,
+		http.MethodGet,
+		custhttp.WithBasicAuth(c.username, c.password))
 	if err != nil {
 		return nil, err
 	}
 
-	if err := handleError(&resp); err != nil {
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := handleError(response); err != nil {
 		return nil, err
 	}
 
 	var parsedResp EventCapabilitiesResponse
-	if err := custhttp.XMLResponse(&resp, &parsedResp); err != nil {
+	if err := custhttp.XMLResponse(response, &parsedResp); err != nil {
 		return nil, err
 	}
 
@@ -54,21 +64,28 @@ type EventCapabilitiesOfChannelResponse struct {
 }
 
 func (c *eventApiClient) CapabilitiesChannel(ctx context.Context, channelId string) (*EventCapabilitiesOfChannelResponse, error) {
-	p := fmt.Sprintf("%s/capabilities", c.getUrlWithChannel(channelId))
+	p, _ := url.Parse(fmt.Sprintf("%s/capabilities", c.getUrlWithChannel(channelId)))
 
-	resp, err := c.restClient.GET(p).
-		Context().Set(ctx).
-		Send()
+	request, err := custhttp.NewHttpRequest(
+		ctx,
+		p,
+		http.MethodGet,
+		custhttp.WithBasicAuth(c.username, c.password))
 	if err != nil {
 		return nil, err
 	}
 
-	if err := handleError(&resp); err != nil {
+	resp, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := handleError(resp); err != nil {
 		return nil, err
 	}
 
 	var parsedResp EventCapabilitiesOfChannelResponse
-	if err := custhttp.XMLResponse(&resp, &parsedResp); err != nil {
+	if err := custhttp.XMLResponse(resp, &parsedResp); err != nil {
 		return nil, err
 	}
 

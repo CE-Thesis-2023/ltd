@@ -3,9 +3,10 @@ package hikvision
 import (
 	"context"
 	"fmt"
-	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
+	"net/http"
+	"net/url"
 
-	fastshot "github.com/opus-domini/fast-shot"
+	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
 )
 
 type SmartApiInterface interface {
@@ -13,7 +14,9 @@ type SmartApiInterface interface {
 }
 
 type smartApiClient struct {
-	restClient  fastshot.ClientHttpMethods
+	httpClient *http.Client
+	username   string
+	password   string
 }
 
 func (c *smartApiClient) getBaseUrl() string {
@@ -24,21 +27,28 @@ type SmartCapabilitiesResponse struct {
 }
 
 func (c *smartApiClient) Capabilities(ctx context.Context) (*SmartCapabilitiesResponse, error) {
-	p := fmt.Sprintf("%s/capabilities", c.getBaseUrl())
+	p, _ := url.Parse(fmt.Sprintf("%s/capabilities", c.getBaseUrl()))
 
-	resp, err := c.restClient.GET(p).
-		Context().Set(ctx).
-		Send()
+	request, err := custhttp.NewHttpRequest(
+		ctx,
+		p,
+		http.MethodGet,
+		custhttp.WithBasicAuth(c.username, c.password))
 	if err != nil {
 		return nil, err
 	}
 
-	if err := handleError(&resp); err != nil {
+	resp, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := handleError(resp); err != nil {
 		return nil, err
 	}
 
 	var parsedResp SmartCapabilitiesResponse
-	if err := custhttp.XMLResponse(&resp, &parsedResp); err != nil {
+	if err := custhttp.XMLResponse(resp, &parsedResp); err != nil {
 		return nil, err
 	}
 

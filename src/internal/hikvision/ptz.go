@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
-	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
-	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
+	"net/http"
+	"net/url"
 	"time"
 
-	fastshot "github.com/opus-domini/fast-shot"
+	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
+	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
+
 	"go.uber.org/zap"
 )
 
@@ -20,7 +22,9 @@ type PtzApiClientInterface interface {
 }
 
 type ptzApiClient struct {
-	restClient fastshot.ClientHttpMethods
+	httpClient *http.Client
+	username   string
+	password   string
 }
 
 func (c *ptzApiClient) getBaseUrl() string {
@@ -35,21 +39,29 @@ type PTZCtrlChannelsResponse struct {
 }
 
 func (c *ptzApiClient) Channels(ctx context.Context) (*PTZCtrlChannelsResponse, error) {
-	p := c.getBaseUrl()
+	p, _ := url.Parse(c.getBaseUrl())
 
-	resp, err := c.restClient.GET(p).
-		Context().Set(ctx).
-		Send()
+	request, err := custhttp.NewHttpRequest(
+		ctx,
+		p,
+		http.MethodGet,
+		custhttp.WithBasicAuth(c.username, c.password),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := handleError(&resp); err != nil {
+	resp, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := handleError(resp); err != nil {
 		return nil, err
 	}
 
 	var parsedResp PTZCtrlChannelsResponse
-	if err := custhttp.XMLResponse(&resp, &parsedResp); err != nil {
+	if err := custhttp.XMLResponse(resp, &parsedResp); err != nil {
 		return nil, err
 	}
 
@@ -60,21 +72,29 @@ type PtzCtrlChannelCapabilities struct {
 }
 
 func (c *ptzApiClient) Capabilities(ctx context.Context, channelId string) (*PtzCtrlChannelCapabilities, error) {
-	p := fmt.Sprintf("%s/capabilities", c.getUrlWithChannel(channelId))
+	p, _ := url.Parse(fmt.Sprintf("%s/capabilities", c.getUrlWithChannel(channelId)))
 
-	resp, err := c.restClient.GET(p).
-		Context().Set(ctx).
-		Send()
+	request, err := custhttp.NewHttpRequest(
+		ctx,
+		p,
+		http.MethodGet,
+		custhttp.WithBasicAuth(c.username, c.password),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := handleError(&resp); err != nil {
+	resp, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := handleError(resp); err != nil {
 		return nil, err
 	}
 
 	var parsedResp PtzCtrlChannelCapabilities
-	if err := custhttp.XMLResponse(&resp, &parsedResp); err != nil {
+	if err := custhttp.XMLResponse(resp, &parsedResp); err != nil {
 		return nil, err
 	}
 
@@ -93,22 +113,26 @@ type PtzCtrlContinousOptions struct {
 }
 
 func (c *ptzApiClient) RawContinuous(ctx context.Context, req *PtzCtrlRawContinousRequest) error {
-	p := fmt.Sprintf("%s/continuous", c.getUrlWithChannel(req.ChannelId))
+	p, _ := url.Parse(fmt.Sprintf("%s/continuous", c.getUrlWithChannel(req.ChannelId)))
 
-	body, err := xml.Marshal(req.Options)
+	request, err := custhttp.NewHttpRequest(
+		ctx,
+		p,
+		http.MethodPut,
+		custhttp.WithBasicAuth(c.username, c.password),
+		custhttp.WithContentType("application/xml"),
+		custhttp.WithXMLBody(req.Options),
+	)
 	if err != nil {
 		return err
 	}
 
-	resp, err := c.restClient.PUT(p).
-		Context().Set(ctx).
-		Body().AsString(string(body)).
-		Send()
+	resp, err := c.httpClient.Do(request)
 	if err != nil {
 		return err
 	}
 
-	if err := handleError(&resp); err != nil {
+	if err := handleError(resp); err != nil {
 		return err
 	}
 
@@ -124,56 +148,62 @@ type PtzCtrlContinousWithResetRequest struct {
 var ptzCtrlResetRequestBody string = "<PTZData><pan>0</pan><tilt>0</tilt></PTZData>"
 
 func (c *ptzApiClient) ContinousWithReset(ctx context.Context, req *PtzCtrlContinousWithResetRequest) error {
-	p := fmt.Sprintf("%s/continuous", c.getUrlWithChannel(req.ChannelId))
+	p, _ := url.Parse(fmt.Sprintf("%s/continuous", c.getUrlWithChannel(req.ChannelId)))
 
-	callbackChan := make(chan bool, 1)
-	// do this first to make sure a goroutine is available, or else it blocks
+	resetRequest, err := custhttp.NewHttpRequest(
+		ctx,
+		p,
+		http.MethodPut,
+		custhttp.WithBasicAuth(c.username, c.password),
+		custhttp.WithContentType("application/xml"),
+		custhttp.WithXMLBody(ptzCtrlResetRequestBody),
+	)
+	if err != nil {
+		return err
+	}
+
+	continousRequest, err := custhttp.NewHttpRequest(
+		ctx,
+		p,
+		http.MethodPut,
+		custhttp.WithBasicAuth(c.username, c.password),
+		custhttp.WithContentType("application/xml"),
+		custhttp.WithXMLBody(req.Options),
+	)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.httpClient.Do(continousRequest)
+	if err != nil {
+		return err
+	}
+
+	if err := handleError(resp); err != nil {
+		return err
+	}
+
 	go func() {
-		<-callbackChan
 		<-time.After(req.ResetAfter)
-		logger.SDebug("hikvision.ContinousWithReset: start reset now")
+		logger.SDebug("PTZ Control continuous request start")
 
-		resp, err := c.restClient.PUT(p).
-			Context().Set(context.Background()).
-			Body().AsString(ptzCtrlResetRequestBody).
-			Retry().Set(2, time.Millisecond*2).
-			Send()
+		resp, err := c.httpClient.Do(resetRequest)
 		if err != nil {
-			logger.SError("hikvision.ContinousWithReset: reset request sending error",
+			logger.SError("failed to send PTZ Control continuous reset request",
 				zap.Error(err))
 			return
 		}
 
-		if err := handleError(&resp); err != nil {
-			logger.SError("hikvision.ContinousWithReset: reset request returned error",
+		if err := handleError(resp); err != nil {
+			logger.SError("failed to send PTZ Control continuous reset request",
 				zap.Error(err))
 			return
 		}
 
-		logger.SDebug("hikvision.ContinousWithReset: reset completed",
+		logger.SDebug("PTZ Control continuous request reset completed",
 			zap.String("channelId", req.ChannelId),
 			zap.Duration("after", req.ResetAfter))
 	}()
-
-	forwardRequestBody, err := xml.Marshal(req.Options)
-	if err != nil {
-		return err
-	}
-
-	resp, err := c.restClient.PUT(p).
-		Context().Set(ctx).
-		Body().AsString(string(forwardRequestBody)).
-		Send()
-	if err != nil {
-		return err
-	}
-
-	if err := handleError(&resp); err != nil {
-		return err
-	}
-
-	callbackChan <- true
-	logger.SDebug("hikvision.ContinousWithReset: first request completed")
 
 	return nil
 }

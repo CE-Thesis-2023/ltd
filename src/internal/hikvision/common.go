@@ -2,10 +2,10 @@ package hikvision
 
 import (
 	"encoding/xml"
+	"net/http"
+
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
-
-	fastshot "github.com/opus-domini/fast-shot"
 )
 
 type Status struct {
@@ -32,8 +32,8 @@ type ResponseStatus struct {
 	AdditionalErr *AdditionalError `xml:"AdditionalErr,omitempty"`
 }
 
-func handleError(resp *fastshot.Response) error {
-	switch resp.StatusCode() {
+func handleError(resp *http.Response) error {
+	switch resp.StatusCode {
 	case 400:
 		var parsedResp ResponseStatus
 		if err := custhttp.XMLResponse(resp, &parsedResp); err != nil {

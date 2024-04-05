@@ -1,30 +1,26 @@
 package custhttp
 
 import (
+	"bytes"
 	"context"
 	"encoding/xml"
-	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"io"
+	"net/http"
+	"net/url"
 	"time"
 
+	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
+
 	"encoding/json"
-	"github.com/opus-domini/fast-shot"
+
 	"go.uber.org/zap"
 )
 
 type Options struct {
-	baseUrl string
 	timeout time.Duration
-	header  map[string]string
 }
 
 type ClientOptioner func(o *Options)
-
-func WithBaseUrl(url string) ClientOptioner {
-	return func(o *Options) {
-		o.baseUrl = url
-	}
-}
 
 func WithTimeout(dur time.Duration) ClientOptioner {
 	return func(o *Options) {
@@ -32,43 +28,124 @@ func WithTimeout(dur time.Duration) ClientOptioner {
 	}
 }
 
-func WithHeader(key string, value string) ClientOptioner {
-	return func(o *Options) {
-		if o.header == nil {
-			o.header = map[string]string{}
-		}
-		o.header[key] = value
-	}
-}
-
-func NewHttpClient(ctx context.Context, opts ...ClientOptioner) fastshot.ClientHttpMethods {
+func NewHttpClient(ctx context.Context, opts ...ClientOptioner) *http.Client {
 	options := &Options{}
 	for _, o := range opts {
 		o(options)
 	}
 
-	fs := fastshot.NewClient(options.baseUrl).
-		Config().SetFollowRedirects(true).
-		Config().SetTimeout(options.timeout)
-
-	fs.Header().AddAll(options.header)
-
-	return fs.Build()
+	client := &http.Client{
+		Timeout: options.timeout,
+	}
+	return client
 }
 
-func JSONResponse(resp *fastshot.Response, dest interface{}) error {
-	body := resp.RawResponse.Body
+type HttpRequestOptions struct {
+	headers  map[string]string
+	body     []byte
+	username string
+	password string
+}
+
+func (o *HttpRequestOptions) hasBasicAuth() bool {
+	return o.username != "" && o.password != ""
+}
+
+type HttpRequestOptioner func(o *HttpRequestOptions)
+
+func WithHeader(key string, value string) HttpRequestOptioner {
+	return func(o *HttpRequestOptions) {
+		if o.headers == nil {
+			o.headers = make(map[string]string)
+		}
+		o.headers[key] = value
+	}
+}
+
+func WithXMLBody(body interface{}) HttpRequestOptioner {
+	return func(o *HttpRequestOptions) {
+		bodyBytes, err := xml.Marshal(body)
+		if err != nil {
+			logger.SDebug("failed to marshal XML body",
+				zap.Error(err))
+			return
+		}
+		o.body = bodyBytes
+	}
+}
+
+func WithJSONBody(body interface{}) HttpRequestOptioner {
+	return func(o *HttpRequestOptions) {
+		bodyBytes, err := json.Marshal(body)
+		if err != nil {
+			logger.SDebug("failed to marshal JSON body",
+				zap.Error(err))
+			return
+		}
+		o.body = bodyBytes
+	}
+}
+
+func WithBasicAuth(username, password string) HttpRequestOptioner {
+	return func(o *HttpRequestOptions) {
+		o.username = username
+		o.password = password
+	}
+}
+
+func WithContentType(contentType string) HttpRequestOptioner {
+	return func(o *HttpRequestOptions) {
+		if o.headers == nil {
+			o.headers = make(map[string]string)
+		}
+		o.headers["Content-Type"] = contentType
+	}
+}
+
+func NewHttpRequest(ctx context.Context, url *url.URL, method string, options ...HttpRequestOptioner) (*http.Request, error) {
+	reqOptions := &HttpRequestOptions{}
+	for _, o := range options {
+		o(reqOptions)
+	}
+
+	var bodyReader io.Reader
+	if reqOptions.body != nil {
+		bodyReader = bytes.NewReader(reqOptions.body)
+	}
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		method,
+		url.String(),
+		bodyReader)
+	if err != nil {
+		logger.SDebug("unable to create new http request",
+			zap.Error(err))
+		return nil, err
+	}
+
+	if reqOptions.hasBasicAuth() {
+		req.SetBasicAuth(reqOptions.username, reqOptions.password)
+	}
+	for key, value := range reqOptions.headers {
+		req.Header.Set(key, value)
+	}
+	return req, nil
+}
+
+func JSONResponse(resp *http.Response, dest interface{}) error {
+	body := resp.Body
 	defer body.Close()
 
 	bodyBytes, err := io.ReadAll(body)
 	if err != nil {
-		logger.SDebug("ParseResponseBody: io.ReadAll",
+		logger.SDebug("failed to read HTTP response body",
 			zap.Error(err))
 		return err
 	}
 
 	if err := json.Unmarshal(bodyBytes, dest); err != nil {
-		logger.SDebug("ParseResponseBody: json.Unmarshal",
+		logger.SDebug("failed to unmarshal JSON response",
 			zap.Error(err))
 		return err
 	}
@@ -76,20 +153,18 @@ func JSONResponse(resp *fastshot.Response, dest interface{}) error {
 	return nil
 }
 
-func XMLResponse(resp *fastshot.Response, dest interface{}) error {
-	body := resp.RawResponse.Body
+func XMLResponse(resp *http.Response, dest interface{}) error {
+	body := resp.Body
 	defer body.Close()
 
 	bodyBytes, err := io.ReadAll(body)
 	if err != nil {
-		logger.SDebug("ParseResponseBody: io.ReadAll", zap.Error(err))
+		logger.SDebug("failed to read HTTP response body", zap.Error(err))
 		return err
 	}
 
-	logger.SDebug("ParseResponseBody: xml response", zap.String("data", string(bodyBytes)))
-
 	if err := xml.Unmarshal(bodyBytes, dest); err != nil {
-		logger.SDebug("ParseResponseBody: xml.Unmarshal", zap.Error(err))
+		logger.SDebug("failed to unmarshal XML response", zap.Error(err))
 		return err
 	}
 

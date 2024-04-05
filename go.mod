@@ -5,7 +5,6 @@ go 1.21.4
 require (
 	github.com/eclipse/paho.golang v0.12.0
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/opus-domini/fast-shot v0.9.0
 	github.com/u2takey/ffmpeg-go v0.5.0
 )
 
