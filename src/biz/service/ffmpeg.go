@@ -9,11 +9,12 @@ import (
 
 	"github.com/CE-Thesis-2023/ltd/src/helper"
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
+	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
+	custff "github.com/CE-Thesis-2023/ltd/src/internal/ffmpeg"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
 	"github.com/CE-Thesis-2023/ltd/src/models/ms"
-	ffmpeg_go "github.com/u2takey/ffmpeg-go"
 	"go.uber.org/zap"
 )
 
@@ -38,18 +39,20 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 	command := s.buildFfmpegRestreamingCommand(sourceUrl, destinationUrl)
 	logger.SDebug("transcoding stream FFmpeg command",
 		zap.String("command", command.String()))
+	if command == nil {
+		logger.SError("failed to build FFmpeg command")
+		return custerror.FormatInternalError("failed to build FFmpeg os/exec command")
+	}
 
 	go func() {
 		helper.Do(func() error {
-			compiledGoCommand := command.Compile()
-
 			s.recordThisStream(camera,
 				sourceUrl,
 				destinationUrl,
-				compiledGoCommand)
+				command)
 
 			logger.SInfo("starting transcoding stream")
-			if err := compiledGoCommand.Run(); err != nil {
+			if err := command.Run(); err != nil {
 				logger.SError("failed to run FFmpeg process", zap.Error(err))
 				return err
 			}
@@ -74,31 +77,54 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 	return nil
 }
 
-func (s *mediaService) buildFfmpegRestreamingCommand(sourceUrl string, destinationUrl string) *ffmpeg_go.Stream {
-	cmd := ffmpeg_go.Input(sourceUrl, ffmpeg_go.KwArgs{
-		"rtsp_transport": "tcp",
-	}).
-		Output(destinationUrl, ffmpeg_go.KwArgs{
-			"c:v":      "libx264",
-			"c:a":      "aac",
-			"f":        "mpegts",
-			"tune":     "zerolatency",
-			"preset":   "faster",
-			"s":        "1280x720",
-			"filter:v": "fps=25",
-			"timeout":  5000000,
-		}).ErrorToStdOut().
-		WithCpuCoreLimit(2)
+func (s *mediaService) buildFfmpegRestreamingCommand(sourceUrl string, destinationUrl string) *exec.Cmd {
 	configs := configs.Get()
+	var binPath string
+	var err error
 	if configs.Ffmpeg.BinaryPath != "" {
-		absPath, err := filepath.Abs(configs.Ffmpeg.BinaryPath)
+		binPath, err = filepath.Abs(configs.Ffmpeg.BinaryPath)
 		if err != nil {
-			logger.SError("buildFfmpegRestreamingCommand: filepath.Abs", zap.Error(err))
-		} else {
-			cmd.SetFfmpegPath(absPath)
+			logger.SFatal("missing FFmpeg binary path", zap.Error(err))
+			return nil
 		}
 	}
-	return cmd
+
+	cmd := custff.NewFFmpegCommand()
+	cmd.WithSourceUrl(sourceUrl).
+		WithBinPath(binPath).
+		WithGlobalArguments(
+			map[string]string{
+				"hide_banner": "",
+				"loglevel":    "info",
+				"threads":     "2",
+			},
+		).
+		WithInputArguments(map[string]string{
+			"avoid_negative_ts":           "make_zero",
+			"fflags":                      "+genpts+discardcorrupt",
+			"rtsp_transport":              "tcp",
+			"use_wallclock_as_timestamps": "1",
+			"timeout":                     "5000000",
+		}).
+		WithDestinationUrl(destinationUrl).
+		WithOutputArguments(map[string]string{
+			"f":        "mpegts",
+			"c:v":      "libx264",
+			"preset:v": "faster",
+			"tune:v":   "zerolatency",
+		}).
+		WithScale(20, 1280, 720).
+		WithHardwareAccelerationType(custff.VA_API)
+
+	execCmd, err := cmd.String()
+	if err != nil {
+		logger.SError("failed to build FFmpeg command", zap.Error(err))
+		return nil
+	}
+
+	logger.SDebug("FFmpeg command", zap.String("command", execCmd))
+
+	return exec.Command(execCmd)
 }
 
 func (s *mediaService) shouldRestartStream(err error, camera *db.Camera) bool {
