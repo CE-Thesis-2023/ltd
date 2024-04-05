@@ -43,7 +43,7 @@ func NewControlPlaneService(configs *configs.DeviceInfoConfigs) *ControlPlaneSer
 }
 
 type RegistrationRequest struct {
-	DeviceId string `json:"device_id"`
+	DeviceId string `json:"deviceId"`
 }
 
 func (s *ControlPlaneService) RegisterDevice(ctx context.Context, req *RegistrationRequest) error {
@@ -84,7 +84,7 @@ func (s *ControlPlaneService) RegisterDevice(ctx context.Context, req *Registrat
 }
 
 type GetAssignedDevicesRequest struct {
-	DeviceId string `json:"device_id"`
+	DeviceId string `json:"deviceId"`
 }
 
 type GetAssignedDevicesResponse struct {

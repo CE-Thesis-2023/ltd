@@ -89,6 +89,10 @@ func (c *Reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 	devices := resp.Cameras
+	if len(devices) == 0 {
+		logger.SInfo("no cameras assigned, nothing to do")
+		return nil
+	}
 	if err := c.matchCameras(devices,
 		c.onRemove,
 		c.checkUpdates,
