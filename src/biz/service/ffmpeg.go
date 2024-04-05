@@ -73,6 +73,7 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 		logger.SError("failed to start transcoding stream",
 			zap.Error(err))
 		delete(s.onGoingProcesses, req.CameraId)
+		return err
 	}
 	return nil
 }

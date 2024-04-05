@@ -126,6 +126,8 @@ func (c *Reconciler) matchCameras(updatedCameras []db.Camera, onRemove func(c *d
 			}
 		} else {
 			if err := onAddition(new); err != nil {
+				logger.SError("failed to add camera",
+					zap.Error(err))
 			} else {
 				merged[cameraId] = new
 			}
@@ -138,6 +140,9 @@ func (c *Reconciler) matchCameras(updatedCameras []db.Camera, onRemove func(c *d
 			}
 		}
 	}
+	logger.SDebug("cameras merged",
+		zap.Reflect("old", c.cameras),
+		zap.Reflect("new", merged))
 	c.cameras = merged
 	return nil
 }
