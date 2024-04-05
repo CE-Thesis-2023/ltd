@@ -25,10 +25,10 @@
     "password": "dev"
   },
   "cloudMediaServer": {
-    "host": "api.mediamtx.ntranlab.com",
-    "port": 443,
-    "username": "admin",
-    "password": "ctportal2024",
+    "host": "103.165.142.15",
+    "port": 8890,
+    "username": "",
+    "password": "",
     "publishPorts": {
       "srt": 8890
     }
