@@ -147,22 +147,10 @@ func (s *mediaService) recordThisStream(camera *db.Camera, sourceUrl string, des
 
 func (s *mediaService) isThisStreamGoing(camera *db.Camera) bool {
 	pr, found := s.onGoingProcesses[camera.CameraId]
-	if pr != nil {
-		logger.SDebug("isThisStreamGoing: stream already ongoing", zap.Reflect("process", pr))
-		return true
-	}
 	if found {
-		if pr.proc != nil {
-			if pr.proc.ProcessState != nil {
-				if pr.proc.ProcessState.Exited() || pr.proc.ProcessState.ExitCode() != 0 {
-					logger.SDebug("isThisStreamGoing: process associated with it has already exited")
-					return false
-				} else {
-					logger.SDebug("isThisStreamGoing: process are not terminated yet")
-					return true
-				}
-			}
-		}
+		logger.SDebug("transcoding stream already going",
+			zap.Reflect("process", pr))
+		return true
 	}
 	return false
 }

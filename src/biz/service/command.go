@@ -18,7 +18,7 @@ type CommandService struct {
 
 func NewCommandService() *CommandService {
 	return &CommandService{
-		hikvisionClient:         factory.Hikvision(),
+		hikvisionClient: factory.Hikvision(),
 	}
 }
 

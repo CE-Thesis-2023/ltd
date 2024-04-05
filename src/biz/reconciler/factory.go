@@ -19,6 +19,7 @@ func Init() {
 			service.GetControlPlaneService(),
 			&configs.Get().
 				DeviceInfo,
+			service.GetCommandService(),
 		)
 	})
 }

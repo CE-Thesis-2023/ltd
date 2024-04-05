@@ -21,9 +21,8 @@ func main() {
 		func(configs *configs.Configs, zl *zap.Logger) []app.Optioner {
 			return []app.Optioner{
 				app.WithReconcilerFactory(func() reconciler.BaseReconciler {
-					return reconciler.NewReconciler(
-						service.GetControlPlaneService(),
-						&configs.DeviceInfo)
+					reconciler.Init()
+					return reconciler.GetReconciler()
 				}),
 				app.WithFactoryHook(func(ctx context.Context) error {
 					factory.Init(configs)

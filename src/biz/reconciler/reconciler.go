@@ -19,10 +19,11 @@ type Reconciler struct {
 	cameras             map[string]*db.Camera
 	controlPlaneService *service.ControlPlaneService
 	deviceInfo          *configs.DeviceInfoConfigs
+	commandService      *service.CommandService
 	mu                  sync.Mutex
 }
 
-func NewReconciler(controlPlaneService *service.ControlPlaneService, deviceInfo *configs.DeviceInfoConfigs) *Reconciler {
+func NewReconciler(controlPlaneService *service.ControlPlaneService, deviceInfo *configs.DeviceInfoConfigs, commandService *service.CommandService) *Reconciler {
 	if controlPlaneService == nil {
 		logger.SFatal("control plane service is nil",
 			zap.String("error", "control plane service is nil"))
@@ -31,10 +32,15 @@ func NewReconciler(controlPlaneService *service.ControlPlaneService, deviceInfo 
 		logger.SFatal("device info is nil",
 			zap.String("error", "device info is nil"))
 	}
+	if commandService == nil {
+		logger.SFatal("command service is nil",
+			zap.String("error", "command service is nil"))
+	}
 	return &Reconciler{
 		cameras:             make(map[string]*db.Camera),
 		controlPlaneService: controlPlaneService,
 		deviceInfo:          deviceInfo,
+		commandService:      commandService,
 	}
 }
 
@@ -103,7 +109,7 @@ func (c *Reconciler) reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (c *Reconciler) matchCameras(updatedCameras []db.Camera, onRemove func(c *db.Camera) error, checkUpdates func(c *db.Camera) error, onAddition func(c *db.Camera)) error {
+func (c *Reconciler) matchCameras(updatedCameras []db.Camera, onRemove func(c *db.Camera) error, checkUpdates func(old *db.Camera, updated *db.Camera) error, onAddition func(c *db.Camera)) error {
 	mappedUpdatedDevices := make(map[string]*db.Camera)
 	for _, camera := range updatedCameras {
 		mappedUpdatedDevices[camera.CameraId] = &camera
@@ -111,10 +117,10 @@ func (c *Reconciler) matchCameras(updatedCameras []db.Camera, onRemove func(c *d
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	for cameraId, camera := range mappedUpdatedDevices {
-		if _, found := c.cameras[cameraId]; !found {
+		if old, found := c.cameras[cameraId]; !found {
 			onAddition(camera)
 		} else {
-			if err := checkUpdates(camera); err != nil {
+			if err := checkUpdates(old, camera); err != nil {
 				return err
 			}
 			delete(c.cameras, cameraId)
@@ -132,17 +138,84 @@ func (c *Reconciler) matchCameras(updatedCameras []db.Camera, onRemove func(c *d
 func (c *Reconciler) onAddition(camera *db.Camera) {
 	logger.SInfo("camera added",
 		zap.String("id", camera.CameraId))
+
+	if err := c.commandService.StartFfmpegStream(
+		context.Background(),
+		camera,
+		&events.CommandStartStreamInfo{
+			CameraId: camera.CameraId,
+		}); err != nil {
+		logger.SError("failed to start ffmpeg stream",
+			zap.Error(err))
+		return
+	}
 }
 
 func (c *Reconciler) onRemove(camera *db.Camera) error {
 	logger.SInfo("camera removed",
 		zap.String("id", camera.CameraId))
+	if err := c.commandService.EndFfmpegStream(
+		context.Background(),
+		camera,
+		&events.CommandEndStreamInfo{
+			CameraId: camera.CameraId,
+		}); err != nil {
+		logger.SError("failed to end ffmpeg stream",
+			zap.Error(err))
+		return err
+	}
 	return nil
 }
 
-func (c *Reconciler) checkUpdates(camera *db.Camera) error {
+func (c *Reconciler) checkUpdates(old *db.Camera, updated *db.Camera) error {
 	logger.SInfo("camera updated",
-		zap.String("id", camera.CameraId))
+		zap.String("id", updated.CameraId))
+	changed := false
+	if old.Ip != updated.Ip {
+		logger.SInfo("camera ip updated",
+			zap.String("id", updated.CameraId),
+			zap.String("old_ip", old.Ip),
+			zap.String("new_ip", updated.Ip))
+		changed = true
+	}
+	if old.Started != updated.Started {
+		logger.SInfo("camera stream status updated",
+			zap.String("id", updated.CameraId),
+			zap.Bool("old_started", old.Started),
+			zap.Bool("new_started", updated.Started))
+		changed = true
+	}
+	if changed {
+		if old.Started {
+			if err := c.commandService.EndFfmpegStream(
+				context.Background(),
+				old,
+				&events.CommandEndStreamInfo{
+					CameraId: old.CameraId,
+				}); err != nil {
+				logger.SError("failed to end ffmpeg stream",
+					zap.Error(err))
+				if err != custerror.ErrorNotFound {
+					return err
+				}
+			}
+		}
+		if updated.Started {
+			if err := c.commandService.StartFfmpegStream(
+				context.Background(),
+				updated,
+				&events.CommandStartStreamInfo{
+					CameraId: updated.CameraId,
+				}); err != nil {
+				logger.SError("failed to start ffmpeg stream",
+					zap.Error(err))
+				if err != custerror.ErrorAlreadyExists {
+					return err
+				}
+				return err
+			}
+		}
+	}
 	return nil
 }
 
