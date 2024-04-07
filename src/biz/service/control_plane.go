@@ -6,14 +6,16 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+
 	db "github.com/CE-Thesis-2023/backend/src/models/db"
+	"github.com/CE-Thesis-2023/backend/src/models/web"
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"go.uber.org/zap"
-	"io"
-	"net/http"
-	"net/url"
 )
 
 type ControlPlaneService struct {
@@ -129,12 +131,128 @@ func (s *ControlPlaneService) GetAssignedDevices(ctx context.Context, req *GetAs
 	}
 }
 
-type GetOpenGateIntegrationConfigurationsRequest struct {
-	OpenGateId string `json:"openGateId"`
+func (s *ControlPlaneService) GetOpenGateIntegrationConfigurations(ctx context.Context, req *web.GetOpenGateIntegrationByIdRequest) (*web.GetOpenGateCameraSettingsResponse, error) {
+	logger.SInfo("requested to get OpenGate integration configurations",
+		zap.Reflect("request", req))
+	path := s.baseUrl.JoinPath("/opengate", req.OpenGateId)
+	request, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		path.String(),
+		nil)
+	if err != nil {
+		return nil, err
+	}
+	request.SetBasicAuth(s.basicAuthUser, s.basicAuthPassword)
+	response, err := s.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	switch response.StatusCode {
+	case 200:
+		defer response.
+			Body.
+			Close()
+		bodyBytes, err := io.ReadAll(response.Body)
+		if err != nil {
+			return nil, custerror.FormatInternalError("unable to read response body: %s", err)
+		}
+		var resp web.GetOpenGateCameraSettingsResponse
+		if err := json.Unmarshal(bodyBytes, &resp); err != nil {
+			return nil, err
+		}
+		return &resp, nil
+	case 400:
+		return nil, custerror.ErrorInvalidArgument
+	case 404:
+		return nil, custerror.ErrorNotFound
+	default:
+		return nil, custerror.ErrorInternal
+	}
 }
 
-type GetOpenGateIntegrationConfigurationsResponse struct {
-	OpenGateIntegration *db.OpenGateIntegration `json:"openGateIntegration"`
+func (s *ControlPlaneService) GetOpenGateCameraSettings(ctx context.Context, req *web.GetOpenGateCameraSettingsRequest) (*web.GetOpenGateCameraSettingsResponse, error) {
+	logger.SInfo("requested to get OpenGate camera settings",
+		zap.Reflect("request", req))
+	path := s.baseUrl.JoinPath("/opengate/cameras")
+	q := path.Query()
+	for _, camera := range req.CameraId {
+		q.Add("cameraId", camera)
+	}
+	path.RawQuery = q.Encode()
+
+	request, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		path.String(),
+		nil)
+	if err != nil {
+		return nil, err
+	}
+	request.SetBasicAuth(s.basicAuthUser, s.basicAuthPassword)
+	response, err := s.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	switch response.StatusCode {
+	case 200:
+		defer response.
+			Body.
+			Close()
+		bodyBytes, err := io.ReadAll(response.Body)
+		if err != nil {
+			return nil, custerror.FormatInternalError("unable to read response body: %s", err)
+		}
+		var resp web.GetOpenGateCameraSettingsResponse
+		if err := json.Unmarshal(bodyBytes, &resp); err != nil {
+			return nil, err
+		}
+		return &resp, nil
+	case 400:
+		return nil, custerror.ErrorInvalidArgument
+	case 404:
+		return nil, custerror.ErrorNotFound
+	default:
+		return nil, custerror.ErrorInternal
+	}
 }
 
-func (s *ControlPlaneService) GetOpenGateIntegrationConfigurations(ctx context.Context, req *GetOpenGateIntegrationConfigurationsRequest)
+func (s *ControlPlaneService) GetOpenGateMqttConfigurations(ctx context.Context, req *web.GetOpenGateMqttSettingsRequest) (*web.GetOpenGateMqttSettingsResponse, error) {
+	logger.SInfo("requested to get OpenGate MQTT configurations",
+		zap.Reflect("request", req))
+	path := s.baseUrl.JoinPath("/opengate", req.ConfigurationId, "mqtt")
+	request, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		path.String(),
+		nil)
+	if err != nil {
+		return nil, err
+	}
+	request.SetBasicAuth(s.basicAuthUser, s.basicAuthPassword)
+	response, err := s.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	switch response.StatusCode {
+	case 200:
+		defer response.
+			Body.
+			Close()
+		bodyBytes, err := io.ReadAll(response.Body)
+		if err != nil {
+			return nil, custerror.FormatInternalError("unable to read response body: %s", err)
+		}
+		var resp web.GetOpenGateMqttSettingsResponse
+		if err := json.Unmarshal(bodyBytes, &resp); err != nil {
+			return nil, err
+		}
+		return &resp, nil
+	case 400:
+		return nil, custerror.ErrorInvalidArgument
+	case 404:
+		return nil, custerror.ErrorNotFound
+	default:
+		return nil, custerror.ErrorInternal
+	}
+}
