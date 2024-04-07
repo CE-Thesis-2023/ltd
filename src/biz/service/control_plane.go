@@ -6,10 +6,10 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	db "github.com/CE-Thesis-2023/backend/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
-	"github.com/CE-Thesis-2023/ltd/src/models/db"
 	"go.uber.org/zap"
 	"io"
 	"net/http"
@@ -128,3 +128,13 @@ func (s *ControlPlaneService) GetAssignedDevices(ctx context.Context, req *GetAs
 		return nil, custerror.ErrorInternal
 	}
 }
+
+type GetOpenGateIntegrationConfigurationsRequest struct {
+	OpenGateId string `json:"openGateId"`
+}
+
+type GetOpenGateIntegrationConfigurationsResponse struct {
+	OpenGateIntegration *db.OpenGateIntegration `json:"openGateIntegration"`
+}
+
+func (s *ControlPlaneService) GetOpenGateIntegrationConfigurations(ctx context.Context, req *GetOpenGateIntegrationConfigurationsRequest)

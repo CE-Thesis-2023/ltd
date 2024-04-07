@@ -2,11 +2,12 @@ package service
 
 import (
 	"context"
+	"time"
+
+	"github.com/CE-Thesis-2023/backend/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/internal/hikvision"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
-	"github.com/CE-Thesis-2023/ltd/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
-	"time"
 
 	"go.uber.org/zap"
 )

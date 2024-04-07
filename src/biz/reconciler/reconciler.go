@@ -5,11 +5,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/CE-Thesis-2023/backend/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/biz/service"
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
-	"github.com/CE-Thesis-2023/ltd/src/models/db"
 	"github.com/CE-Thesis-2023/ltd/src/models/events"
 	"github.com/mitchellh/mapstructure"
 	"go.uber.org/zap"
@@ -45,7 +45,7 @@ func NewReconciler(controlPlaneService *service.ControlPlaneService, deviceInfo 
 }
 
 func (c *Reconciler) Run(ctx context.Context) {
-	logger.SInfo("reconciler loop started")
+	logger.SInfo("reconciler loop Enabled")
 	if err := c.initApplication(ctx); err != nil {
 		logger.SError("reconciler loop initialize application failed",
 			zap.Error(err))
@@ -84,7 +84,7 @@ func (c *Reconciler) initApplication(ctx context.Context) error {
 }
 
 func (c *Reconciler) reconcile(ctx context.Context) error {
-	logger.SInfo("reconcile started")
+	logger.SInfo("reconcile Enabled")
 	resp, err := c.controlPlaneService.GetAssignedDevices(ctx, &service.GetAssignedDevicesRequest{
 		DeviceId: c.
 			deviceInfo.
@@ -187,15 +187,15 @@ func (c *Reconciler) checkUpdates(old *db.Camera, updated *db.Camera) error {
 			zap.String("new_ip", updated.Ip))
 		changed = true
 	}
-	if old.Started != updated.Started {
+	if old.Enabled != updated.Enabled {
 		logger.SInfo("camera stream status updated",
 			zap.String("id", updated.CameraId),
-			zap.Bool("old_started", old.Started),
-			zap.Bool("new_started", updated.Started))
+			zap.Bool("old_Enabled", old.Enabled),
+			zap.Bool("new_Enabled", updated.Enabled))
 		changed = true
 	}
 	if changed {
-		if old.Started {
+		if old.Enabled {
 			if err := c.commandService.EndFfmpegStream(
 				context.Background(),
 				old,
@@ -209,7 +209,7 @@ func (c *Reconciler) checkUpdates(old *db.Camera, updated *db.Camera) error {
 				}
 			}
 		}
-		if updated.Started {
+		if updated.Enabled {
 			if err := c.commandService.StartFfmpegStream(
 				context.Background(),
 				updated,

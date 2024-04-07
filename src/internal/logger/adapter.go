@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"github.com/nats-io/nats-server/v2/server"
 	"go.uber.org/zap"
 )
 
@@ -31,12 +30,6 @@ func (a *ZapToNatsLogger) Tracef(format string, v ...interface{}) {
 
 func (a *ZapToNatsLogger) Warnf(format string, v ...interface{}) {
 	a.logger.Warnf(format, v...)
-}
-
-func NewZapToNatsLogger(logger *zap.SugaredLogger) server.Logger {
-	return &ZapToNatsLogger{
-		logger: logger,
-	}
 }
 
 type ZapToAntsLogger struct {
