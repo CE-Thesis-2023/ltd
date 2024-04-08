@@ -13,11 +13,9 @@ import (
 var globalConfigs *Configs
 
 type Configs struct {
-	Public           HttpConfigs       `json:"public,omitempty" yaml:"public,omitempty"`
 	Private          HttpConfigs       `json:"private,omitempty" yaml:"private,omitempty"`
 	Logger           LoggerConfigs     `json:"logger,omitempty" yaml:"logger,omitempty"`
 	MqttStore        EventStoreConfigs `json:"mqttStore,omitempty" yaml:"mqttStore,omitempty"`
-	CloudMediaServer MediaMtxConfigs   `json:"cloudMediaServer,omitempty" yaml:"cloudMediaServer,omitempty"`
 	DeviceInfo       DeviceInfoConfigs `json:"deviceInfo,omitempty" yaml:"deviceInfo,omitempty"`
 	Ffmpeg           FfmpegConfigs     `json:"ffmpeg,omitempty" yaml:"ffmpeg,omitempty"`
 }
@@ -85,19 +83,6 @@ type EventStoreConfigs struct {
 	Level    string    `json:"level,omitempty" yaml:"level,omitempty"`
 }
 
-type MediaMtxConfigs struct {
-	Host         string        `json:"host,omitempty" yaml:"host,omitempty"`
-	Port         int           `json:"port,omitempty" yaml:"port,omitempty"`
-	Username     string        `json:"username,omitempty" yaml:"username,omitempty"`
-	Password     string        `json:"password,omitempty" yaml:"password,omitempty"`
-	PublishPorts MediaMtxPorts `json:"publishPorts,omitempty" yaml:"publishPorts,omitempty"`
-}
-
-type MediaMtxPorts struct {
-	WebRtc int `json:"webRtc,omitempty" yaml:"webRtc,omitempty"`
-	Srt    int `json:"srt,omitempty" yaml:"srt,omitempty"`
-	Rtmp   int `json:"rtmp,omitempty" yaml:"rtmp,omitempty"`
-}
 
 type FfmpegConfigs struct {
 	BinaryPath string `json:"binaryPath,omitempty" yaml:"binaryPath,omitempty"`

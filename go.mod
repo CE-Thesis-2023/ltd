@@ -7,7 +7,6 @@ replace github.com/CE-Thesis-2023/backend => ../backend
 require (
 	github.com/CE-Thesis-2023/backend v1.0.0
 	github.com/eclipse/paho.golang v0.12.0
-	github.com/mitchellh/mapstructure v1.5.0
 )
 
 require (

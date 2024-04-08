@@ -23,14 +23,5 @@
     "cloudApiServer": "https://private.api.ctportal.ntranlab.com",
     "username": "dev",
     "password": "dev"
-  },
-  "cloudMediaServer": {
-    "host": "103.165.142.15",
-    "port": 8890,
-    "username": "",
-    "password": "",
-    "publishPorts": {
-      "srt": 8890
-    }
   }
 }
