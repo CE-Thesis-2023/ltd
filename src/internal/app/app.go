@@ -6,77 +6,66 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/CE-Thesis-2023/ltd/src/biz/reconciler"
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
+	"github.com/CE-Thesis-2023/ltd/src/internal/hikvision"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
+	"github.com/CE-Thesis-2023/ltd/src/reconciler"
+	"github.com/CE-Thesis-2023/ltd/src/service"
 	"go.uber.org/zap"
 )
 
-func Run(shutdownTimeout time.Duration, registration RegistrationFunc) {
-	ctx := context.Background()
+func Run() {
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		10*time.Second)
+	defer cancel()
 	configs.Init(ctx)
 
 	globalConfigs := configs.Get()
-
-	loggerConfigs := globalConfigs.Logger
-	logger.Init(ctx,
-		logger.WithGlobalConfigs(&loggerConfigs))
-
-	options := registration(
-		globalConfigs,
-		logger.Logger())
-
-	opts := Options{}
-	for _, optioner := range options {
-		optioner(&opts)
-	}
+	logger.Init(
+		ctx,
+		logger.WithGlobalConfigs(&globalConfigs.Logger))
 
 	logger.SInfo("application starting",
 		zap.Reflect("configs", globalConfigs))
 
-	if opts.factoryHook != nil {
-		if err := opts.factoryHook(ctx); err != nil {
-			logger.Fatal("failed to run factory hook",
-				zap.Error(err))
-			return
-		}
-	}
-
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
-	reconcilerContext, cancel := context.WithCancel(context.Background())
 
-	var reconciler reconciler.BaseReconciler
-	if opts.reconcilerFactory != nil {
-		reconciler = opts.reconcilerFactory()
+	hikvisionClient, err := hikvision.NewClient(
+		hikvision.WithPoolSize(10),
+	)
+	if err != nil {
+		logger.SFatal("failed to create hikvision client", zap.Error(err))
 	}
+	controlPlaneService := service.NewControlPlaneService(&globalConfigs.DeviceInfo)
+	commandService := service.NewCommandService(hikvisionClient)
 
+	reconciler := reconciler.NewReconciler(
+		controlPlaneService,
+		&globalConfigs.DeviceInfo,
+		commandService,
+	)
+
+	reconcilerContext, reconcilerCancel := context.WithCancel(context.Background())
 	if reconciler != nil {
 		go func() {
 			reconciler.Run(reconcilerContext)
-			cancel()
+			reconcilerCancel()
 		}()
 	}
 
 	defer func() {
-		cancel()
-		ctx, cancel = context.WithTimeout(context.Background(), shutdownTimeout)
+		ctx, cancel = context.WithTimeout(
+			context.Background(),
+			5*time.Second)
 		defer cancel()
-
-		if opts.shutdownHook != nil {
-			opts.shutdownHook(ctx)
-		}
 		logger.Info("application shutdown complete")
 	}()
 
-	for {
-		select {
-		case <-quit:
-			return
-		case <-reconcilerContext.Done():
-			return
-		}
-	}
+	<-quit
+	logger.Info("application shutdown requested")
+	reconcilerCancel()
 }
 
 type RegistrationFunc func(configs *configs.Configs, logger *zap.Logger) []Optioner

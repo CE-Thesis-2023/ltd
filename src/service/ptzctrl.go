@@ -5,14 +5,14 @@ import (
 	"time"
 
 	"github.com/CE-Thesis-2023/backend/src/models/db"
+	"github.com/CE-Thesis-2023/backend/src/models/events"
 	"github.com/CE-Thesis-2023/ltd/src/internal/hikvision"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
-	"github.com/CE-Thesis-2023/ltd/src/models/events"
 
 	"go.uber.org/zap"
 )
 
-func (s *CommandService) PtzCtrl(ctx context.Context, camera *db.Camera, req *events.PtzCtrlRequest) error {
+func (s *CommandService) PtzCtrl(ctx context.Context, camera *db.Camera, req *events.PTZCtrlRequest) error {
 	logger.SInfo("requested to perform PTZ Control",
 		zap.Reflect("request", req),
 		zap.String("camera_id", req.CameraId))
@@ -26,8 +26,8 @@ func (s *CommandService) PtzCtrl(ctx context.Context, camera *db.Camera, req *ev
 	return nil
 }
 
-func (s *CommandService) requestRemoteControl(ctx context.Context, camera *db.Camera, req *events.PtzCtrlRequest) error {
-	hasStopAfter := req.StopAfterSeconds != nil && *req.StopAfterSeconds > 0
+func (s *CommandService) requestRemoteControl(ctx context.Context, camera *db.Camera, req *events.PTZCtrlRequest) error {
+	hasStopAfter := req.Duration > 0
 	client := s.hikvisionClient.PtzCtrl(&hikvision.Credentials{
 		Username: camera.Username,
 		Password: camera.Password,
@@ -42,7 +42,7 @@ func (s *CommandService) requestRemoteControl(ctx context.Context, camera *db.Ca
 		if err := s.doContinousWithStop(ctx, client, &hikvision.PtzCtrlContinousWithResetRequest{
 			ChannelId:  channelId,
 			Options:    continuousOptions,
-			ResetAfter: time.Second * time.Duration(*req.StopAfterSeconds),
+			ResetAfter: time.Second * time.Duration(req.Duration),
 		}); err != nil {
 			return err
 		}

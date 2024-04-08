@@ -8,7 +8,7 @@ import (
 
 	"github.com/CE-Thesis-2023/backend/src/models/db"
 	"github.com/CE-Thesis-2023/backend/src/models/web"
-	"github.com/CE-Thesis-2023/ltd/src/biz/service"
+	"github.com/CE-Thesis-2023/ltd/src/service"
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"

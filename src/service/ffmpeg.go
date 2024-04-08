@@ -13,7 +13,6 @@ import (
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	custff "github.com/CE-Thesis-2023/ltd/src/internal/ffmpeg"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
-	"github.com/CE-Thesis-2023/ltd/src/models/rest"
 	"go.uber.org/zap"
 )
 
@@ -61,7 +60,6 @@ func (s *mediaService) Shutdown() {
 type MediaServiceInterface interface {
 	RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Camera, info *web.TranscoderStreamConfiguration) error
 	CancelFFmpegRtspToSrt(ctx context.Context, camera *db.Camera) error
-	ListOngoingStreams(ctx context.Context) (*rest.DebugListStreamsResponse, error)
 	Shutdown()
 }
 
@@ -227,19 +225,4 @@ func (s *mediaService) CancelFFmpegRtspToSrt(ctx context.Context, camera *db.Cam
 	logger.SInfo("canceled transcoding stream",
 		zap.String("camera_id", camera.CameraId))
 	return nil
-}
-
-func (s *mediaService) ListOngoingStreams(ctx context.Context) (*rest.DebugListStreamsResponse, error) {
-	logger.SDebug("ListOngoingStreams: request received")
-	streams := s.onGoingProcesses
-	resp := &rest.DebugListStreamsResponse{}
-	for cameraId, s := range streams {
-		resp.Streams = append(resp.Streams, rest.StreamInfo{
-			CameraId:       cameraId,
-			SourceUrl:      s.SourceUrl,
-			DestinationUrl: s.DestinationUrl,
-		})
-	}
-	logger.SDebug("ListOngoingStreams: streams", zap.Reflect("streams", resp))
-	return resp, nil
 }
