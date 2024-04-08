@@ -13,9 +13,7 @@ import (
 var globalConfigs *Configs
 
 type Configs struct {
-	Private          HttpConfigs       `json:"private,omitempty" yaml:"private,omitempty"`
 	Logger           LoggerConfigs     `json:"logger,omitempty" yaml:"logger,omitempty"`
-	MqttStore        EventStoreConfigs `json:"mqttStore,omitempty" yaml:"mqttStore,omitempty"`
 	DeviceInfo       DeviceInfoConfigs `json:"deviceInfo,omitempty" yaml:"deviceInfo,omitempty"`
 	Ffmpeg           FfmpegConfigs     `json:"ffmpeg,omitempty" yaml:"ffmpeg,omitempty"`
 }

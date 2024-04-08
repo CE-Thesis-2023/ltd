@@ -1,27 +1,15 @@
 {
-  "public": {
-    "port": 8700,
-    "name": "public_api"
-  },
   "logger": {
     "level": "debug",
     "encoding": "console"
-  },
-  "mqttStore": {
-    "host": "mosquitto.mqtt.ntranlab.com",
-    "port": 8883,
-    "enabled": true,
-    "username": "admin",
-    "password": "ctportal2024",
-    "level": "debug",
-    "tls": {
-      "enabled": true
-    }
   },
   "deviceInfo": {
     "deviceId": "test-device-01",
     "cloudApiServer": "https://private.api.ctportal.ntranlab.com",
     "username": "dev",
     "password": "dev"
+  },
+  "ffmpeg": {
+    "binaryPath": "/usr/bin/ffmpeg"
   }
 }
