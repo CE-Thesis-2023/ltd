@@ -60,11 +60,11 @@ func Run() {
 			context.Background(),
 			5*time.Second)
 		defer cancel()
-		logger.Info("application shutdown complete")
+		logger.SInfo("application shutdown complete")
 	}()
 
 	<-quit
-	logger.Info("application shutdown requested")
+	logger.SInfo("application shutdown requested")
 	reconcilerCancel()
 }
 

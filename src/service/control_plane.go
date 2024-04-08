@@ -342,3 +342,47 @@ func (s *ControlPlaneService) GetCameraStreamSettings(ctx context.Context, req *
 		return nil, custerror.ErrorInternal
 	}
 }
+
+func (s *ControlPlaneService) GetMQTTEndpoints(ctx context.Context, req *web.GetMQTTEventEndpointRequest) (*web.GetMQTTEventEndpointResponse, error) {
+	logger.SInfo("requested to get MQTT endpoints",
+		zap.Reflect("request", req))
+	path := s.baseUrl.JoinPath("/transcoders/mqtt")
+	q := path.Query()
+	q.Add("transcoder_id", req.TranscoderId)
+	path.RawQuery = q.Encode()
+
+	request, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		path.String(),
+		nil)
+	if err != nil {
+		return nil, err
+	}
+	request.SetBasicAuth(s.basicAuthUser, s.basicAuthPassword)
+	response, err := s.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	switch response.StatusCode {
+	case 200:
+		defer response.
+			Body.
+			Close()
+		bodyBytes, err := io.ReadAll(response.Body)
+		if err != nil {
+			return nil, custerror.FormatInternalError("unable to read response body: %s", err)
+		}
+		var resp web.GetMQTTEventEndpointResponse
+		if err := json.Unmarshal(bodyBytes, &resp); err != nil {
+			return nil, err
+		}
+		return &resp, nil
+	case 400:
+		return nil, custerror.ErrorInvalidArgument
+	case 404:
+		return nil, custerror.ErrorNotFound
+	default:
+		return nil, custerror.ErrorInternal
+	}
+}

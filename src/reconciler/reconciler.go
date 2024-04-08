@@ -8,10 +8,10 @@ import (
 
 	"github.com/CE-Thesis-2023/backend/src/models/db"
 	"github.com/CE-Thesis-2023/backend/src/models/web"
-	"github.com/CE-Thesis-2023/ltd/src/service"
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
+	"github.com/CE-Thesis-2023/ltd/src/service"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
@@ -81,6 +81,17 @@ func (c *Reconciler) initApplication(ctx context.Context) error {
 			zap.Error(err))
 		return err
 	}
+
+	mqttEndpoints, err := c.controlPlaneService.GetMQTTEndpoints(ctx, &web.GetMQTTEventEndpointRequest{
+		TranscoderId: c.deviceInfo.DeviceId,
+	})
+	if err != nil {
+		logger.SError("failed to get MQTT endpoints",
+			zap.Error(err))
+		return err
+	}
+	logger.SDebug("MQTT endpoints",
+		zap.Reflect("endpoints", mqttEndpoints))
 	return nil
 }
 
