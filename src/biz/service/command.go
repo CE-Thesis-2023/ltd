@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/CE-Thesis-2023/backend/src/models/db"
+	"github.com/CE-Thesis-2023/backend/src/models/web"
 	"github.com/CE-Thesis-2023/ltd/src/helper/factory"
 	"github.com/CE-Thesis-2023/ltd/src/internal/hikvision"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
@@ -44,20 +45,20 @@ func (s *CommandService) DeviceInfo(ctx context.Context, camera *db.Camera) (*hi
 	return info, nil
 }
 
-func (s *CommandService) StartFfmpegStream(ctx context.Context, camera *db.Camera, req *events.CommandStartStreamInfo) error {
+func (s *CommandService) StartFfmpegStream(ctx context.Context, camera *db.Camera, configs *web.TranscoderStreamConfiguration) error {
 	logger.SDebug("requested to start RTSP to SRT transcoding stream",
 		zap.Reflect("camera_id", camera.CameraId),
-		zap.Reflect("request", req))
+		zap.Reflect("configs", configs))
 
 	m := GetMediaService()
-	err := m.RequestFFmpegRtspToSrt(ctx, camera, req)
+	err := m.RequestFFmpegRtspToSrt(ctx, camera, configs)
 	if err != nil {
 		logger.SError("failed to start RTSP to SRT transcoding stream", zap.Error(err))
 		return err
 	}
 
 	logger.SInfo("started transcoding stream",
-		zap.Reflect("camera_id", req.CameraId))
+		zap.Reflect("camera_id", camera.CameraId))
 	return nil
 }
 

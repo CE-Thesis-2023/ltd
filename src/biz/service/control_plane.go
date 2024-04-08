@@ -256,3 +256,89 @@ func (s *ControlPlaneService) GetOpenGateMqttConfigurations(ctx context.Context,
 		return nil, custerror.ErrorInternal
 	}
 }
+
+func (s *ControlPlaneService) GetOpenGateConfigurations(ctx context.Context, req *web.GetTranscoderOpenGateConfigurationRequest) (*web.GetTranscoderOpenGateConfigurationResponse, error) {
+	logger.SInfo("requested to get OpenGate configurations",
+		zap.Reflect("request", req))
+	path := s.baseUrl.JoinPath("/opengate", "configurations", req.TranscoderId)
+	request, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		path.String(),
+		nil)
+	if err != nil {
+		return nil, err
+	}
+	request.SetBasicAuth(s.basicAuthUser, s.basicAuthPassword)
+	response, err := s.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	switch response.StatusCode {
+	case 200:
+		defer response.
+			Body.
+			Close()
+		bodyBytes, err := io.ReadAll(response.Body)
+		if err != nil {
+			return nil, custerror.FormatInternalError("unable to read response body: %s", err)
+		}
+		var resp web.GetTranscoderOpenGateConfigurationResponse
+		if err := json.Unmarshal(bodyBytes, &resp); err != nil {
+			return nil, err
+		}
+		return &resp, nil
+	case 400:
+		return nil, custerror.ErrorInvalidArgument
+	case 404:
+		return nil, custerror.ErrorNotFound
+	default:
+		return nil, custerror.ErrorInternal
+	}
+}
+
+func (s *ControlPlaneService) GetCameraStreamSettings(ctx context.Context, req *web.GetStreamConfigurationsRequest) (*web.GetStreamConfigurationsResponse, error) {
+	logger.SInfo("requested to get camera stream settings",
+		zap.Reflect("request", req))
+	path := s.baseUrl.JoinPath("/transcoders/streams")
+	q := path.Query()
+	for _, camera := range req.CameraId {
+		q.Add("camera_id", camera)
+	}
+	path.RawQuery = q.Encode()
+
+	request, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		path.String(),
+		nil)
+	if err != nil {
+		return nil, err
+	}
+	request.SetBasicAuth(s.basicAuthUser, s.basicAuthPassword)
+	response, err := s.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	switch response.StatusCode {
+	case 200:
+		defer response.
+			Body.
+			Close()
+		bodyBytes, err := io.ReadAll(response.Body)
+		if err != nil {
+			return nil, custerror.FormatInternalError("unable to read response body: %s", err)
+		}
+		var resp web.GetStreamConfigurationsResponse
+		if err := json.Unmarshal(bodyBytes, &resp); err != nil {
+			return nil, err
+		}
+		return &resp, nil
+	case 400:
+		return nil, custerror.ErrorInvalidArgument
+	case 404:
+		return nil, custerror.ErrorNotFound
+	default:
+		return nil, custerror.ErrorInternal
+	}
+}

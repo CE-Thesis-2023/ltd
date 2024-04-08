@@ -2,20 +2,17 @@ package service
 
 import (
 	"context"
-	"fmt"
-	"net/url"
 	"os/exec"
 	"path/filepath"
 	"sync"
 
 	"github.com/CE-Thesis-2023/backend/src/models/db"
+	"github.com/CE-Thesis-2023/backend/src/models/web"
 	"github.com/CE-Thesis-2023/ltd/src/helper"
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	custff "github.com/CE-Thesis-2023/ltd/src/internal/ffmpeg"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
-	"github.com/CE-Thesis-2023/ltd/src/models/events"
-	"github.com/CE-Thesis-2023/ltd/src/models/ms"
 	"github.com/CE-Thesis-2023/ltd/src/models/rest"
 	"go.uber.org/zap"
 )
@@ -62,22 +59,21 @@ func (s *mediaService) Shutdown() {
 }
 
 type MediaServiceInterface interface {
-	RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Camera, req *events.CommandStartStreamInfo) error
+	RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Camera, info *web.TranscoderStreamConfiguration) error
 	CancelFFmpegRtspToSrt(ctx context.Context, camera *db.Camera) error
 	ListOngoingStreams(ctx context.Context) (*rest.DebugListStreamsResponse, error)
 	Shutdown()
 }
 
-func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Camera, req *events.CommandStartStreamInfo) error {
-	logger.SInfo("requested starting to perform RTSP to SRT transcoding stream", zap.String("request", req.CameraId))
+func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Camera, info *web.TranscoderStreamConfiguration) error {
+	logger.SInfo("requested starting to perform RTSP to SRT transcoding stream",
+		zap.String("request", camera.CameraId))
 
-	sourceUrl := s.buildRtspStreamUrl(camera)
+	sourceUrl := info.SourceUrl
 	logger.SDebug("RTSP source stream URL",
 		zap.String("source", sourceUrl))
 
-	destinationUrl := s.buildPushSrtUrl(&ms.PushStreamingRequest{
-		StreamName: req.CameraId,
-	})
+	destinationUrl := info.PublishUrl
 	logger.SDebug("SRT destination stream URL",
 		zap.String("destination", destinationUrl))
 
@@ -124,7 +120,7 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 			zap.Error(err))
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		delete(s.onGoingProcesses, req.CameraId)
+		delete(s.onGoingProcesses, camera.CameraId)
 	}
 	return nil
 }
@@ -231,20 +227,6 @@ func (s *mediaService) CancelFFmpegRtspToSrt(ctx context.Context, camera *db.Cam
 	logger.SInfo("canceled transcoding stream",
 		zap.String("camera_id", camera.CameraId))
 	return nil
-}
-
-func (s *mediaService) buildRtspStreamUrl(camera *db.Camera) string {
-	u := &url.URL{}
-	u.Scheme = "rtsp"
-	u.Host = camera.Ip
-	if camera.Port != 0 {
-		u.Host = fmt.Sprintf("%s:%d", camera.Ip, camera.Port)
-	}
-	u = u.JoinPath("/ISAPI", "/Streaming", "channels", "101")
-	u.User = url.UserPassword(camera.Username, camera.Password)
-	url := u.String()
-	logger.SDebug("buildRtspStreamUrl: stream url", zap.String("url", url))
-	return url
 }
 
 func (s *mediaService) ListOngoingStreams(ctx context.Context) (*rest.DebugListStreamsResponse, error) {
