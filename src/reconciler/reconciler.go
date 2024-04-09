@@ -67,14 +67,19 @@ func NewReconciler(
 }
 
 func (c *Reconciler) Run(ctx context.Context) {
-	logger.SInfo("reconciler loop Enabled")
+	logger.SDebug("reconciler loop started")
+
 	if err := c.init(ctx); err != nil {
 		logger.SError("reconciler loop initialize application failed",
 			zap.Error(err))
 		return
 	}
 
+	var wg sync.WaitGroup
+	wg.Add(2)
+
 	go func() {
+		defer wg.Done()
 		if err := c.mediaService.Reconcile(ctx); err != nil {
 			logger.SFatal("media controller reconcile failed",
 				zap.Error(err))
@@ -82,6 +87,7 @@ func (c *Reconciler) Run(ctx context.Context) {
 	}()
 
 	go func() {
+		defer wg.Done()
 		if err := c.openGateService.Reconcile(ctx); err != nil {
 			logger.SFatal("open gate controller reconcile failed",
 				zap.Error(err))
@@ -104,6 +110,7 @@ func (c *Reconciler) Run(ctx context.Context) {
 		case <-ctx.Done():
 			logger.SInfo("reconciler loop shutdown requested")
 			c.mu.Unlock()
+			wg.Wait()
 			return
 		}
 	}

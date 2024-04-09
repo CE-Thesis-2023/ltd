@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"sync"
 	"time"
 
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
@@ -53,25 +54,23 @@ func Run() {
 		processorController,
 	)
 
+	var wg sync.WaitGroup
+
 	reconcilerContext, reconcilerCancel := context.WithCancel(context.Background())
 	if reconciler != nil {
+		wg.Add(1)
 		go func() {
 			reconciler.Run(reconcilerContext)
 			reconcilerCancel()
+			defer wg.Done()
 		}()
 	}
-
-	defer func() {
-		ctx, cancel = context.WithTimeout(
-			context.Background(),
-			5*time.Second)
-		defer cancel()
-		logger.SInfo("application shutdown complete")
-	}()
 
 	<-quit
 	logger.SInfo("application shutdown requested")
 	reconcilerCancel()
+	wg.Wait()
+	logger.SInfo("application shutdown complete")
 }
 
 type RegistrationFunc func(configs *configs.Configs, logger *zap.Logger) []Optioner

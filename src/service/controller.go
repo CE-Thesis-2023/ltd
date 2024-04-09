@@ -35,10 +35,10 @@ func (c *MediaController) Reconcile(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
-			logger.SDebug("media controller context cancelled",
-				zap.Error(ctx.Err()))
+			logger.SDebug("media controller context cancelled")
 			c.cleanup()
-			return ctx.Err()
+			logger.SDebug("media controller cleaned up")
+			return nil
 		default:
 			updated := false
 
@@ -262,14 +262,14 @@ func (c *ProcessorController) Reconcile(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
-			logger.SDebug("processor controller context cancelled",
-				zap.Error(ctx.Err()))
+			logger.SDebug("processor controller context cancelled")
 			if err := c.shutdown(ctx); err != nil {
 				logger.SError("error shutting down processor",
 					zap.Error(err))
 				return err
 			}
-			return ctx.Err()
+			logger.SDebug("processor controller cleaned up")
+			return nil
 		default:
 			if err := c.reconcile(ctx); err != nil {
 				logger.SError("error reconciling processor",
