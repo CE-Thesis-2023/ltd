@@ -237,8 +237,7 @@ func (s *mediaService) ComposeDownOpenGate(ctx context.Context, p *OpenGateProce
 	if p.proc != nil {
 		if p.proc.Process != nil {
 			if err := p.proc.Process.Signal(syscall.SIGTERM); err != nil {
-				logger.SError("failed to kill Compose up process", zap.Error(err))
-				return nil
+				logger.SDebug("no other Compose process running")
 			}
 			logger.SDebug("interrupted Compose up process")
 		}
@@ -254,8 +253,8 @@ func (s *mediaService) ComposeDownOpenGate(ctx context.Context, p *OpenGateProce
 	return nil
 }
 
-func (s *mediaService) buildComposeDownCommand(ctx context.Context, p *OpenGateProcess) *exec.Cmd {
-	cmd := exec.CommandContext(ctx,
+func (s *mediaService) buildComposeDownCommand(_ context.Context, p *OpenGateProcess) *exec.Cmd {
+	cmd := exec.Command(
 		"docker", "compose", "-f", p.absComposePath, "down")
 	return cmd
 }
