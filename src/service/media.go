@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"syscall"
 
 	"github.com/CE-Thesis-2023/backend/src/models/web"
@@ -41,6 +42,7 @@ type MediaServiceInterface interface {
 	ComposeRestartOpenGate(ctx context.Context, p *OpenGateProcess) error
 	ComposeUpOpenGate(ctx context.Context, p *OpenGateProcess) error
 	ComposeDownOpenGate(ctx context.Context, p *OpenGateProcess) error
+	DockerPullImages(ctx context.Context, images []string) error
 }
 
 func (s *mediaService) StartTranscodingStream(ctx context.Context, p *Process) error {
@@ -278,4 +280,26 @@ func (s *mediaService) ComposeRestartOpenGate(ctx context.Context, p *OpenGatePr
 
 	logger.SDebug("Compose restart process completed")
 	return nil
+}
+
+func (s *mediaService) DockerPullImages(ctx context.Context, images []string) error {
+	var wg sync.WaitGroup
+	wg.Add(len(images))
+	for _, i := range images {
+		go func(image string) {
+			cmd := s.buildDockerPullCmd(ctx, image)
+			if err := cmd.Run(); err != nil {
+				logger.SError("failed to run process",
+					zap.Error(err))
+			}
+			defer wg.Done()
+		}(i)
+	}
+	wg.Wait()
+	return nil
+}
+
+func (s *mediaService) buildDockerPullCmd(ctx context.Context, image string) *exec.Cmd {
+	return exec.CommandContext(ctx,
+		"docker", "pull", image)
 }

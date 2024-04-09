@@ -89,23 +89,46 @@ func (c *Reconciler) Run(ctx context.Context) {
 	}()
 
 	for {
+		c.mu.Lock()
 		if err := c.reconcile(ctx); err != nil {
 			logger.SError("reconciler loop reconcile failed",
 				zap.Error(err))
+			c.mu.Unlock()
 			return
 		}
 
 		select {
 		case <-time.After(2 * time.Second):
+			c.mu.Unlock()
 			continue
 		case <-ctx.Done():
 			logger.SInfo("reconciler loop shutdown requested")
+			c.mu.Unlock()
 			return
 		}
 	}
 }
 
 func (c *Reconciler) init(ctx context.Context) error {
+	if err := c.registerDevice(ctx); err != nil {
+		logger.SError("failed to register device",
+			zap.Error(err))
+		return err
+	}
+	if err := c.pullLatestMQTTConfigurations(ctx); err != nil {
+		logger.SError("failed to pull latest MQTT configurations",
+			zap.Error(err))
+		return err
+	}
+	if err := c.openGateService.PrePullImages(ctx); err != nil {
+		logger.SError("failed to pull images",
+			zap.Error(err))
+		return err
+	}
+	return nil
+}
+
+func (c *Reconciler) registerDevice(ctx context.Context) error {
 	err := c.controlPlaneService.
 		RegisterDevice(ctx, &service.RegistrationRequest{
 			DeviceId: c.
@@ -124,7 +147,10 @@ func (c *Reconciler) init(ctx context.Context) error {
 			zap.Error(err))
 		return err
 	}
+	return nil
+}
 
+func (c *Reconciler) pullLatestMQTTConfigurations(ctx context.Context) error {
 	mqttEndpoints, err := c.controlPlaneService.GetMQTTEndpoints(ctx, &web.GetMQTTEventEndpointRequest{
 		TranscoderId: c.deviceInfo.DeviceId,
 	})
@@ -139,7 +165,7 @@ func (c *Reconciler) init(ctx context.Context) error {
 }
 
 func (c *Reconciler) reconcile(ctx context.Context) error {
-	logger.SInfo("reconcile Enabled")
+	logger.SDebug("reconcile Enabled")
 
 	if err := c.pullLatestConfigurations(ctx); err != nil {
 		logger.SError("failed to pull latest configurations",
@@ -153,12 +179,18 @@ func (c *Reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	logger.SInfo("reconcile completed")
+	if err := c.reconcileOpenGate(); err != nil {
+		logger.SError("failed to reconcile OpenGate",
+			zap.Error(err))
+		return err
+	}
+
+	logger.SDebug("reconcile completed")
 	return nil
 }
 
 func (c *Reconciler) pullLatestConfigurations(ctx context.Context) error {
-	logger.SInfo("pulling latest configurations",
+	logger.SDebug("pulling latest configurations",
 		zap.String("transcoderId", c.deviceInfo.DeviceId))
 
 	if err := c.pullOpenGateConfiguration(ctx); err != nil {
@@ -177,7 +209,7 @@ func (c *Reconciler) pullLatestConfigurations(ctx context.Context) error {
 		return err
 	}
 
-	logger.SInfo("pulling latest configurations completed")
+	logger.SDebug("pulling latest configurations completed")
 	return nil
 }
 
@@ -199,7 +231,7 @@ func (c *Reconciler) pullOpenGateConfiguration(ctx context.Context) error {
 }
 
 func (c *Reconciler) pullStreamConfigurations(ctx context.Context) error {
-	logger.SInfo("pulling stream configurations",
+	logger.SDebug("pulling stream configurations",
 		zap.String("transcoderId", c.deviceInfo.DeviceId))
 	assignedResp, err := c.controlPlaneService.GetAssignedDevices(ctx, &service.GetAssignedDevicesRequest{
 		DeviceId: c.
@@ -231,8 +263,6 @@ func (c *Reconciler) pullStreamConfigurations(ctx context.Context) error {
 }
 
 func (c *Reconciler) reconcileFFmpegStreams() error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
 	for cameraId, newConfig := range c.updatedCameras {
 		if _, ok := c.cameras[cameraId]; !ok {
 			logger.SInfo("new camera stream configuration",
@@ -255,7 +285,6 @@ func (c *Reconciler) reconcileFFmpegStreams() error {
 			logger.SInfo("camera stream configuration removed",
 				zap.String("cameraId", cameraId))
 			c.mediaService.Deregister(cameraId)
-			logger.SDebug("camera stream configuration removed")
 		}
 	}
 	c.cameras = c.updatedCameras

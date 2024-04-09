@@ -1,4 +1,3 @@
-version: '3.9'
 services:
   local-transcoder:
     image: 'nguyentrantrung/local-transcoder:latest'

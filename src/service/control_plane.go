@@ -258,7 +258,7 @@ func (s *ControlPlaneService) GetOpenGateMqttConfigurations(ctx context.Context,
 }
 
 func (s *ControlPlaneService) GetOpenGateConfigurations(ctx context.Context, req *web.GetTranscoderOpenGateConfigurationRequest) (*web.GetTranscoderOpenGateConfigurationResponse, error) {
-	logger.SInfo("requested to get OpenGate configurations",
+	logger.SDebug("requested to get OpenGate configurations",
 		zap.Reflect("request", req))
 	path := s.baseUrl.JoinPath("/opengate", "configurations", req.TranscoderId)
 	request, err := http.NewRequestWithContext(

@@ -284,17 +284,19 @@ func (c *ProcessorController) Reconcile(ctx context.Context) error {
 func (c *ProcessorController) Updates(settings []byte) {
 	c.mu.Lock()
 	c.updatedSettings = settings
-	defer c.mu.Unlock()
+	c.mu.Unlock()
 }
 
 func (c *ProcessorController) reconcile(ctx context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	updated := c.compareSettings()
+	if updated {
+		c.settings = c.updatedSettings
+	}
 	switch c.running {
 	case true:
 		if updated {
-			c.settings = c.updatedSettings
 			logger.SInfo("processor is running, settings is updated, restarting")
 			if err := c.startOrRestart(ctx); err != nil {
 				logger.SError("error restarting processor",
@@ -366,4 +368,16 @@ func (c *ProcessorController) compareSettings() (updated bool) {
 		return false
 	}
 	return true
+}
+
+func (c *ProcessorController) PrePullImages(ctx context.Context) error {
+	logger.SDebug("pre-pulling images", zap.Reflect("images", c.configs.PrepullImages))
+	images := c.configs.PrepullImages
+	if err := c.mediaService.DockerPullImages(ctx, images); err != nil {
+		logger.SError("error pre-pulling images",
+			zap.Error(err))
+		return err
+	}
+	logger.SInfo("images pulled successfully")
+	return nil
 }
