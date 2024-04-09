@@ -1,1 +1,0 @@
-# Media Engine Proxy

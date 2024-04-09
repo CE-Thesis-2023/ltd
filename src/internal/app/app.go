@@ -40,11 +40,15 @@ func Run() {
 	}
 	controlPlaneService := service.NewControlPlaneService(&globalConfigs.DeviceInfo)
 	commandService := service.NewCommandService(hikvisionClient)
+	mediaService := service.NewMediaService()
+
+	mediaController := service.NewMediaController(mediaService)
 
 	reconciler := reconciler.NewReconciler(
 		controlPlaneService,
 		&globalConfigs.DeviceInfo,
 		commandService,
+		mediaController,
 	)
 
 	reconcilerContext, reconcilerCancel := context.WithCancel(context.Background())

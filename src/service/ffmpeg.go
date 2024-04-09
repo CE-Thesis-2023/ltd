@@ -4,11 +4,9 @@ import (
 	"context"
 	"os/exec"
 	"path/filepath"
-	"sync"
+	"syscall"
 
-	"github.com/CE-Thesis-2023/backend/src/models/db"
 	"github.com/CE-Thesis-2023/backend/src/models/web"
-	"github.com/CE-Thesis-2023/ltd/src/helper"
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	custff "github.com/CE-Thesis-2023/ltd/src/internal/ffmpeg"
@@ -16,69 +14,35 @@ import (
 	"go.uber.org/zap"
 )
 
-type onGoingProcess struct {
-	SourceUrl      string
-	DestinationUrl string
-	proc           *exec.Cmd
-}
-
-func (c *onGoingProcess) Cancel(ctx context.Context) error {
-	if c.proc != nil {
-		return c.proc.Cancel()
-	}
-	return nil
-}
-
 type mediaService struct {
-	onGoingProcesses map[string]*onGoingProcess
-	mu               sync.Mutex
 }
 
 func NewMediaService() MediaServiceInterface {
-	return &mediaService{
-		onGoingProcesses: map[string]*onGoingProcess{},
-	}
+	return &mediaService{}
 }
 
-func (s *mediaService) Shutdown() {
-	logger.SInfo("shutting down media service")
-	for cameraId, p := range s.onGoingProcesses {
-		if p.proc != nil {
-			if p.proc.Cancel != nil {
-				if err := p.proc.Cancel(); err != nil {
-					logger.SDebug("error shutting down FFmpeg process", zap.Error(err))
-					continue
-				}
-				delete(s.onGoingProcesses, cameraId)
-				logger.SDebug("shutdown FFmpeg process", zap.String("cameraId", cameraId))
-			}
-		}
-	}
-	logger.SDebug("released streaming pool")
+type Process struct {
+	proc     *exec.Cmd
+	cameraId string
+	configs  *web.TranscoderStreamConfiguration
 }
 
 type MediaServiceInterface interface {
-	RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Camera, info *web.TranscoderStreamConfiguration) error
-	CancelFFmpegRtspToSrt(ctx context.Context, camera *db.Camera) error
-	Shutdown()
+	StartTranscodingStream(ctx context.Context, p *Process) error
+	EndTranscodingStream(ctx context.Context, p *Process) error
 }
 
-func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Camera, info *web.TranscoderStreamConfiguration) error {
+func (s *mediaService) StartTranscodingStream(ctx context.Context, p *Process) error {
 	logger.SInfo("requested starting to perform RTSP to SRT transcoding stream",
-		zap.String("request", camera.CameraId))
+		zap.String("request", p.cameraId))
 
-	sourceUrl := info.SourceUrl
+	sourceUrl := p.configs.SourceUrl
 	logger.SDebug("RTSP source stream URL",
 		zap.String("source", sourceUrl))
 
-	destinationUrl := info.PublishUrl
+	destinationUrl := p.configs.PublishUrl
 	logger.SDebug("SRT destination stream URL",
 		zap.String("destination", destinationUrl))
-
-	if s.isThisStreamGoing(camera) {
-		logger.SInfo("RequestFFmpegRtspToSrt: stream already exists")
-		return nil
-	}
 
 	command := s.buildFfmpegRestreamingCommand(sourceUrl, destinationUrl)
 	logger.SDebug("transcoding stream FFmpeg command",
@@ -87,39 +51,14 @@ func (s *mediaService) RequestFFmpegRtspToSrt(ctx context.Context, camera *db.Ca
 		logger.SError("failed to build FFmpeg command")
 		return custerror.FormatInternalError("failed to build FFmpeg os/exec command")
 	}
+	p.proc = command
 
-	if err := helper.Do(func() error {
-		s.recordThisStream(camera,
-			sourceUrl,
-			destinationUrl,
-			command)
-
-		logger.SInfo("starting transcoding stream")
-		if err := command.Start(); err != nil {
-			logger.SError("failed to run FFmpeg process", zap.Error(err))
-			return err
-		}
-		logger.SInfo("transcoding stream ended")
-
-		return nil
-	},
-		helper.Attempts(3),
-		helper.RetryIf(func(err error) bool {
-			if s.shouldRestartStream(err, camera) {
-				logger.SInfo("will restart transcoding stream",
-					zap.String("camera_id", camera.CameraId))
-				return true
-			}
-			logger.SInfo("transcoding stream will not restart",
-				zap.String("camera_id", camera.CameraId))
-			return false
-		})); err != nil {
-		logger.SError("failed to start transcoding stream",
-			zap.Error(err))
-		s.mu.Lock()
-		defer s.mu.Unlock()
-		delete(s.onGoingProcesses, camera.CameraId)
+	logger.SInfo("starting transcoding stream")
+	if err := command.Run(); err != nil {
+		logger.SError("failed to run FFmpeg process", zap.Error(err))
+		return err
 	}
+	logger.SInfo("transcoding stream ended")
 	return nil
 }
 
@@ -173,56 +112,36 @@ func (s *mediaService) buildFfmpegRestreamingCommand(sourceUrl string, destinati
 	return exec.Command("/bin/bash", "-c", execCmd)
 }
 
-func (s *mediaService) shouldRestartStream(err error, camera *db.Camera) bool {
-	_, found := s.onGoingProcesses[camera.CameraId]
-	if found && err != nil {
-		return true
-	}
-	return false
-}
+func (s *mediaService) EndTranscodingStream(ctx context.Context, p *Process) error {
+	logger.SInfo("requested to end transcoding stream",
+		zap.String("camera_id", p.cameraId))
 
-func (s *mediaService) recordThisStream(camera *db.Camera, sourceUrl string, destinationUrl string, proc *exec.Cmd) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.onGoingProcesses[camera.CameraId] = &onGoingProcess{
-		SourceUrl:      sourceUrl,
-		DestinationUrl: destinationUrl,
-		proc:           proc,
-	}
-}
-
-func (s *mediaService) isThisStreamGoing(camera *db.Camera) bool {
-	pr, found := s.onGoingProcesses[camera.CameraId]
-	if found {
-		logger.SDebug("transcoding stream already going",
-			zap.Reflect("process", pr))
-		return true
-	}
-	return false
-}
-
-func (s *mediaService) CancelFFmpegRtspToSrt(ctx context.Context, camera *db.Camera) error {
-	logger.SInfo("requested canceling RTSP to SRT transcoding stream",
-		zap.String("camera_id", camera.CameraId))
-
-	onGoingProcess, yes := s.onGoingProcesses[camera.CameraId]
-	if !yes {
-		logger.SError("transcoding stream not found",
-			zap.String("camera_id", camera.CameraId))
+	if p.proc == nil {
+		logger.SInfo("no FFmpeg process to kill",
+			zap.String("camera_id", p.cameraId))
 		return nil
 	}
-	delete(s.onGoingProcesses, camera.CameraId)
 
-	logger.SDebug("canceling transcoding stream",
-		zap.String("camera_id", camera.CameraId))
-	if err := onGoingProcess.Cancel(ctx); err != nil {
-		logger.SError("failed to cancel transcoding stream",
-			zap.String("camera_id", camera.CameraId),
+	if p.proc.ProcessState != nil && p.proc.ProcessState.Exited() {
+		logger.SInfo("FFmpeg process already exited",
+			zap.String("camera_id", p.cameraId))
+		return nil
+	}
+
+	if p.proc.Process == nil {
+		logger.SInfo("FFmpeg process is nil",
+			zap.String("camera_id", p.cameraId))
+		return nil
+	}
+
+	if err := p.proc.Process.Signal(syscall.SIGTERM); err != nil {
+		logger.SError("failed to kill FFmpeg process",
+			zap.String("camera_id", p.cameraId),
 			zap.Error(err))
 		return err
 	}
 
-	logger.SInfo("canceled transcoding stream",
-		zap.String("camera_id", camera.CameraId))
+	logger.SInfo("FFmpeg process killed",
+		zap.String("camera_id", p.cameraId))
 	return nil
 }
