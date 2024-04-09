@@ -13,9 +13,9 @@ import (
 var globalConfigs *Configs
 
 type Configs struct {
-	Logger           LoggerConfigs     `json:"logger,omitempty" yaml:"logger,omitempty"`
-	DeviceInfo       DeviceInfoConfigs `json:"deviceInfo,omitempty" yaml:"deviceInfo,omitempty"`
-	Ffmpeg           FfmpegConfigs     `json:"ffmpeg,omitempty" yaml:"ffmpeg,omitempty"`
+	Logger     LoggerConfigs     `json:"logger,omitempty" yaml:"logger,omitempty"`
+	DeviceInfo DeviceInfoConfigs `json:"deviceInfo,omitempty" yaml:"deviceInfo,omitempty"`
+	Ffmpeg     FfmpegConfigs     `json:"ffmpeg,omitempty" yaml:"ffmpeg,omitempty"`
 }
 
 func (c Configs) String() string {
@@ -71,16 +71,15 @@ type BasicAuthConfigs struct {
 }
 
 type EventStoreConfigs struct {
-	Tls      TlsConfig `json:"tls,omitempty" yaml:"tls,omitempty"`
-	Host     string    `json:"host,omitempty" yaml:"host,omitempty"`
-	Port     int       `json:"port,omitempty" yaml:"port,omitempty"`
-	Name     string    `json:"name,omitempty" yaml:"name,omitempty"`
-	Enabled  bool      `json:"enabled,omitempty" yaml:"enabled,omitempty"`
-	Username string    `json:"username,omitempty" yaml:"username,omitempty"`
-	Password string    `json:"password,omitempty" yaml:"password,omitempty"`
-	Level    string    `json:"level,omitempty" yaml:"level,omitempty"`
+	TlsEnabled bool   `json:"tlsEnabled,omitempty" yaml:"tlsEnabled,omitempty"`
+	Host       string `json:"host,omitempty" yaml:"host,omitempty"`
+	Port       int    `json:"port,omitempty" yaml:"port,omitempty"`
+	Name       string `json:"name,omitempty" yaml:"name,omitempty"`
+	Enabled    bool   `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Username   string `json:"username,omitempty" yaml:"username,omitempty"`
+	Password   string `json:"password,omitempty" yaml:"password,omitempty"`
+	Level      string `json:"level,omitempty" yaml:"level,omitempty"`
 }
-
 
 type FfmpegConfigs struct {
 	BinaryPath string `json:"binaryPath,omitempty" yaml:"binaryPath,omitempty"`

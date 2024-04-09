@@ -23,7 +23,7 @@ func NewClient(ctx context.Context, options ...ClientOptioner) *autopaho.Connect
 
 	globalConfigs := opts.globalConfigs
 	connUrl := url.URL{}
-	if globalConfigs.Tls.IsEnabled() {
+	if globalConfigs.TlsEnabled {
 		connUrl.Scheme = "tls"
 	} else {
 		connUrl.Scheme = "mqtt"
@@ -53,7 +53,7 @@ func NewClient(ctx context.Context, options ...ClientOptioner) *autopaho.Connect
 		},
 	}
 
-	if globalConfigs.Tls.IsEnabled() {
+	if globalConfigs.TlsEnabled {
 		tlsConfigs, err := makeTlsConfigs(globalConfigs)
 		if err != nil {
 			logger.SFatal("create TLS configuration failed", zap.Error(err))
@@ -99,23 +99,9 @@ func NewClient(ctx context.Context, options ...ClientOptioner) *autopaho.Connect
 }
 
 func makeTlsConfigs(globalConfigs *configs.EventStoreConfigs) (*tls.Config, error) {
-	tlsConfigs := globalConfigs.Tls
-	if !tlsConfigs.IsEnabled() {
-		return nil, nil
-	}
-
 	t := &tls.Config{
 		InsecureSkipVerify: true,
 	}
-
-	if tlsConfigs.Cert != "" && tlsConfigs.Key != "" {
-		credentials, err := tls.LoadX509KeyPair(tlsConfigs.Cert, tlsConfigs.Key)
-		if err != nil {
-			return nil, err
-		}
-		t.Certificates = []tls.Certificate{credentials}
-	}
-
 	return t, nil
 }
 
