@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"syscall"
@@ -27,9 +28,19 @@ type Process struct {
 	configs  *web.TranscoderStreamConfiguration
 }
 
+type OpenGateProcess struct {
+	proc           *exec.Cmd
+	configs        *configs.OpenGateConfigs
+	absComposePath string
+	settings       []byte
+}
+
 type MediaServiceInterface interface {
 	StartTranscodingStream(ctx context.Context, p *Process) error
 	EndTranscodingStream(ctx context.Context, p *Process) error
+	ComposeRestartOpenGate(ctx context.Context, p *OpenGateProcess) error
+	ComposeUpOpenGate(ctx context.Context, p *OpenGateProcess) error
+	ComposeDownOpenGate(ctx context.Context, p *OpenGateProcess) error
 }
 
 func (s *mediaService) StartTranscodingStream(ctx context.Context, p *Process) error {
@@ -44,7 +55,7 @@ func (s *mediaService) StartTranscodingStream(ctx context.Context, p *Process) e
 	logger.SDebug("SRT destination stream URL",
 		zap.String("destination", destinationUrl))
 
-	command := s.buildFfmpegRestreamingCommand(sourceUrl, destinationUrl)
+	command := s.buildFfmpegRestreamingCommand(ctx, sourceUrl, destinationUrl)
 	logger.SDebug("transcoding stream FFmpeg command",
 		zap.String("command", command.String()))
 	if command == nil {
@@ -62,7 +73,7 @@ func (s *mediaService) StartTranscodingStream(ctx context.Context, p *Process) e
 	return nil
 }
 
-func (s *mediaService) buildFfmpegRestreamingCommand(sourceUrl string, destinationUrl string) *exec.Cmd {
+func (s *mediaService) buildFfmpegRestreamingCommand(ctx context.Context, sourceUrl string, destinationUrl string) *exec.Cmd {
 	configs := configs.Get()
 	var binPath string
 	var err error
@@ -109,7 +120,8 @@ func (s *mediaService) buildFfmpegRestreamingCommand(sourceUrl string, destinati
 
 	logger.SDebug("FFmpeg command", zap.String("command", execCmd))
 
-	return exec.Command("/bin/bash", "-c", execCmd)
+	return exec.CommandContext(ctx,
+		"/bin/bash", "-c", execCmd)
 }
 
 func (s *mediaService) EndTranscodingStream(ctx context.Context, p *Process) error {
@@ -143,5 +155,127 @@ func (s *mediaService) EndTranscodingStream(ctx context.Context, p *Process) err
 
 	logger.SInfo("FFmpeg process killed",
 		zap.String("camera_id", p.cameraId))
+	return nil
+}
+
+func (s *mediaService) ComposeUpOpenGate(ctx context.Context, p *OpenGateProcess) error {
+	logger.SInfo("requested to start OpenGate")
+
+	if err := s.writeConfigurationFile(p); err != nil {
+		logger.SError("failed to write configuration file", zap.Error(err))
+		return err
+	}
+
+	command := s.buildOpenGateCommand(ctx, p)
+	logger.SDebug("opening gate command",
+		zap.String("command", command.String()))
+	if command == nil {
+		logger.SError("failed to build os/exec command")
+		return custerror.FormatInternalError("failed to build os/exec command")
+	}
+	p.proc = command
+
+	logger.SInfo("starting OpenGate")
+	if err := command.Run(); err != nil {
+		logger.SError("failed to run process", zap.Error(err))
+		return err
+	}
+	logger.SInfo("OpenGate started")
+	return nil
+}
+
+func (s *mediaService) buildOpenGateCommand(ctx context.Context, p *OpenGateProcess) *exec.Cmd {
+	filePath := p.configs.DockerComposePath
+	absPath, err := filepath.Abs(filePath)
+	if err != nil {
+		logger.SError("failed to get absolute path", zap.Error(err))
+		return nil
+	}
+	p.absComposePath = absPath
+
+	cmd := exec.CommandContext(ctx,
+		"docker", "compose", "-f", absPath, "up", "-d")
+	return cmd
+}
+
+func (s *mediaService) writeConfigurationFile(p *OpenGateProcess) error {
+	filePath := p.configs.ConfigurationPath
+	absPath, err := filepath.Abs(filePath)
+	if err != nil {
+		logger.SError("failed to get absolute path", zap.Error(err))
+		return err
+	}
+
+	f, err := os.OpenFile(absPath, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		logger.SError("failed to open file", zap.Error(err))
+		return err
+	}
+	defer f.Close()
+
+	data := p.settings
+	if _, err := f.Write(data); err != nil {
+		logger.SError("failed to write to file", zap.Error(err))
+		return err
+	}
+
+	return nil
+}
+
+func (s *mediaService) ComposeDownOpenGate(ctx context.Context, p *OpenGateProcess) error {
+	if p.absComposePath == "" {
+		filePath := p.configs.DockerComposePath
+		absPath, err := filepath.Abs(filePath)
+		if err != nil {
+			logger.SError("failed to get absolute path", zap.Error(err))
+			return nil
+		}
+		p.absComposePath = absPath
+	}
+	if p.proc != nil {
+		if p.proc.Process != nil {
+			if err := p.proc.Process.Signal(syscall.SIGTERM); err != nil {
+				logger.SError("failed to kill Compose up process", zap.Error(err))
+				return nil
+			}
+			logger.SDebug("interrupted Compose up process")
+		}
+	}
+
+	cmd := s.buildComposeDownCommand(ctx, p)
+	if err := cmd.Run(); err != nil {
+		logger.SError("failed to run process", zap.Error(err))
+		return nil
+	}
+
+	logger.SDebug("Compose down process completed")
+	return nil
+}
+
+func (s *mediaService) buildComposeDownCommand(ctx context.Context, p *OpenGateProcess) *exec.Cmd {
+	cmd := exec.CommandContext(ctx,
+		"docker", "compose", "-f", p.absComposePath, "down")
+	return cmd
+}
+
+func (s *mediaService) ComposeRestartOpenGate(ctx context.Context, p *OpenGateProcess) error {
+	if p.absComposePath == "" {
+		filePath := p.configs.DockerComposePath
+		absPath, err := filepath.Abs(filePath)
+		if err != nil {
+			logger.SError("failed to get absolute path", zap.Error(err))
+			return err
+		}
+		p.absComposePath = absPath
+	}
+
+	cmd := exec.CommandContext(ctx,
+		"docker", "compose", "-f", p.absComposePath, "restart")
+	if err := cmd.Run(); err != nil {
+		logger.SError("failed to run process", zap.Error(err))
+		return err
+	}
+
+	logger.SDebug("Compose restart process completed")
 	return nil
 }

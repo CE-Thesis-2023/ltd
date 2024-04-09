@@ -22,6 +22,7 @@ type Reconciler struct {
 	deviceInfo          *configs.DeviceInfoConfigs
 	commandService      *service.CommandService
 	mediaService        *service.MediaController
+	openGateService     *service.ProcessorController
 
 	updatedOpenGateConfigs string
 	updatedCameras         map[string]web.TranscoderStreamConfiguration
@@ -33,7 +34,8 @@ func NewReconciler(
 	controlPlaneService *service.ControlPlaneService,
 	deviceInfo *configs.DeviceInfoConfigs,
 	commandService *service.CommandService,
-	mediaService *service.MediaController) *Reconciler {
+	mediaService *service.MediaController,
+	openGateService *service.ProcessorController) *Reconciler {
 	if controlPlaneService == nil {
 		logger.SFatal("control plane service is nil",
 			zap.String("error", "control plane service is nil"))
@@ -50,12 +52,17 @@ func NewReconciler(
 		logger.SFatal("media service is nil",
 			zap.String("error", "media service is nil"))
 	}
+	if openGateService == nil {
+		logger.SFatal("open gate service is nil",
+			zap.String("error", "open gate service is nil"))
+	}
 	return &Reconciler{
 		cameras:             make(map[string]web.TranscoderStreamConfiguration),
 		controlPlaneService: controlPlaneService,
 		deviceInfo:          deviceInfo,
 		commandService:      commandService,
 		mediaService:        mediaService,
+		openGateService:     openGateService,
 	}
 }
 
@@ -70,6 +77,13 @@ func (c *Reconciler) Run(ctx context.Context) {
 	go func() {
 		if err := c.mediaService.Reconcile(ctx); err != nil {
 			logger.SFatal("media controller reconcile failed",
+				zap.Error(err))
+		}
+	}()
+
+	go func() {
+		if err := c.openGateService.Reconcile(ctx); err != nil {
+			logger.SFatal("open gate controller reconcile failed",
 				zap.Error(err))
 		}
 	}()
@@ -157,6 +171,11 @@ func (c *Reconciler) pullLatestConfigurations(ctx context.Context) error {
 			zap.Error(err))
 		return err
 	}
+	if err := c.reconcileOpenGate(); err != nil {
+		logger.SError("failed to reconcile OpenGate",
+			zap.Error(err))
+		return err
+	}
 
 	logger.SInfo("pulling latest configurations completed")
 	return nil
@@ -182,7 +201,6 @@ func (c *Reconciler) pullOpenGateConfiguration(ctx context.Context) error {
 func (c *Reconciler) pullStreamConfigurations(ctx context.Context) error {
 	logger.SInfo("pulling stream configurations",
 		zap.String("transcoderId", c.deviceInfo.DeviceId))
-
 	assignedResp, err := c.controlPlaneService.GetAssignedDevices(ctx, &service.GetAssignedDevicesRequest{
 		DeviceId: c.
 			deviceInfo.
@@ -248,7 +266,7 @@ func (c *Reconciler) reconcileOpenGate() error {
 	if c.openGateConfigs != c.updatedOpenGateConfigs {
 		logger.SInfo("OpenGate configuration updated")
 		c.openGateConfigs = c.updatedOpenGateConfigs
+		c.openGateService.Updates([]byte(c.openGateConfigs))
 	}
-
 	return nil
 }

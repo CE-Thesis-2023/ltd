@@ -43,12 +43,14 @@ func Run() {
 	mediaService := service.NewMediaService()
 
 	mediaController := service.NewMediaController(mediaService)
+	processorController := service.NewProcessorController(&configs.Get().OpenGate, mediaService)
 
 	reconciler := reconciler.NewReconciler(
 		controlPlaneService,
 		&globalConfigs.DeviceInfo,
 		commandService,
 		mediaController,
+		processorController,
 	)
 
 	reconcilerContext, reconcilerCancel := context.WithCancel(context.Background())

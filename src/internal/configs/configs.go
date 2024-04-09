@@ -152,4 +152,5 @@ func parseConfig(contents []byte) (*Configs, error) {
 
 type OpenGateConfigs struct {
 	DockerComposePath string `json:"dockerComposePath,omitempty" yaml:"dockerComposePath,omitempty"`
+	ConfigurationPath string `json:"configurationPath,omitempty" yaml:"configurationPath,omitempty"`
 }

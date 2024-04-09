@@ -32,40 +32,6 @@ func NewMediaController(mediaService MediaServiceInterface) *MediaController {
 
 func (c *MediaController) Reconcile(ctx context.Context) error {
 	for {
-		updated := false
-
-		c.mu.Lock()
-		for _, cameraId := range c.needConcilation {
-			updated = true
-			if err := c.startOrRestart(cameraId); err != nil {
-				logger.SError("error reconciling stream",
-					zap.String("cameraId", cameraId),
-					zap.Error(err))
-				c.mu.Unlock()
-				return err
-			}
-			logger.SDebug("reconciled stream",
-				zap.String("cameraId", cameraId))
-		}
-		c.needConcilation = []string{}
-
-		for _, cameraId := range c.needRemoval {
-			updated = true
-			if err := c.stop(cameraId); err != nil {
-				logger.SDebug("error stopping stream",
-					zap.String("cameraId", cameraId))
-				c.mu.Unlock()
-				return err
-			}
-			logger.SDebug("stopped stream",
-				zap.String("cameraId", cameraId))
-		}
-		c.needRemoval = []string{}
-		c.mu.Unlock()
-
-		if updated {
-			logger.SDebug("media controller reconciled")
-		}
 		select {
 		case <-ctx.Done():
 			logger.SDebug("media controller context cancelled",
@@ -73,6 +39,41 @@ func (c *MediaController) Reconcile(ctx context.Context) error {
 			c.cleanup()
 			return ctx.Err()
 		default:
+			updated := false
+
+			c.mu.Lock()
+			for _, cameraId := range c.needConcilation {
+				updated = true
+				if err := c.startOrRestart(cameraId); err != nil {
+					logger.SError("error reconciling stream",
+						zap.String("cameraId", cameraId),
+						zap.Error(err))
+					c.mu.Unlock()
+					return err
+				}
+				logger.SDebug("reconciled stream",
+					zap.String("cameraId", cameraId))
+			}
+			c.needConcilation = []string{}
+
+			for _, cameraId := range c.needRemoval {
+				updated = true
+				if err := c.stop(cameraId); err != nil {
+					logger.SDebug("error stopping stream",
+						zap.String("cameraId", cameraId))
+					c.mu.Unlock()
+					return err
+				}
+				logger.SDebug("stopped stream",
+					zap.String("cameraId", cameraId))
+			}
+			c.needRemoval = []string{}
+			c.mu.Unlock()
+
+			if updated {
+				logger.SDebug("media controller reconciled")
+			}
+
 			time.Sleep(200 * time.Millisecond)
 			continue
 		}
@@ -237,12 +238,22 @@ func (c *MediaController) stop(cameraId string) error {
 }
 
 type ProcessorController struct {
-	configs *configs.OpenGateConfigs
+	mu              sync.Mutex
+	configs         *configs.OpenGateConfigs
+	settings        []byte
+	updatedSettings []byte
+	running         bool
+	mediaService    MediaServiceInterface
+	proc            *OpenGateProcess
 }
 
-func NewProcessorController(configs *configs.OpenGateConfigs) *ProcessorController {
+func NewProcessorController(
+	configs *configs.OpenGateConfigs,
+	mediaService MediaServiceInterface) *ProcessorController {
 	return &ProcessorController{
-		configs: configs,
+		configs:      configs,
+		running:      false,
+		mediaService: mediaService,
 	}
 }
 
@@ -252,10 +263,107 @@ func (c *ProcessorController) Reconcile(ctx context.Context) error {
 		case <-ctx.Done():
 			logger.SDebug("processor controller context cancelled",
 				zap.Error(ctx.Err()))
+			if err := c.shutdown(ctx); err != nil {
+				logger.SError("error shutting down processor",
+					zap.Error(err))
+				return err
+			}
 			return ctx.Err()
 		default:
+			if err := c.reconcile(ctx); err != nil {
+				logger.SError("error reconciling processor",
+					zap.Error(err))
+				return err
+			}
 			time.Sleep(200 * time.Millisecond)
 			continue
 		}
 	}
+}
+
+func (c *ProcessorController) Updates(settings []byte) {
+	c.mu.Lock()
+	c.updatedSettings = settings
+	defer c.mu.Unlock()
+}
+
+func (c *ProcessorController) reconcile(ctx context.Context) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	updated := c.compareSettings()
+	switch c.running {
+	case true:
+		if updated {
+			c.settings = c.updatedSettings
+			logger.SInfo("processor is running, settings is updated, restarting")
+			if err := c.startOrRestart(ctx); err != nil {
+				logger.SError("error restarting processor",
+					zap.Error(err))
+				return err
+			}
+			break
+		}
+		logger.SDebug("processor is running, settings is not updated, skipping")
+	case false:
+		if len(c.settings) > 0 {
+			logger.SInfo("processor is not running, starting")
+			if err := c.startOrRestart(ctx); err != nil {
+				logger.SError("error starting processor",
+					zap.Error(err))
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (c *ProcessorController) shutdown(ctx context.Context) error {
+	if c.proc != nil {
+		if c.running {
+			logger.SInfo("shutting down processor")
+			if err := c.mediaService.ComposeDownOpenGate(ctx, c.proc); err != nil {
+				logger.SError("error shutting down processor",
+					zap.Error(err))
+				return err
+			}
+			c.running = false
+		}
+	}
+	return nil
+}
+
+func (c *ProcessorController) startOrRestart(ctx context.Context) error {
+	c.proc = &OpenGateProcess{
+		configs:  c.configs,
+		settings: c.updatedSettings,
+	}
+	if c.running {
+		if err := c.mediaService.ComposeRestartOpenGate(ctx, c.proc); err != nil {
+			logger.SError("error restarting processor",
+				zap.Error(err))
+			c.running = false
+			return err
+		}
+		return nil
+	}
+	if err := c.mediaService.ComposeUpOpenGate(ctx, c.proc); err != nil {
+		logger.SError("error starting processor",
+			zap.Error(err))
+		c.running = false
+		return err
+	}
+	c.running = true
+	logger.SInfo("processor started",
+		zap.String("settings", string(c.updatedSettings)))
+	return nil
+}
+
+func (c *ProcessorController) compareSettings() (updated bool) {
+	if len(c.updatedSettings) == 0 {
+		return false
+	}
+	if string(c.settings) == string(c.updatedSettings) {
+		return false
+	}
+	return true
 }
