@@ -211,14 +211,7 @@ func (c *Reconciler) commandHandler(p *paho.Publish) {
 
 	switch event.Prefix {
 	case "commands":
-		cameraId := event.ID
-		camera, err := c.resoluteCamera(cameraId)
-		if err != nil {
-			logger.SError("failed to resolute camera",
-				zap.Error(err))
-			return
-		}
-		if err := c.handleCommand(ctx, &event, camera, p.Payload, p.Properties); err != nil {
+		if err := c.handleCommand(ctx, &event, p.Payload, p.Properties); err != nil {
 			logger.SError("failed to handle command",
 				zap.Error(err))
 		}
@@ -236,7 +229,7 @@ func (c *Reconciler) resoluteCamera(cameraId string) (*db.Camera, error) {
 	return &camera, nil
 }
 
-func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, camera *db.Camera, payload []byte, prop *paho.PublishProperties) (err error) {
+func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, payload []byte, prop *paho.PublishProperties) (err error) {
 	publishTo := prop.
 		ResponseTopic
 	if publishTo == "" {
@@ -252,12 +245,26 @@ func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, cam
 		if err = json.Unmarshal(payload, &req); err != nil {
 			return err
 		}
+		var camera *db.Camera
+		camera, err = c.resoluteCamera(event.ID)
+		if err != nil {
+			logger.SError("failed to resolute camera",
+				zap.Error(err))
+			return err
+		}
 		if err = c.commandService.PtzCtrl(ctx, camera, &req); err != nil {
 			return err
 		}
 		reply, _ = c.buildPublish(publishTo, events.EventReply_OK, prop)
 
 	case "info":
+		var camera *db.Camera
+		camera, err = c.resoluteCamera(event.ID)
+		if err != nil {
+			logger.SError("failed to resolute camera",
+				zap.Error(err))
+			return err
+		}
 		var resp *hikvision.SystemDeviceInfoResponse
 		resp, err = c.commandService.DeviceInfo(ctx, camera)
 		if err != nil {
@@ -266,6 +273,7 @@ func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, cam
 		reply, _ = c.buildPublish(publishTo, resp, prop)
 	case "healthcheck":
 		var resp web.DeviceHealthcheckResponse
+		resp.Status = "ok"
 		reply, _ = c.buildPublish(publishTo, resp, prop)
 	}
 	defer func() {
