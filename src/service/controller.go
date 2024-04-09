@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"os/exec"
 	"sync"
 	"time"
 
@@ -355,9 +356,29 @@ func (c *ProcessorController) startOrRestart(ctx context.Context) error {
 		return err
 	}
 	c.running = true
+	go c.watchStartCmd(c.proc.proc)
+
 	logger.SInfo("processor started",
 		zap.String("settings", string(c.updatedSettings)))
 	return nil
+}
+
+func (c *ProcessorController) watchStartCmd(cmd *exec.Cmd) {
+	for {
+		if cmd.Process != nil {
+			if cmd.ProcessState != nil {
+				if cmd.ProcessState.Exited() {
+					logger.SInfo("start command exited successfully")
+					return
+				} else {
+					logger.SDebug("start command is running")
+				}
+			}
+		}
+		for range time.After(time.Second * 1) {
+			continue
+		}
+	}
 }
 
 func (c *ProcessorController) compareSettings() (updated bool) {
