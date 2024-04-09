@@ -13,6 +13,7 @@ import (
 	"github.com/CE-Thesis-2023/backend/src/models/web"
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
+	"github.com/CE-Thesis-2023/ltd/src/internal/hikvision"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	custmqtt "github.com/CE-Thesis-2023/ltd/src/internal/mqtt"
 	"github.com/CE-Thesis-2023/ltd/src/service"
@@ -235,7 +236,7 @@ func (c *Reconciler) resoluteCamera(cameraId string) (*db.Camera, error) {
 	return &camera, nil
 }
 
-func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, camera *db.Camera, payload []byte, prop *paho.PublishProperties) error {
+func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, camera *db.Camera, payload []byte, prop *paho.PublishProperties) (err error) {
 	publishTo := prop.
 		ResponseTopic
 	if publishTo == "" {
@@ -244,27 +245,41 @@ func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, cam
 		return nil
 	}
 	var reply *paho.Publish
+
 	switch event.Type {
 	case "ptz":
 		var req events.PTZCtrlRequest
-		if err := json.Unmarshal(payload, &req); err != nil {
+		if err = json.Unmarshal(payload, &req); err != nil {
 			return err
 		}
-		if err := c.commandService.PtzCtrl(ctx, camera, &req); err != nil {
+		if err = c.commandService.PtzCtrl(ctx, camera, &req); err != nil {
 			return err
 		}
 		reply, _ = c.buildPublish(publishTo, events.EventReply_OK, prop)
 
 	case "info":
-		resp, err := c.commandService.DeviceInfo(ctx, camera)
+		var resp *hikvision.SystemDeviceInfoResponse
+		resp, err = c.commandService.DeviceInfo(ctx, camera)
 		if err != nil {
 			return err
 		}
 		reply, _ = c.buildPublish(publishTo, resp, prop)
 	}
-	if _, err := c.mqttClient.Publish(ctx, reply); err != nil {
-		return err
-	}
+	defer func() {
+		if err != nil {
+			resp := events.EventReply{
+				Err:    err,
+				Status: err.Error(),
+			}
+			s, _ := resp.JSON()
+			reply, _ = c.buildPublish(publishTo, s, prop)
+		}
+		if _, err := c.mqttClient.Publish(ctx, reply); err != nil {
+			logger.SError("failed to publish response",
+				zap.Error(err))
+			return
+		}
+	}()
 	return nil
 }
 
