@@ -80,7 +80,7 @@ type ShutdownHook func(ctx context.Context)
 type Options struct {
 	factoryHook       FactoryHook
 	shutdownHook      ShutdownHook
-	reconcilerFactory func() reconciler.BaseReconciler
+	reconcilerFactory func() reconciler.Reconciler
 }
 
 type Optioner func(opts *Options)
@@ -97,7 +97,7 @@ func WithShutdownHook(cb ShutdownHook) Optioner {
 	}
 }
 
-func WithReconcilerFactory(r func() reconciler.BaseReconciler) Optioner {
+func WithReconcilerFactory(r func() reconciler.Reconciler) Optioner {
 	return func(opts *Options) {
 		opts.reconcilerFactory = r
 	}

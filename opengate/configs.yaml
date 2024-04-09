@@ -1,16 +1,16 @@
 audio:
-    enabled: false
+  enabled: false
 cameras: {}
 logger:
-    default: info
+  default: info
 mqtt:
-    enabled: true
-    host: mosquitto.mqtt.ntranlab.com
-    password: ctportal2024
-    port: 8883
-    topic_prefix: opengate/d97f08a0-4a97-4bde-96ea-b10cf4760ac2
-    user: admin
+  enabled: true
+  host: mosquitto.mqtt.ntranlab.com
+  password: ctportal2024
+  port: 8883
+  topic_prefix: opengate/d97f08a0-4a97-4bde-96ea-b10cf4760ac2
+  user: admin
 snapshots:
-    enabled: true
-    retain:
-        default: 7
+  enabled: true
+  retain:
+    default: 7
