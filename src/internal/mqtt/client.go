@@ -54,7 +54,7 @@ func NewClient(ctx context.Context, options ...ClientOptioner) *autopaho.Connect
 	}
 
 	if globalConfigs.TlsEnabled {
-		tlsConfigs, err := makeTlsConfigs(globalConfigs)
+		tlsConfigs, err := makeTlsConfigs()
 		if err != nil {
 			logger.SFatal("create TLS configuration failed", zap.Error(err))
 			return nil
@@ -98,7 +98,7 @@ func NewClient(ctx context.Context, options ...ClientOptioner) *autopaho.Connect
 	return connManager
 }
 
-func makeTlsConfigs(globalConfigs *configs.EventStoreConfigs) (*tls.Config, error) {
+func makeTlsConfigs() (*tls.Config, error) {
 	t := &tls.Config{
 		InsecureSkipVerify: true,
 	}

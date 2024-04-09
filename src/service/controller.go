@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/CE-Thesis-2023/backend/src/models/web"
+	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"go.uber.org/zap"
 )
@@ -109,6 +110,7 @@ func (c *MediaController) deregister(cameraId string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.markForRemoval(cameraId)
+	delete(c.ffmpegStreams, cameraId)
 	logger.SDebug("deregistered stream",
 		zap.String("cameraId", cameraId))
 }
@@ -195,17 +197,24 @@ func (c *MediaController) startOrRestart(cameraId string) error {
 		cameraId: cameraId,
 		configs:  &s,
 	}
-	go func() {
+	go func(cameraId string) {
 		if err := c.mediaService.StartTranscodingStream(context.Background(), p); err != nil {
+			if c.Exists(cameraId) {
+				c.mu.Lock()
+				c.markForReconcile(cameraId)
+				delete(c.running, cameraId)
+				c.mu.Unlock()
+			}
+
 			logger.SDebug("error starting stream",
 				zap.String("cameraId", cameraId))
 			return
 		}
 		logger.SDebug("exited stream",
 			zap.String("cameraId", cameraId))
-	}()
-	c.running[cameraId] = p
+	}(cameraId)
 
+	c.running[cameraId] = p
 	return nil
 }
 
@@ -225,4 +234,28 @@ func (c *MediaController) stop(cameraId string) error {
 
 	delete(c.running, cameraId)
 	return nil
+}
+
+type ProcessorController struct {
+	configs *configs.OpenGateConfigs
+}
+
+func NewProcessorController(configs *configs.OpenGateConfigs) *ProcessorController {
+	return &ProcessorController{
+		configs: configs,
+	}
+}
+
+func (c *ProcessorController) Reconcile(ctx context.Context) error {
+	for {
+		select {
+		case <-ctx.Done():
+			logger.SDebug("processor controller context cancelled",
+				zap.Error(ctx.Err()))
+			return ctx.Err()
+		default:
+			time.Sleep(200 * time.Millisecond)
+			continue
+		}
+	}
 }

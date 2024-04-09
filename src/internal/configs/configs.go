@@ -16,6 +16,7 @@ type Configs struct {
 	Logger     LoggerConfigs     `json:"logger,omitempty" yaml:"logger,omitempty"`
 	DeviceInfo DeviceInfoConfigs `json:"deviceInfo,omitempty" yaml:"deviceInfo,omitempty"`
 	Ffmpeg     FfmpegConfigs     `json:"ffmpeg,omitempty" yaml:"ffmpeg,omitempty"`
+	OpenGate   OpenGateConfigs   `json:"openGate,omitempty" yaml:"openGate,omitempty"`
 }
 
 func (c Configs) String() string {
@@ -147,4 +148,8 @@ func parseConfig(contents []byte) (*Configs, error) {
 		}
 	}
 	return configs, nil
+}
+
+type OpenGateConfigs struct {
+	DockerComposePath string `json:"dockerComposePath,omitempty" yaml:"dockerComposePath,omitempty"`
 }

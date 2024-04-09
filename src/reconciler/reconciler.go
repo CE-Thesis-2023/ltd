@@ -2,6 +2,7 @@ package reconciler
 
 import (
 	"context"
+	"encoding/base64"
 	"sync"
 	"time"
 
@@ -14,12 +15,18 @@ import (
 )
 
 type Reconciler struct {
-	cameras             map[string]web.TranscoderStreamConfiguration
+	cameras         map[string]web.TranscoderStreamConfiguration
+	openGateConfigs string
+
 	controlPlaneService *service.ControlPlaneService
 	deviceInfo          *configs.DeviceInfoConfigs
 	commandService      *service.CommandService
 	mediaService        *service.MediaController
-	mu                  sync.Mutex
+
+	updatedOpenGateConfigs string
+	updatedCameras         map[string]web.TranscoderStreamConfiguration
+
+	mu sync.Mutex
 }
 
 func NewReconciler(
@@ -54,7 +61,7 @@ func NewReconciler(
 
 func (c *Reconciler) Run(ctx context.Context) {
 	logger.SInfo("reconciler loop Enabled")
-	if err := c.initApplication(ctx); err != nil {
+	if err := c.init(ctx); err != nil {
 		logger.SError("reconciler loop initialize application failed",
 			zap.Error(err))
 		return
@@ -84,7 +91,7 @@ func (c *Reconciler) Run(ctx context.Context) {
 	}
 }
 
-func (c *Reconciler) initApplication(ctx context.Context) error {
+func (c *Reconciler) init(ctx context.Context) error {
 	err := c.controlPlaneService.
 		RegisterDevice(ctx, &service.RegistrationRequest{
 			DeviceId: c.
@@ -119,7 +126,64 @@ func (c *Reconciler) initApplication(ctx context.Context) error {
 
 func (c *Reconciler) reconcile(ctx context.Context) error {
 	logger.SInfo("reconcile Enabled")
-	resp, err := c.controlPlaneService.GetAssignedDevices(ctx, &service.GetAssignedDevicesRequest{
+
+	if err := c.pullLatestConfigurations(ctx); err != nil {
+		logger.SError("failed to pull latest configurations",
+			zap.Error(err))
+		return err
+	}
+
+	if err := c.reconcileFFmpegStreams(); err != nil {
+		logger.SError("failed to reconcile FFmpeg streams",
+			zap.Error(err))
+		return err
+	}
+
+	logger.SInfo("reconcile completed")
+	return nil
+}
+
+func (c *Reconciler) pullLatestConfigurations(ctx context.Context) error {
+	logger.SInfo("pulling latest configurations",
+		zap.String("transcoderId", c.deviceInfo.DeviceId))
+
+	if err := c.pullOpenGateConfiguration(ctx); err != nil {
+		logger.SError("failed to pull open gate configuration",
+			zap.Error(err))
+		return err
+	}
+	if err := c.pullStreamConfigurations(ctx); err != nil {
+		logger.SError("failed to pull stream configurations",
+			zap.Error(err))
+		return err
+	}
+
+	logger.SInfo("pulling latest configurations completed")
+	return nil
+}
+
+func (c *Reconciler) pullOpenGateConfiguration(ctx context.Context) error {
+	openGateResp, err := c.controlPlaneService.GetOpenGateConfigurations(ctx, &web.GetTranscoderOpenGateConfigurationRequest{
+		TranscoderId: c.deviceInfo.DeviceId,
+	})
+	if err != nil {
+		return err
+	}
+	decoded, err := base64.
+		StdEncoding.
+		DecodeString(openGateResp.Base64)
+	if err != nil {
+		return err
+	}
+	c.updatedOpenGateConfigs = string(decoded)
+	return nil
+}
+
+func (c *Reconciler) pullStreamConfigurations(ctx context.Context) error {
+	logger.SInfo("pulling stream configurations",
+		zap.String("transcoderId", c.deviceInfo.DeviceId))
+
+	assignedResp, err := c.controlPlaneService.GetAssignedDevices(ctx, &service.GetAssignedDevicesRequest{
 		DeviceId: c.
 			deviceInfo.
 			DeviceId,
@@ -127,50 +191,31 @@ func (c *Reconciler) reconcile(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	cameras := resp.Cameras
-
+	cameras := assignedResp.Cameras
 	cameraIds := make([]string, 0, len(cameras))
 	for _, camera := range cameras {
 		cameraIds = append(cameraIds, camera.CameraId)
 	}
-	logger.SDebug("assigned cameras",
-		zap.Reflect("cameras", cameraIds))
-
-	mapped := make(map[string]web.TranscoderStreamConfiguration)
-	if len(cameras) > 0 {
-		_, err = c.controlPlaneService.GetOpenGateConfigurations(ctx, &web.GetTranscoderOpenGateConfigurationRequest{
-			TranscoderId: c.deviceInfo.DeviceId,
-		})
-		if err != nil {
-			logger.SError("failed to get open gate configurations",
-				zap.Error(err))
-			return err
-		}
-
+	c.updatedCameras = make(map[string]web.TranscoderStreamConfiguration)
+	if len(cameraIds) > 0 {
 		cameraConfigurations, err := c.controlPlaneService.GetCameraStreamSettings(ctx, &web.GetStreamConfigurationsRequest{
 			CameraId: cameraIds,
 		})
 		if err != nil {
-			logger.SError("failed to get camera stream settings",
-				zap.Error(err))
 			return err
 		}
 		configs := cameraConfigurations.StreamConfigurations
 		for _, config := range configs {
-			mapped[config.CameraId] = config
+			c.updatedCameras[config.CameraId] = config
 		}
 	}
-
-	c.reconcileFFmpegStreams(mapped)
-
-	logger.SInfo("reconcile completed")
 	return nil
 }
 
-func (c *Reconciler) reconcileFFmpegStreams(newCameraConfigs map[string]web.TranscoderStreamConfiguration) {
+func (c *Reconciler) reconcileFFmpegStreams() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	for cameraId, newConfig := range newCameraConfigs {
+	for cameraId, newConfig := range c.updatedCameras {
 		if _, ok := c.cameras[cameraId]; !ok {
 			logger.SInfo("new camera stream configuration",
 				zap.String("cameraId", cameraId))
@@ -179,7 +224,7 @@ func (c *Reconciler) reconcileFFmpegStreams(newCameraConfigs map[string]web.Tran
 				logger.SError("failed to register camera stream configuration",
 					zap.String("cameraId", cameraId),
 					zap.Error(err))
-				continue
+				return err
 			}
 			if updated {
 				logger.SInfo("camera stream configuration updated",
@@ -188,12 +233,22 @@ func (c *Reconciler) reconcileFFmpegStreams(newCameraConfigs map[string]web.Tran
 		}
 	}
 	for cameraId := range c.cameras {
-		if _, ok := newCameraConfigs[cameraId]; !ok {
+		if _, ok := c.updatedCameras[cameraId]; !ok {
 			logger.SInfo("camera stream configuration removed",
 				zap.String("cameraId", cameraId))
 			c.mediaService.Deregister(cameraId)
 			logger.SDebug("camera stream configuration removed")
 		}
 	}
-	c.cameras = newCameraConfigs
+	c.cameras = c.updatedCameras
+	return nil
+}
+
+func (c *Reconciler) reconcileOpenGate() error {
+	if c.openGateConfigs != c.updatedOpenGateConfigs {
+		logger.SInfo("OpenGate configuration updated")
+		c.openGateConfigs = c.updatedOpenGateConfigs
+	}
+
+	return nil
 }

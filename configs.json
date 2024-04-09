@@ -11,5 +11,8 @@
   },
   "ffmpeg": {
     "binaryPath": "/usr/bin/ffmpeg"
+  },
+  "openGate": {
+    "dockerComposePath": "./opengate/docker-compose.yml"
   }
 }
