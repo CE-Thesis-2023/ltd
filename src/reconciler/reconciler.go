@@ -3,26 +3,37 @@ package reconciler
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
+	"path/filepath"
 	"sync"
 	"time"
 
+	"github.com/CE-Thesis-2023/backend/src/models/db"
+	"github.com/CE-Thesis-2023/backend/src/models/events"
 	"github.com/CE-Thesis-2023/backend/src/models/web"
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
+	custmqtt "github.com/CE-Thesis-2023/ltd/src/internal/mqtt"
 	"github.com/CE-Thesis-2023/ltd/src/service"
+	"github.com/eclipse/paho.golang/autopaho"
+	"github.com/eclipse/paho.golang/paho"
 	"go.uber.org/zap"
 )
 
 type Reconciler struct {
-	cameras         map[string]web.TranscoderStreamConfiguration
-	openGateConfigs string
+	cameras          map[string]web.TranscoderStreamConfiguration
+	cameraProperties map[string]db.Camera
+	openGateConfigs  string
 
 	controlPlaneService *service.ControlPlaneService
 	deviceInfo          *configs.DeviceInfoConfigs
 	commandService      *service.CommandService
 	mediaService        *service.MediaController
 	openGateService     *service.ProcessorController
+	mqttEndpoints       *web.GetMQTTEventEndpointResponse
+
+	mqttClient *autopaho.ConnectionManager
 
 	updatedOpenGateConfigs string
 	updatedCameras         map[string]web.TranscoderStreamConfiguration
@@ -58,6 +69,7 @@ func NewReconciler(
 	}
 	return &Reconciler{
 		cameras:             make(map[string]web.TranscoderStreamConfiguration),
+		cameraProperties:    make(map[string]db.Camera),
 		controlPlaneService: controlPlaneService,
 		deviceInfo:          deviceInfo,
 		commandService:      commandService,
@@ -127,12 +139,149 @@ func (c *Reconciler) init(ctx context.Context) error {
 			zap.Error(err))
 		return err
 	}
+	if err := c.initializeMQTTClient(ctx); err != nil {
+		logger.SError("failed to initialize MQTT client",
+			zap.Error(err))
+		return err
+	}
 	if err := c.openGateService.PrePullImages(ctx); err != nil {
 		logger.SError("failed to pull images",
 			zap.Error(err))
 		return err
 	}
 	return nil
+}
+
+func (c *Reconciler) initializeMQTTClient(ctx context.Context) error {
+	configs := configs.EventStoreConfigs{
+		Host:       c.mqttEndpoints.Host,
+		Port:       c.mqttEndpoints.Port,
+		Username:   c.mqttEndpoints.Username,
+		Password:   c.mqttEndpoints.Password,
+		Enabled:    true,
+		Level:      "info",
+		TlsEnabled: c.mqttEndpoints.TlsEnabled,
+		Name:       "reconciler-mqtt-client",
+	}
+	client := custmqtt.NewClient(
+		ctx,
+		custmqtt.WithClientGlobalConfigs(&configs),
+		custmqtt.WithClientError(func(err error) {
+			logger.SError("mqtt client error",
+				zap.Error(err))
+		}),
+		custmqtt.WithOnReconnection(c.subscribe),
+		custmqtt.WithHandlerRegister(c.registerListeners),
+	)
+	c.mqttClient = client
+	return nil
+}
+
+func (c *Reconciler) subscribe(cm *autopaho.ConnectionManager, _ *paho.Connack) {
+	subscribeOn := filepath.Join(c.mqttEndpoints.SubscribeOn, "#")
+	logger.SInfo("subscribing to topic",
+		zap.String("topic", subscribeOn))
+	if _, err := cm.Subscribe(context.Background(), &paho.Subscribe{
+		Subscriptions: []paho.SubscribeOptions{
+			{Topic: subscribeOn, QoS: 1},
+		},
+	}); err != nil {
+		logger.SFatal("failed to subscribe to topic",
+			zap.Error(err))
+	}
+}
+
+func (c *Reconciler) registerListeners(router *paho.StandardRouter) {
+	subscribeOn := filepath.Join(c.mqttEndpoints.SubscribeOn, "#")
+	logger.SInfo("registered handlers for topic",
+		zap.String("topic", subscribeOn))
+	router.RegisterHandler(subscribeOn, c.commandHandler)
+}
+
+func (c *Reconciler) commandHandler(p *paho.Publish) {
+	logger.SDebug("received command",
+		zap.String("topic", p.Topic),
+		zap.String("message", string(p.Payload)))
+	event := events.Event{}
+	event.Parse(p.Topic)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	switch event.Prefix {
+	case "commands":
+		cameraId := event.ID
+		camera, err := c.resoluteCamera(cameraId)
+		if err != nil {
+			logger.SError("failed to resolute camera",
+				zap.Error(err))
+			return
+		}
+		if err := c.handleCommand(ctx, &event, camera, p.Payload, p.Properties); err != nil {
+			logger.SError("failed to handle command",
+				zap.Error(err))
+		}
+	default:
+		logger.SError("unknown event type",
+			zap.String("event", event.Prefix))
+	}
+}
+
+func (c *Reconciler) resoluteCamera(cameraId string) (*db.Camera, error) {
+	camera, ok := c.cameraProperties[cameraId]
+	if !ok {
+		return nil, custerror.ErrorNotFound
+	}
+	return &camera, nil
+}
+
+func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, camera *db.Camera, payload []byte, prop *paho.PublishProperties) error {
+	publishTo := prop.
+		ResponseTopic
+	if publishTo == "" {
+		logger.SDebug("response topic not found",
+			zap.Reflect("event", event))
+		return nil
+	}
+	var reply *paho.Publish
+	switch event.Type {
+	case "ptz":
+		var req events.PTZCtrlRequest
+		if err := json.Unmarshal(payload, &req); err != nil {
+			return err
+		}
+		if err := c.commandService.PtzCtrl(ctx, camera, &req); err != nil {
+			return err
+		}
+		reply, _ = c.buildPublish(publishTo, events.EventReply_OK, prop)
+
+	case "info":
+		resp, err := c.commandService.DeviceInfo(ctx, camera)
+		if err != nil {
+			return err
+		}
+		reply, _ = c.buildPublish(publishTo, resp, prop)
+	}
+	if _, err := c.mqttClient.Publish(ctx, reply); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Reconciler) buildPublish(topic string, body interface{}, receivedProperties *paho.PublishProperties) (*paho.Publish, error) {
+	payload, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	return &paho.Publish{
+		QoS:     1,
+		Topic:   topic,
+		Payload: payload,
+		Properties: &paho.PublishProperties{
+			CorrelationData: receivedProperties.CorrelationData,
+			ContentType:     "application/json",
+		},
+	}, nil
 }
 
 func (c *Reconciler) registerDevice(ctx context.Context) error {
@@ -168,6 +317,8 @@ func (c *Reconciler) pullLatestMQTTConfigurations(ctx context.Context) error {
 	}
 	logger.SDebug("MQTT endpoints",
 		zap.Reflect("endpoints", mqttEndpoints))
+
+	c.mqttEndpoints = mqttEndpoints
 	return nil
 }
 
@@ -249,10 +400,13 @@ func (c *Reconciler) pullStreamConfigurations(ctx context.Context) error {
 		return err
 	}
 	cameras := assignedResp.Cameras
+
 	cameraIds := make([]string, 0, len(cameras))
 	for _, camera := range cameras {
 		cameraIds = append(cameraIds, camera.CameraId)
+		c.cameraProperties[camera.CameraId] = camera
 	}
+
 	c.updatedCameras = make(map[string]web.TranscoderStreamConfiguration)
 	if len(cameraIds) > 0 {
 		cameraConfigurations, err := c.controlPlaneService.GetCameraStreamSettings(ctx, &web.GetStreamConfigurationsRequest{

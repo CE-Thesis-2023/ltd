@@ -357,8 +357,7 @@ func (c *ProcessorController) startOrRestart(ctx context.Context) error {
 	c.running = true
 	go c.watchStartCmd(c.proc.proc)
 
-	logger.SInfo("processor started",
-		zap.String("settings", string(c.updatedSettings)))
+	logger.SInfo("processor started")
 	return nil
 }
 

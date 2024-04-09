@@ -1,16 +1,44 @@
 audio:
-  enabled: false
-cameras: {}
+    enabled: false
+cameras:
+    front_door:
+        detect:
+            fps: 5
+            height: 480
+            width: 640
+        ffmpeg:
+            inputs:
+                - hwaccel_args:
+                    - preset-vaapi
+                  input_args: preset-rtsp-generic
+                  output_args: preset-rtsp-generic
+                  path: rtsp://admin:bkcamera2023@10.40.8.100:80/ISAPI/Streaming/channels/101
+                  retry_interval: 10
+                  roles:
+                    - detect
+        mqtt:
+            bounding_box: true
+            crop: true
+            enabled: true
+            timestamp: true
+        onvif:
+            autotracking:
+                enabled: true
+                zooming: disabled
+            host: 10.40.8.100
+            password: bkcamera2023
+            port: 80
+            username: admin
 logger:
-  default: info
+    default: info
 mqtt:
-  enabled: true
-  host: mosquitto.mqtt.ntranlab.com
-  password: ctportal2024
-  port: 8883
-  topic_prefix: opengate/d97f08a0-4a97-4bde-96ea-b10cf4760ac2
-  user: admin
+    enabled: true
+    host: mosquitto.mqtt.ntranlab.com
+    password: ctportal2024
+    port: 8883
+    topic_prefix: opengate/d97f08a0-4a97-4bde-96ea-b10cf4760ac2
+    user: admin
 snapshots:
-  enabled: true
-  retain:
-    default: 7
+    enabled: true
+    retain:
+        default: 7
