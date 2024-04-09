@@ -306,7 +306,6 @@ func (c *ProcessorController) reconcile(ctx context.Context) error {
 			}
 			break
 		}
-		logger.SDebug("processor is running, settings is not updated, skipping")
 	case false:
 		if len(c.settings) > 0 {
 			logger.SInfo("processor is not running, starting")
