@@ -264,6 +264,9 @@ func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, cam
 			return err
 		}
 		reply, _ = c.buildPublish(publishTo, resp, prop)
+	case "healthcheck":
+		var resp web.DeviceHealthcheckResponse
+		reply, _ = c.buildPublish(publishTo, resp, prop)
 	}
 	defer func() {
 		if err != nil {
