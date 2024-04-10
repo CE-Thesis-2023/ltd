@@ -71,128 +71,128 @@ func (c *ptzApiClient) Channels(ctx context.Context) (*PTZCtrlChannelsResponse, 
 }
 
 type PTZChannelCapabilities struct {
-	XMLName                        xml.Name           `xml:"PTZChannelCap"`
-	Version                        string             `xml:"version,attr"`
-	XMLNamespace                   string             `xml:"xmlns,attr"`
-	AbsolutePanTiltPositionSpace   *PanTiltPosition   `xml:"AbsolutePanTiltPositionSpace,omitempty"`
-	AbsoluteZoomPositionSpace      *ZoomPosition      `xml:"AbsoluteZoomPositionSpace,omitempty"`
-	RelativePanTiltSpace           *PanTiltSpace      `xml:"RelativePanTiltSpace,omitempty"`
-	RelativeZoomSpace              *ZoomSpace         `xml:"RelativeZoomSpace,omitempty"`
-	ContinuousPanTiltSpace         *PanTiltSpace      `xml:"ContinuousPanTiltSpace,omitempty"`
-	ContinuousZoomSpace            *ZoomSpace         `xml:"ContinuousZoomSpace,omitempty"`
-	MomentaryPanTiltSpace          *PanTiltSpace      `xml:"MomentaryPanTiltSpace,omitempty"`
-	MomentaryZoomSpace             *ZoomSpace         `xml:"MomentaryZoomSpace,omitempty"`
-	HomePositionSupport            bool               `xml:"homePostionSupport"`
-	MaxPresetNum                   int                `xml:"maxPresetNum"`
-	MaxPatrolNum                   int                `xml:"maxPatrolNum"`
-	MaxPatternNum                  int                `xml:"maxPatternNum"`
-	MaxLimitesNum                  int                `xml:"maxLimitesNum"`
-	MaxTimeTaskNum                 int                `xml:"maxTimeTaskNum"`
-	SerialNumber                   SerialNumber       `xml:"serialNumber"`
-	ControlProtocol                string             `xml:"controlProtocol,omitempty"`
-	ControlAddress                 string             `xml:"controlAddress,omitempty"`
-	PTZRs485Para                   *PTZRs485Para      `xml:"PTZRs485Para,omitempty"`
-	PresetNameCap                  *PresetNameCap     `xml:"PresetNameCap,omitempty"`
-	IsSupportPosition3D            bool               `xml:"isSupportPosition3D,omitempty"`
-	IsSupportManualTrack           bool               `xml:"isSupportManualTrack,omitempty"`
-	ManualControlSpeed             string             `xml:"manualControlSpeed,omitempty"`
-	IsSupportPtzlimiteds           bool               `xml:"isSpportPtzlimiteds,omitempty"`
-	ParkAction                     *ParkAction        `xml:"ParkAction,omitempty"`
-	TimeTaskList                   *TimeTaskList      `xml:"TimeTaskList,omitempty"`
-	Thermometry                    *Thermometry       `xml:"Thermometry,omitempty"`
-	IsSupportPtzEagleFocusing      bool               `xml:"isSpportPtzEagleFocusing,omitempty"`
-	TrackingRatio                  *TrackingRatio     `xml:"TrackingRatio,omitempty"`
-	TrackInitPosition              *TrackInitPosition `xml:"TrackInitPosition,omitempty"`
-	IsSupportAbsoluteEx            bool               `xml:"isSupportAbsoluteEx,omitempty"`
-	IsSupportCruise                bool               `xml:"isSupportCruise,omitempty"`
-	IsSupportAreaScan              bool               `xml:"isSupportAreaScan,omitempty"`
-	IsSupportFaceSnap3D            bool               `xml:"isSupportFaceSnap3D,omitempty"`
-	IsSupportOnepushSynchronizeFOV bool               `xml:"isSupportOnepushSynchronizeFOV,omitempty"`
-	IsSupportLensCorrection        bool               `xml:"isSupportLensCorrection,omitempty"`
-	IsSupportPTZTrackStatus        bool               `xml:"isSupportPTZTrackStatus,omitempty"`
-	PqrsZoom                       *PqrsZoom          `xml:"pqrsZoom,omitempty"`
-	MnstFocus                      *MnstFocus         `xml:"mnstFocus,omitempty"`
-	IsSupportPTZSave               bool               `xml:"isSupportPTZSave,omitempty"`
-	IsSupportPTZSaveGet            bool               `xml:"isSupportPTZSaveGet,omitempty"`
-	IsSupportAutoGotoCfg           bool               `xml:"isSupportAutoGotoCfg,omitempty"`
-	LockTime                       int                `xml:"lockTime,omitempty"`
+	XMLName                        xml.Name           `xml:"PTZChannelCap" json:"-"`
+	Version                        string             `xml:"version,attr" json:"-" `
+	XMLNamespace                   string             `xml:"xmlns,attr" json:"-"`
+	AbsolutePanTiltPositionSpace   *PanTiltPosition   `xml:"AbsolutePanTiltPositionSpace,omitempty" json:"absolutePanTiltPositionSpace,omitempty"`
+	AbsoluteZoomPositionSpace      *ZoomPosition      `xml:"AbsoluteZoomPositionSpace,omitempty" json:"absoluteZoomPositionSpace,omitempty"`
+	RelativePanTiltSpace           *PanTiltSpace      `xml:"RelativePanTiltSpace,omitempty" json:"relativePanTiltSpace,omitempty"`
+	RelativeZoomSpace              *ZoomSpace         `xml:"RelativeZoomSpace,omitempty" json:"relativeZoomSpace,omitempty"`
+	ContinuousPanTiltSpace         *PanTiltSpace      `xml:"ContinuousPanTiltSpace,omitempty" json:"continuousPanTiltSpace,omitempty"`
+	ContinuousZoomSpace            *ZoomSpace         `xml:"ContinuousZoomSpace,omitempty" json:"continuousZoomSpace,omitempty"`
+	MomentaryPanTiltSpace          *PanTiltSpace      `xml:"MomentaryPanTiltSpace,omitempty" json:"momentaryPanTiltSpace,omitempty" `
+	MomentaryZoomSpace             *ZoomSpace         `xml:"MomentaryZoomSpace,omitempty" json:"momentaryZoomSpace,omitempty"`
+	HomePositionSupport            bool               `xml:"homePostionSupport" json:"homePositionSupport"`
+	MaxPresetNum                   int                `xml:"maxPresetNum" json:"maxPresetNum"`
+	MaxPatrolNum                   int                `xml:"maxPatrolNum" json:"maxPatrolNum"`
+	MaxPatternNum                  int                `xml:"maxPatternNum" json:"maxPatternNum"`
+	MaxLimitesNum                  int                `xml:"maxLimitesNum" json:"maxLimitesNum"`
+	MaxTimeTaskNum                 int                `xml:"maxTimeTaskNum" json:"maxTimeTaskNum"`
+	SerialNumber                   SerialNumber       `xml:"serialNumber" json:"serialNumber"`
+	ControlProtocol                string             `xml:"controlProtocol" json:"controlProtocol"`
+	ControlAddress                 string             `xml:"controlAddress" json:"controlAddress"`
+	PTZRs485Para                   *PTZRs485Para      `xml:"PTZRs485Para,omitempty" json:"PTZRs485Para,omitempty"`
+	PresetNameCap                  *PresetNameCap     `xml:"PresetNameCap,omitempty" json:"PresetNameCap,omitempty"`
+	IsSupportPosition3D            bool               `xml:"isSupportPosition3D" json:"isSupportPosition3D"`
+	IsSupportManualTrack           bool               `xml:"isSupportManualTrack" json:"isSupportManualTrack"`
+	ManualControlSpeed             string             `xml:"manualControlSpeed" json:"manualControlSpeed"`
+	IsSupportPtzlimiteds           bool               `xml:"isSupportPtzlimiteds" json:"isSupportPtzlimiteds"`
+	ParkAction                     *ParkAction        `xml:"ParkAction,omitempty" json:"ParkAction,omitempty"`
+	TimeTaskList                   *TimeTaskList      `xml:"TimeTaskList,omitempty" json:"TimeTaskList,omitempty"`
+	Thermometry                    *Thermometry       `xml:"Thermometry,omitempty" json:"Thermometry,omitempty"`
+	IsSupportPtzEagleFocusing      bool               `xml:"isSupportPtzEagleFocusing" json:"isSupportPtzEagleFocusing"`
+	TrackingRatio                  *TrackingRatio     `xml:"TrackingRatio,omitempty" json:"TrackingRatio,omitempty"`
+	TrackInitPosition              *TrackInitPosition `xml:"TrackInitPosition,omitempty" json:"TrackInitPosition,omitempty"`
+	IsSupportAbsoluteEx            bool               `xml:"isSupportAbsoluteEx" json:"isSupportAbsoluteEx"`
+	IsSupportCruise                bool               `xml:"isSupportCruise" json:"isSupportCruise"`
+	IsSupportAreaScan              bool               `xml:"isSupportAreaScan" json:"isSupportAreaScan"`
+	IsSupportFaceSnap3D            bool               `xml:"isSupportFaceSnap3D" json:"isSupportFaceSnap3D"`
+	IsSupportOnepushSynchronizeFOV bool               `xml:"isSupportOnepushSynchronizeFOV" json:"isSupportOnepushSynchronizeFOV"`
+	IsSupportLensCorrection        bool               `xml:"isSupportLensCorrection" json:"isSupportLensCorrection"`
+	IsSupportPTZTrackStatus        bool               `xml:"isSupportPTZTrackStatus" json:"isSupportPTZTrackStatus"`
+	PqrsZoom                       *PqrsZoom          `xml:"pqrsZoom,omitempty" json:"pqrsZoom,omitempty"`
+	MnstFocus                      *MnstFocus         `xml:"mnstFocus,omitempty" json:"mnstFocus,omitempty"`
+	IsSupportPTZSave               bool               `xml:"isSupportPTZSave" json:"isSupportPTZSave"`
+	IsSupportPTZSaveGet            bool               `xml:"isSupportPTZSaveGet" json:"isSupportPTZSaveGet"`
+	IsSupportAutoGotoCfg           bool               `xml:"isSupportAutoGotoCfg" json:"isSupportAutoGotoCfg"`
+	LockTime                       int                `xml:"lockTime" json:"lockTime"`
 }
 
 type PanTiltPosition struct {
-	XRange *XRange `xml:"XRange,omitempty"`
-	YRange *YRange `xml:"YRange,omitempty"`
+	XRange *XRange `xml:"XRange,omitempty" json:"XRange,omitempty"`
+	YRange *YRange `xml:"YRange,omitempty" json:"YRange,omitempty"`
 }
 
 type ZoomPosition struct {
-	ZRange *ZRange `xml:"ZRange,omitempty"`
+	ZRange *ZRange `xml:"ZRange,omitempty" json:"ZRange,omitempty"`
 }
 
 type PanTiltSpace struct {
-	XRange *XRange `xml:"XRange,omitempty"`
-	YRange *YRange `xml:"YRange,omitempty"`
+	XRange *XRange `xml:"XRange,omitempty" json:"XRange,omitempty"`
+	YRange *YRange `xml:"YRange,omitempty" json:"YRange,omitempty`
 }
 
 type ZoomSpace struct {
-	ZRange *ZRange `xml:"ZRange,omitempty"`
+	ZRange *ZRange `xml:"ZRange,omitempty" json:"ZRange,omitempty"`
 }
 
 type SerialNumber struct {
-	Min int `xml:"min,attr"`
-	Max int `xml:"max,attr"`
+	Min int `xml:"min,attr" json:"min"`
+	Max int `xml:"max,attr" json:"max"`
 }
 
 type PTZRs485Para struct {
-	BaudRate   int    `xml:"baudRate"`
-	DataBits   int    `xml:"dataBits"`
-	ParityType string `xml:"parityType"`
-	StopBits   string `xml:"stopBits"`
-	FlowCtrl   string `xml:"flowCtrl"`
+	BaudRate   int    `xml:"baudRate" json:"baudRate"`
+	DataBits   int    `xml:"dataBits" json:"dataBits"`
+	ParityType string `xml:"parityType" json:"parityType" `
+	StopBits   string `xml:"stopBits" json:"stopBits"`
+	FlowCtrl   string `xml:"flowCtrl" json:"flowCtrl"`
 }
 
 type PresetNameCap struct {
-	PresetNameSupport bool `xml:"presetNameSupport"`
+	PresetNameSupport bool `xml:"presetNameSupport" json:"presetNameSupport"`
 }
 
 type ParkAction struct {
-	AutoParkAction bool `xml:"autoParkAction"`
-	GotoPresetNum  int  `xml:"gotoPresetNum"`
+	AutoParkAction bool `xml:"autoParkAction" json:"autoParkAction"`
+	GotoPresetNum  int  `xml:"gotoPresetNum" json:"gotoPresetNum"`
 }
 
 type TimeTaskList struct {
-	TaskNum int         `xml:"taskNum"`
-	Tasks   []*TimeTask `xml:"Task"`
+	TaskNum int         `xml:"taskNum" json:"taskNum"`
+	Tasks   []*TimeTask `xml:"Task" json:"tasks"`
 }
 
 type TimeTask struct {
-	TaskID           int           `xml:"taskID"`
-	TaskName         string        `xml:"taskName"`
-	TaskType         string        `xml:"taskType"`
-	TaskEnable       bool          `xml:"taskEnable"`
-	StartDateTime    string        `xml:"startDateTime"`
-	EndDateTime      string        `xml:"endDateTime"`
-	RepeatType       string        `xml:"repeatType"`
-	IntervalType     string        `xml:"intervalType"`
-	IntervalDuration int           `xml:"intervalDuration"`
-	TriggerType      string        `xml:"triggerType"`
-	TriggerValue     string        `xml:"triggerValue"`
-	Actions          []*TaskAction `xml:"Actions>TaskAction"`
+	TaskID           int           `xml:"taskID" json:"taskID"`
+	TaskName         string        `xml:"taskName" json:"taskName"`
+	TaskType         string        `xml:"taskType" json:"taskType"`
+	TaskEnable       bool          `xml:"taskEnable" json:"taskEnable"`
+	StartDateTime    string        `xml:"startDateTime" json:"startDateTime" `
+	EndDateTime      string        `xml:"endDateTime" json:"endDateTime"`
+	RepeatType       string        `xml:"repeatType" json:"repeatType"`
+	IntervalType     string        `xml:"intervalType" json:"intervalType" `
+	IntervalDuration int           `xml:"intervalDuration" json:"intervalDuration"`
+	TriggerType      string        `xml:"triggerType" json:"triggerType"`
+	TriggerValue     string        `xml:"triggerValue" json:"triggerValue"`
+	Actions          []*TaskAction `xml:"Actions" json:"actions"`
 }
 
 type TaskAction struct {
-	ActionType   string `xml:"actionType"`
-	ActionValue  string `xml:"actionValue"`
-	ActionParams string `xml:"actionParams"`
+	ActionType   string `xml:"actionType" json:"actionType"`
+	ActionValue  string `xml:"actionValue" json:"actionValue"`
+	ActionParams string `xml:"actionParams" json:"actionParams"`
 }
 
 type Thermometry struct {
-	ThermometryCap *ThermometryCap `xml:"ThermometryCap,omitempty"`
+	ThermometryCap *ThermometryCap `xml:"ThermometryCap,omitempty" json:"thermometryCap,omitempty"`
 }
 
 type ThermometryCap struct {
-	EmissivityRange          *EmissivityRange          `xml:"EmissivityRange,omitempty"`
-	RelativeHumidityRange    *RelativeHumidityRange    `xml:"RelativeHumidityRange,omitempty"`
-	AtmosphericPressureRange *AtmosphericPressureRange `xml:"AtmosphericPressureRange,omitempty"`
-	TemperatureRange         *TemperatureRange         `xml:"TemperatureRange,omitempty"`
+	EmissivityRange          *EmissivityRange          `xml:"EmissivityRange,omitempty" json:"emissivityRange,omitempty"`
+	RelativeHumidityRange    *RelativeHumidityRange    `xml:"RelativeHumidityRange,omitempty" json:"relativeHumidityRange,omitempty" `
+	AtmosphericPressureRange *AtmosphericPressureRange `xml:"AtmosphericPressureRange,omitempty" json:"atmosphericPressureRange,omitempty"`
+	TemperatureRange         *TemperatureRange         `xml:"TemperatureRange,omitempty" json:"temperatureRange,omitempty" `
 }
 
 type EmissivityRange struct {
@@ -216,31 +216,31 @@ type TemperatureRange struct {
 }
 
 type TrackingRatio struct {
-	Max int `xml:"max,attr"`
+	Max int `xml:"max,attr" `
 }
 
 type TrackInitPosition struct {
-	PositionX float64 `xml:"positionX"`
-	PositionY float64 `xml:"positionY"`
-	ZoomValue int     `xml:"zoomValue"`
+	PositionX float64 `xml:"positionX" json:"positionX" `
+	PositionY float64 `xml:"positionY" json:"positionY"`
+	ZoomValue int     `xml:"zoomValue" json:"zoomValue"`
 }
 
 type PqrsZoom struct {
-	ZoomSpeedList []*ZoomSpeed `xml:"ZoomSpeedList>ZoomSpeed"`
+	ZoomSpeedList []*ZoomSpeed `xml:"ZoomSpeedList" json:"zoomSpeedList"`
 }
 
 type ZoomSpeed struct {
-	ZoomSpeedLevel string `xml:"zoomSpeedLevel"`
-	ZoomSpeedValue int    `xml:"zoomSpeedValue"`
+	ZoomSpeedLevel string `xml:"zoomSpeedLevel" json:"zoomSpeedLevel"`
+	ZoomSpeedValue int    `xml:"zoomSpeedValue" json:"zoomSpeedValue"`
 }
 
 type MnstFocus struct {
-	MinstFocusSpeedList []*FocusSpeed `xml:"MinstFocusSpeedList>FocusSpeed"`
+	MinstFocusSpeedList []*FocusSpeed `xml:"MinstFocusSpeedList"`
 }
 
 type FocusSpeed struct {
-	FocusSpeedLevel string `xml:"focusSpeedLevel"`
-	FocusSpeedValue int    `xml:"focusSpeedValue"`
+	FocusSpeedLevel string `xml:"focusSpeedLevel" json:"focusSpeedLevel"`
+	FocusSpeedValue int    `xml:"focusSpeedValue" json:"focusSpeedValue"`
 }
 
 type XRange struct {
@@ -448,9 +448,9 @@ type PTZCtrlRelativeRequest struct {
 	Relative Relative `xml:"Relative"`
 }
 type Relative struct {
-	PositionX    int `xml:"positionX"`
-	PositionY    int `xml:"positionY"`
-	RelativeZoom int `xml:"relativeZoom"`
+	PositionX    float32 `xml:"positionX"`
+	PositionY    float32 `xml:"positionY"`
+	RelativeZoom float32 `xml:"relativeZoom"`
 }
 
 func (c *ptzApiClient) Relative(ctx context.Context, req *PTZCtrlRelativeRequest) error {

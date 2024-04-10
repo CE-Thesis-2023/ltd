@@ -59,6 +59,7 @@ func (s *HttpSidecar) newServeMux() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ptz/status", s.handlePtzStatus)
 	mux.HandleFunc("/ptz/relative", s.handlePtzRelative)
+	mux.HandleFunc("/ptz/capabilities", s.handlePtzCapabilities)
 
 	return mux
 }
@@ -90,6 +91,22 @@ func (s *HttpSidecar) handlePtzStatus(w http.ResponseWriter, r *http.Request) {
 		Add("Content-Type", "application/json")
 }
 
+type RelativeMoveRequest struct {
+	Pan  float32 `json:"pan"`
+	Tilt float32 `json:"tilt"`
+	Zoom float32 `json:"zoom"`
+}
+
+func (r *RelativeMoveRequest) toHikvisionRequest() *hikvision.PTZCtrlRelativeRequest {
+	return &hikvision.PTZCtrlRelativeRequest{
+		Relative: hikvision.Relative{
+			PositionX:    r.Pan,
+			PositionY:    r.Tilt,
+			RelativeZoom: r.Zoom,
+		},
+	}
+}
+
 func (s *HttpSidecar) handlePtzRelative(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	cameraName := query.Get("name")
@@ -102,7 +119,7 @@ func (s *HttpSidecar) handlePtzRelative(w http.ResponseWriter, r *http.Request) 
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	var req hikvision.PTZCtrlRelativeRequest
+	var req RelativeMoveRequest
 	if err := json.
 		NewDecoder(r.Body).
 		Decode(&req); err != nil {
@@ -110,10 +127,37 @@ func (s *HttpSidecar) handlePtzRelative(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if err := s.commandService.PTZRelative(r.Context(), camera, &req); err != nil {
+	if err := s.commandService.PTZRelative(r.Context(), camera, req.toHikvisionRequest()); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (s *HttpSidecar) handlePtzCapabilities(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	cameraName := query.Get("name")
+	if len(cameraName) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	camera, err := s.metadata.GetCameraByName(cameraName)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	capabilities, err := s.commandService.PTZCapabilties(r.Context(), camera)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	resp, err := json.Marshal(capabilities)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Write(resp)
+	w.Header().
+		Add("Content-Type", "application/json")
 }
