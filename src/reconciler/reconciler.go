@@ -279,6 +279,20 @@ func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, pay
 		var resp web.DeviceHealthcheckResponse
 		resp.Status = "ok"
 		reply, _ = c.buildPublish(publishTo, resp, prop)
+	case "ptz_capabilties":
+		var camera *db.Camera
+		camera, err = c.resoluteCamera(event.ID)
+		if err != nil {
+			logger.SError("failed to resolute camera",
+				zap.Error(err))
+			return err
+		}
+		var resp *hikvision.PTZChannelCapabilities
+		resp, err = c.commandService.PTZCapabilties(ctx, camera)
+		if err != nil {
+			return err
+		}
+		reply, _ = c.buildPublish(publishTo, resp, prop)
 	}
 	defer func() {
 		if err != nil {

@@ -59,6 +59,25 @@ func (s *CommandService) PtzCtrl(ctx context.Context, camera *db.Camera, req *ev
 	return nil
 }
 
+func (s *CommandService) PTZCapabilties(ctx context.Context, camera *db.Camera) (*hikvision.PTZChannelCapabilities, error) {
+	logger.SDebug("requested retrieving PTZ capabilities",
+		zap.Reflect("camera_id", camera.CameraId))
+	capabilities, err := s.hikvisionClient.PtzCtrl(&hikvision.Credentials{
+		Ip:       camera.Ip,
+		Username: camera.Username,
+		Password: camera.Password,
+	}).Capabilities(ctx, "0")
+	if err != nil {
+		logger.SError("failed to retrieve PTZ capabilities",
+			zap.Error(err))
+		return nil, err
+	}
+	logger.SInfo("retrieved PTZ capabilities",
+		zap.Reflect("capabilities", capabilities),
+		zap.Reflect("camera_id", camera.CameraId))
+	return capabilities, nil
+}
+
 func (s *CommandService) requestRemoteControl(ctx context.Context, camera *db.Camera, req *events.PTZCtrlRequest) error {
 	hasStopAfter := req.Duration > 0
 	client := s.hikvisionClient.PtzCtrl(&hikvision.Credentials{

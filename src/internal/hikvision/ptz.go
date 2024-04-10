@@ -16,7 +16,7 @@ import (
 
 type PtzApiClientInterface interface {
 	Channels(ctx context.Context) (*PTZCtrlChannelsResponse, error)
-	Capabilities(ctx context.Context, channelId string) (*PTZChanelCap, error)
+	Capabilities(ctx context.Context, channelId string) (*PTZChannelCapabilities, error)
 	RawContinuous(ctx context.Context, req *PtzCtrlRawContinousRequest) error
 	ContinousWithReset(ctx context.Context, req *PtzCtrlContinousWithResetRequest) error
 	Status(ctx context.Context, req *PtzCtrlStatusRequest) (*PTZStatus, error)
@@ -70,7 +70,8 @@ func (c *ptzApiClient) Channels(ctx context.Context) (*PTZCtrlChannelsResponse, 
 	return &parsedResp, nil
 }
 
-type PTZChanelCap struct {
+type PTZChannelCapabilities struct {
+	XMLName                        xml.Name           `xml:"PTZChannelCap"`
 	Version                        string             `xml:"version,attr"`
 	XMLNamespace                   string             `xml:"xmlns,attr"`
 	AbsolutePanTiltPositionSpace   *PanTiltPosition   `xml:"AbsolutePanTiltPositionSpace,omitempty"`
@@ -257,7 +258,7 @@ type ZRange struct {
 	Max float64 `xml:"max,attr"`
 }
 
-func (c *ptzApiClient) Capabilities(ctx context.Context, channelId string) (*PTZChanelCap, error) {
+func (c *ptzApiClient) Capabilities(ctx context.Context, channelId string) (*PTZChannelCapabilities, error) {
 	p, _ := url.Parse(fmt.Sprintf("%s/capabilities", c.getUrlWithChannel(channelId)))
 
 	request, err := custhttp.NewHttpRequest(
@@ -279,7 +280,7 @@ func (c *ptzApiClient) Capabilities(ctx context.Context, channelId string) (*PTZ
 		return nil, err
 	}
 
-	var parsedResp PTZChanelCap
+	var parsedResp PTZChannelCapabilities
 	if err := custhttp.XMLResponse(resp, &parsedResp); err != nil {
 		return nil, err
 	}
