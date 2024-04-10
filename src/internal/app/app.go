@@ -68,22 +68,24 @@ func Run() {
 		}()
 	}
 
-	sidecarCtx, sidecarCancel := context.WithCancel(context.Background())
 	if sidecar != nil {
 		wg.Add(1)
 		go func() {
-			if err := sidecar.Start(sidecarCtx); err != nil {
+			if err := sidecar.Start(); err != nil {
 				logger.SError("failed to start sidecar", zap.Error(err))
 			}
-			sidecarCancel()
 			defer wg.Done()
 		}()
 	}
 
 	<-quit
 	logger.SInfo("application shutdown requested")
+	if sidecar != nil {
+		if err := sidecar.Stop(ctx); err != nil {
+			logger.SError("failed to stop sidecar", zap.Error(err))
+		}
+	}
 	reconcilerCancel()
-	sidecarCancel()
 	wg.Wait()
 	logger.SInfo("application shutdown complete")
 }

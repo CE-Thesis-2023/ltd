@@ -36,20 +36,20 @@ func (s *HttpSidecar) init() {
 	}
 }
 
-func (s *HttpSidecar) Start(ctx context.Context) error {
+func (s *HttpSidecar) Start() error {
 	logger.SInfo("Starting HTTP sidecar",
 		zap.String("addr", s.server.Addr))
-	go func() {
-		for range ctx.Done() {
-			logger.SInfo("Shutting down HTTP sidecar")
-			if err := s.server.Shutdown(context.Background()); err != nil {
-				logger.SError("Failed to shutdown HTTP sidecar",
-					zap.Error(err))
-			}
-		}
-	}()
 	if err := s.server.ListenAndServe(); err != nil {
 		logger.SError("Failed to start HTTP sidecar",
+			zap.Error(err))
+	}
+	return nil
+}
+
+func (s *HttpSidecar) Stop(ctx context.Context) error {
+	logger.SInfo("Stopping HTTP sidecar")
+	if err := s.server.Shutdown(ctx); err != nil {
+		logger.SError("Failed to stop HTTP sidecar",
 			zap.Error(err))
 	}
 	return nil
