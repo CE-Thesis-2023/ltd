@@ -3,6 +3,7 @@ services:
     image: nginx:1.25.4
     container_name: opengate
     restart: always
+    network_mode: host
     deploy:
       resources:
         limits:
