@@ -52,7 +52,6 @@ func (c *client) getRestClient(opts *Credentials) *http.Client {
 		}
 		u.Scheme = "http"
 		u.User = url.UserPassword(opts.Username, opts.Password)
-		ip = u.String()
 	}
 
 	httpClient := custhttp.NewHttpClient(
