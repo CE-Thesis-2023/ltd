@@ -22,6 +22,10 @@ import (
 	"go.uber.org/zap"
 )
 
+type Metadata interface {
+	GetCameraByName(name string) (*db.Camera, error)
+}
+
 type Reconciler struct {
 	cameras          map[string]web.TranscoderStreamConfiguration
 	cameraProperties map[string]db.Camera
@@ -292,6 +296,15 @@ func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, pay
 		}
 	}()
 	return nil
+}
+
+func (c *Reconciler) GetCameraByName(name string) (*db.Camera, error) {
+	for _, camera := range c.cameraProperties {
+		if camera.Name == name {
+			return &camera, nil
+		}
+	}
+	return nil, custerror.ErrorNotFound
 }
 
 func (c *Reconciler) buildPublish(topic string, body interface{}, receivedProperties *paho.PublishProperties) (*paho.Publish, error) {

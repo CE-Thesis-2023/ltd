@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"math"
 	"time"
 
 	"github.com/CE-Thesis-2023/backend/src/models/db"
@@ -104,6 +105,57 @@ func (s *CommandService) doContinousWithStop(
 	client hikvision.PtzApiClientInterface,
 	options *hikvision.PtzCtrlContinousWithResetRequest) error {
 	if err := client.ContinousWithReset(ctx, options); err != nil {
+		return err
+	}
+	return nil
+}
+
+type PTZStatusResponse struct {
+	Moving bool `json:"moving"`
+}
+
+func (s *CommandService) PTZStatus(ctx context.Context, camera *db.Camera, req *hikvision.PtzCtrlStatusRequest) (*PTZStatusResponse, error) {
+	ptzCtrl := s.hikvisionClient.PtzCtrl(&hikvision.Credentials{
+		Username: camera.Username,
+		Password: camera.Password,
+		Ip:       camera.Ip,
+	})
+
+	status, err := ptzCtrl.Status(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	<-time.After(time.Millisecond * 200)
+	updatedStatus, err := ptzCtrl.Status(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	azimuthDiff := 0.0
+	elevationDiff := 0.0
+	prev := status.AbsoluteHigh
+	updated := updatedStatus.AbsoluteHigh
+
+	azimuthDiff = math.Round(math.Abs(float64(updated.Azimuth-prev.Azimuth))*100) / 100
+	elevationDiff = math.Round(math.Abs(float64(updated.Elevation-prev.Elevation))*100) / 100
+
+	var resp PTZStatusResponse
+	if azimuthDiff > 0.0 {
+		resp.Moving = true
+	}
+	if elevationDiff > 0.0 {
+		resp.Moving = true
+	}
+	return &resp, nil
+}
+
+func (s *CommandService) PTZRelative(ctx context.Context, camera *db.Camera, req *hikvision.PTZCtrlRelativeRequest) error {
+	ptzCtrl := s.hikvisionClient.PtzCtrl(&hikvision.Credentials{
+		Username: camera.Username,
+		Password: camera.Password,
+		Ip:       camera.Ip,
+	})
+	if err := ptzCtrl.Relative(ctx, req); err != nil {
 		return err
 	}
 	return nil

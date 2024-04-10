@@ -12,6 +12,7 @@ import (
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/reconciler"
 	"github.com/CE-Thesis-2023/ltd/src/service"
+	"github.com/CE-Thesis-2023/ltd/src/sidecar"
 	"go.uber.org/zap"
 )
 
@@ -53,6 +54,7 @@ func Run() {
 		mediaController,
 		processorController,
 	)
+	sidecar := sidecar.NewHttpSidecar(commandService, reconciler)
 
 	var wg sync.WaitGroup
 
@@ -66,9 +68,22 @@ func Run() {
 		}()
 	}
 
+	sidecarCtx, sidecarCancel := context.WithCancel(context.Background())
+	if sidecar != nil {
+		wg.Add(1)
+		go func() {
+			if err := sidecar.Start(sidecarCtx); err != nil {
+				logger.SError("failed to start sidecar", zap.Error(err))
+			}
+			sidecarCancel()
+			defer wg.Done()
+		}()
+	}
+
 	<-quit
 	logger.SInfo("application shutdown requested")
 	reconcilerCancel()
+	sidecarCancel()
 	wg.Wait()
 	logger.SInfo("application shutdown complete")
 }
