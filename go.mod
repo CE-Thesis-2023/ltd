@@ -7,7 +7,6 @@ replace github.com/CE-Thesis-2023/backend => ../backend
 require (
 	github.com/CE-Thesis-2023/backend v1.0.0
 	github.com/eclipse/paho.golang v0.12.0
-	golang.org/x/text v0.14.0
 	gonum.org/v1/gonum v0.15.0
 )
 
