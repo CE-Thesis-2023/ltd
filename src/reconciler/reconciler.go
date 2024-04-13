@@ -243,7 +243,22 @@ func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, pay
 		publishTo = fmt.Sprintf("reply/%s", event.String())
 	}
 	var reply *paho.Publish
-
+	defer func() {
+		if err != nil {
+			resp := events.EventReply{
+				Err:    err,
+				Status: err.Error(),
+			}
+			reply, err = c.buildPublish(publishTo, resp, prop)
+		}
+		if reply != nil {
+			if _, err := c.mqttClient.Publish(ctx, reply); err != nil {
+				logger.SError("failed to publish response",
+					zap.Error(err))
+				return
+			}
+		}
+	}()
 	switch event.Type {
 	case "ptz":
 		var req events.PTZCtrlRequest
@@ -280,7 +295,7 @@ func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, pay
 		var resp web.DeviceHealthcheckResponse
 		resp.Status = "ok"
 		reply, _ = c.buildPublish(publishTo, resp, prop)
-	case "ptz_capabilties":
+	case "ptz_capabilities":
 		var camera *db.Camera
 		camera, err = c.resoluteCamera(event.ID)
 		if err != nil {
@@ -291,31 +306,23 @@ func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, pay
 		var resp *hikvision.PTZChannelCapabilities
 		resp, err = c.commandService.PTZCapabilties(ctx, camera)
 		if err != nil {
+			logger.SDebug("failed to get PTZ capabilities",
+				zap.Error(err))
 			return err
 		}
-		reply, _ = c.buildPublish(publishTo, resp, prop)
-	}
-	defer func() {
+		reply, err = c.buildPublish(publishTo, resp, prop)
 		if err != nil {
-			resp := events.EventReply{
-				Err:    err,
-				Status: err.Error(),
-			}
-			s, _ := resp.JSON()
-			reply, _ = c.buildPublish(publishTo, s, prop)
-		}
-		if _, err := c.mqttClient.Publish(ctx, reply); err != nil {
-			logger.SError("failed to publish response",
+			logger.SError("failed to build publish",
 				zap.Error(err))
-			return
+			return err
 		}
-	}()
+	}
 	return nil
 }
 
 func (c *Reconciler) GetCameraByName(name string) (*db.Camera, error) {
 	for _, camera := range c.cameraProperties {
-		if camera.Name == name {
+		if camera.OpenGateCameraName == name {
 			return &camera, nil
 		}
 	}

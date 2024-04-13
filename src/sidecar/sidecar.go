@@ -76,7 +76,9 @@ func (s *HttpSidecar) handlePtzStatus(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	info, err := s.commandService.DeviceInfo(r.Context(), camera)
+	info, err := s.commandService.PTZStatus(r.Context(), camera, &hikvision.PtzCtrlStatusRequest{
+		ChannelId: "1",
+	})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -128,6 +130,8 @@ func (s *HttpSidecar) handlePtzRelative(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if err := s.commandService.PTZRelative(r.Context(), camera, req.toHikvisionRequest()); err != nil {
+		logger.SError("failed to send PTZ relative command",
+			zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

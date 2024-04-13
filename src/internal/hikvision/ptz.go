@@ -72,7 +72,7 @@ func (c *ptzApiClient) Channels(ctx context.Context) (*PTZCtrlChannelsResponse, 
 }
 
 type PTZChannelCapabilities struct {
-	XMLName                        xml.Name           `xml:"PTZChannelCap" json:"-"`
+	XMLName                        xml.Name           `xml:"PTZChanelCap" json:"-"`
 	Version                        string             `xml:"version,attr" json:"-" `
 	XMLNamespace                   string             `xml:"xmlns,attr" json:"-"`
 	AbsolutePanTiltPositionSpace   *PanTiltPosition   `xml:"AbsolutePanTiltPositionSpace,omitempty" json:"absolutePanTiltPositionSpace,omitempty"`
@@ -130,7 +130,7 @@ type ZoomPosition struct {
 
 type PanTiltSpace struct {
 	XRange *XRange `xml:"XRange,omitempty" json:"XRange,omitempty"`
-	YRange *YRange `xml:"YRange,omitempty" json:"YRange,omitempty`
+	YRange *YRange `xml:"YRange,omitempty" json:"YRange,omitempty"`
 }
 
 type ZoomSpace struct {
@@ -458,7 +458,9 @@ type Relative struct {
 }
 
 func (c *ptzApiClient) Relative(ctx context.Context, req *PTZCtrlRelativeRequest) error {
-	p, _ := url.Parse(fmt.Sprintf("%s/relative", c.getBaseUrl()))
+	p, _ := url.Parse(fmt.Sprintf("%s/relative", c.getUrlWithChannel("1")))
+	logger.SDebug("PTZ relative request",
+		zap.String("url", p.String()))
 
 	request, err := custhttp.NewHttpRequest(
 		ctx,
@@ -474,10 +476,12 @@ func (c *ptzApiClient) Relative(ctx context.Context, req *PTZCtrlRelativeRequest
 
 	resp, err := c.httpClient.Do(request)
 	if err != nil {
+		logger.SDebug("PTZ relative request failed", zap.Error(err))
 		return err
 	}
 
 	if err := handleError(resp); err != nil {
+		logger.SDebug("PTZ relative request failed", zap.Error(err))
 		return err
 	}
 

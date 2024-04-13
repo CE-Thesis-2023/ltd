@@ -66,7 +66,7 @@ func (s *CommandService) PTZCapabilties(ctx context.Context, camera *db.Camera) 
 		Ip:       camera.Ip,
 		Username: camera.Username,
 		Password: camera.Password,
-	}).Capabilities(ctx, "0")
+	}).Capabilities(ctx, "1")
 	if err != nil {
 		logger.SError("failed to retrieve PTZ capabilities",
 			zap.Error(err))
