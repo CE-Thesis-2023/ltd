@@ -17,12 +17,13 @@ type StreamsApiInterface interface {
 
 type streamApiClient struct {
 	httpClient *http.Client
+	ip         string
 	username   string
 	password   string
 }
 
 func (c *streamApiClient) getBaseUrl() string {
-	return "/Stream"
+	return c.ip + "/Stream"
 }
 
 type StreamChannelsRequest struct {

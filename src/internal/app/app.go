@@ -64,7 +64,6 @@ func Run() {
 		go func() {
 			reconciler.Run(reconcilerContext)
 			reconcilerCancel()
-			quit <- os.Interrupt
 			defer wg.Done()
 		}()
 	}
@@ -75,7 +74,6 @@ func Run() {
 			if err := sidecar.Start(); err != nil {
 				logger.SError("failed to start sidecar", zap.Error(err))
 			}
-			quit <- os.Interrupt
 			defer wg.Done()
 		}()
 	}

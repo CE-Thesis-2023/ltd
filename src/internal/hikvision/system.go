@@ -20,12 +20,13 @@ type SystemApiInterface interface {
 
 type systemApiClient struct {
 	httpClient *http.Client
+	ip         string
 	username   string
 	password   string
 }
 
 func (c *systemApiClient) getBaseUrl() string {
-	return "/System"
+	return c.ip + "/System"
 }
 
 type SystemCapabilitiesResponse struct {

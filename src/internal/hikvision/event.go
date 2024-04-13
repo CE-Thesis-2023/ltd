@@ -18,10 +18,11 @@ type eventApiClient struct {
 	httpClient *http.Client
 	username   string
 	password   string
+	ip         string
 }
 
 func (c *eventApiClient) getBaseUrl() string {
-	return "/Event"
+	return c.ip + "/Event"
 }
 
 func (c *eventApiClient) getUrlWithChannel(id string) string {

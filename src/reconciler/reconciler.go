@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"sync"
 	"time"
@@ -93,15 +94,15 @@ func (c *Reconciler) Run(ctx context.Context) {
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(1)
 
-	go func() {
-		defer wg.Done()
-		if err := c.mediaService.Reconcile(ctx); err != nil {
-			logger.SFatal("media controller reconcile failed",
-				zap.Error(err))
-		}
-	}()
+	// go func() {
+	// 	defer wg.Done()
+	// 	if err := c.mediaService.Reconcile(ctx); err != nil {
+	// 		logger.SFatal("media controller reconcile failed",
+	// 			zap.Error(err))
+	// 	}
+	// }()
 
 	go func() {
 		defer wg.Done()
@@ -239,7 +240,7 @@ func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, pay
 	if publishTo == "" {
 		logger.SDebug("response topic not found",
 			zap.Reflect("event", event))
-		return nil
+		publishTo = fmt.Sprintf("reply/%s", event.String())
 	}
 	var reply *paho.Publish
 

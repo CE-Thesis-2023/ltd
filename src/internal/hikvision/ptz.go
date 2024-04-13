@@ -27,10 +27,11 @@ type ptzApiClient struct {
 	httpClient *http.Client
 	username   string
 	password   string
+	ip         string
 }
 
 func (c *ptzApiClient) getBaseUrl() string {
-	return "/PTZCtrl/channels"
+	return c.ip + "/PTZCtrl/channels"
 }
 
 func (c *ptzApiClient) getUrlWithChannel(id string) string {
@@ -332,13 +333,16 @@ type PtzCtrlContinousWithResetRequest struct {
 	ResetAfter time.Duration
 }
 
-var ptzCtrlResetRequestBody string = "<PTZData><pan>0</pan><tilt>0</tilt></PTZData>"
+var ptzCtrlResetRequestBody PtzCtrlContinousOptions = PtzCtrlContinousOptions{
+	Pan:  0,
+	Tilt: 0,
+}
 
 func (c *ptzApiClient) ContinousWithReset(ctx context.Context, req *PtzCtrlContinousWithResetRequest) error {
 	p, _ := url.Parse(fmt.Sprintf("%s/continuous", c.getUrlWithChannel(req.ChannelId)))
 
 	resetRequest, err := custhttp.NewHttpRequest(
-		ctx,
+		context.Background(),
 		p,
 		http.MethodPut,
 		custhttp.WithBasicAuth(c.username, c.password),

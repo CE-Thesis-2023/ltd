@@ -41,61 +41,73 @@ type Credentials struct {
 	Ip               string `json:"ip"`
 }
 
-func (c *client) getRestClient(opts *Credentials) *http.Client {
+func (c *client) getRestClient(opts *Credentials) (*http.Client, string) {
 	ip := opts.Ip
 
 	if opts.Username != "" && opts.Password != "" {
 		u, err := url.Parse(ip)
 		if err != nil {
 			logger.SError("failed to parse camera IP", zap.Error(err))
-			return nil
+			return nil, ""
 		}
+		u = u.JoinPath("/ISAPI")
 		u.Scheme = "http"
 		u.User = url.UserPassword(opts.Username, opts.Password)
+		ip = u.String()
 	}
 
 	httpClient := custhttp.NewHttpClient(
 		context.Background(),
 		custhttp.WithTimeout(2*time.Second))
 
-	return httpClient
+	return httpClient, ip
 }
 
 func (c *client) PtzCtrl(credentials *Credentials) PtzApiClientInterface {
+	client, ip := c.getRestClient(credentials)
 	return &ptzApiClient{
-		httpClient: c.getRestClient(credentials),
+		httpClient: client,
+		ip:         ip,
 		username:   credentials.Username,
 		password:   credentials.Password,
 	}
 }
 
 func (c *client) Smart(credentials *Credentials) SmartApiInterface {
+	client, ip := c.getRestClient(credentials)
 	return &smartApiClient{
-		httpClient: c.getRestClient(credentials),
+		httpClient: client,
+		ip:         ip,
 		username:   credentials.Username,
 		password:   credentials.Password,
 	}
 }
 
 func (c *client) Event(credentials *Credentials) EventApiInterface {
+	client, ip := c.getRestClient(credentials)
 	return &eventApiClient{
-		httpClient: c.getRestClient(credentials),
+		httpClient: client,
+		ip:         ip,
 		username:   credentials.Username,
 		password:   credentials.Password,
 	}
 }
 
 func (c *client) System(credentials *Credentials) SystemApiInterface {
+	client, ip := c.getRestClient(credentials)
 	return &systemApiClient{
-		httpClient: c.getRestClient(credentials),
+		httpClient: client,
+		ip:         ip,
 		username:   credentials.Username,
 		password:   credentials.Password,
 	}
 }
 
 func (c *client) Streams(credentials *Credentials) StreamsApiInterface {
+	client, ip := c.getRestClient(credentials)
 	return &streamApiClient{
-		httpClient: c.getRestClient(credentials),
+		ip:         ip,
+		httpClient: client,
 		username:   credentials.Username,
 		password:   credentials.Password,
 	}

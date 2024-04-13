@@ -17,10 +17,11 @@ type smartApiClient struct {
 	httpClient *http.Client
 	username   string
 	password   string
+	ip         string
 }
 
 func (c *smartApiClient) getBaseUrl() string {
-	return "/Smart"
+	return c.ip + "/Smart"
 }
 
 type SmartCapabilitiesResponse struct {
