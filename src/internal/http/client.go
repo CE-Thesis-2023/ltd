@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/xml"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -156,12 +157,13 @@ func JSONResponse(resp *http.Response, dest interface{}) error {
 func XMLResponse(resp *http.Response, dest interface{}) error {
 	body := resp.Body
 	defer body.Close()
-
+	
 	bodyBytes, err := io.ReadAll(body)
 	if err != nil {
 		logger.SDebug("failed to read HTTP response body", zap.Error(err))
 		return err
 	}
+	fmt.Println(string(bodyBytes))
 
 	if err := xml.Unmarshal(bodyBytes, dest); err != nil {
 		logger.SDebug("failed to unmarshal XML response", zap.Error(err))
@@ -170,3 +172,4 @@ func XMLResponse(resp *http.Response, dest interface{}) error {
 
 	return nil
 }
+

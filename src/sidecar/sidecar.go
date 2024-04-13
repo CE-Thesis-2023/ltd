@@ -43,6 +43,7 @@ func (s *HttpSidecar) Start() error {
 		logger.SError("Failed to start HTTP sidecar",
 			zap.Error(err))
 	}
+	logger.SDebug("HTTP sidecar stopped")
 	return nil
 }
 
@@ -71,6 +72,7 @@ func (s *HttpSidecar) handlePtzStatus(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	logger.SDebug("received PTZ status request", zap.String("camera_name", cameraName))
 	camera, err := s.metadata.GetCameraByName(cameraName)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -93,22 +95,6 @@ func (s *HttpSidecar) handlePtzStatus(w http.ResponseWriter, r *http.Request) {
 		Add("Content-Type", "application/json")
 }
 
-type RelativeMoveRequest struct {
-	Pan  float32 `json:"pan"`
-	Tilt float32 `json:"tilt"`
-	Zoom float32 `json:"zoom"`
-}
-
-func (r *RelativeMoveRequest) toHikvisionRequest() *hikvision.PTZCtrlRelativeRequest {
-	return &hikvision.PTZCtrlRelativeRequest{
-		Relative: hikvision.Relative{
-			PositionX:    r.Pan,
-			PositionY:    r.Tilt,
-			RelativeZoom: r.Zoom,
-		},
-	}
-}
-
 func (s *HttpSidecar) handlePtzRelative(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	cameraName := query.Get("name")
@@ -121,7 +107,7 @@ func (s *HttpSidecar) handlePtzRelative(w http.ResponseWriter, r *http.Request) 
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	var req RelativeMoveRequest
+	var req hikvision.PTZCtrlRelativeRequest
 	if err := json.
 		NewDecoder(r.Body).
 		Decode(&req); err != nil {
@@ -129,7 +115,7 @@ func (s *HttpSidecar) handlePtzRelative(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if err := s.commandService.PTZRelative(r.Context(), camera, req.toHikvisionRequest()); err != nil {
+	if err := s.commandService.PTZRelative(r.Context(), camera, &req); err != nil {
 		logger.SError("failed to send PTZ relative command",
 			zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)

@@ -94,7 +94,7 @@ func (c *Reconciler) Run(ctx context.Context) {
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(1)
+	wg.Add(0)
 
 	// go func() {
 	// 	defer wg.Done()
@@ -104,13 +104,13 @@ func (c *Reconciler) Run(ctx context.Context) {
 	// 	}
 	// }()
 
-	go func() {
-		defer wg.Done()
-		if err := c.openGateService.Reconcile(ctx); err != nil {
-			logger.SFatal("open gate controller reconcile failed",
-				zap.Error(err))
-		}
-	}()
+	// go func() {
+	// 	defer wg.Done()
+	// 	if err := c.openGateService.Reconcile(ctx); err != nil {
+	// 		logger.SFatal("open gate controller reconcile failed",
+	// 			zap.Error(err))
+	// 	}
+	// }()
 
 	for {
 		c.mu.Lock()

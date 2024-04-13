@@ -10,6 +10,7 @@ import (
 
 	custhttp "github.com/CE-Thesis-2023/ltd/src/internal/http"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
+	"gonum.org/v1/gonum/interp"
 
 	"go.uber.org/zap"
 )
@@ -417,6 +418,7 @@ type AbsoluteHigh struct {
 
 func (c *ptzApiClient) Status(ctx context.Context, req *PtzCtrlStatusRequest) (*PTZStatus, error) {
 	p, _ := url.Parse(fmt.Sprintf("%s/status", c.getUrlWithChannel(req.ChannelId)))
+	logger.SDebug("PTZ status request", zap.String("url", p.String()))
 
 	statusRequest, err := custhttp.NewHttpRequest(
 		ctx,
@@ -448,19 +450,74 @@ func (c *ptzApiClient) Status(ctx context.Context, req *PtzCtrlStatusRequest) (*
 }
 
 type PTZCtrlRelativeRequest struct {
-	XMLName  xml.Name `xml:"PTZData"`
-	Relative Relative `xml:"Relative"`
+	XMLName  xml.Name   `xml:"PTZData" json:"-"`
+	Relative Relative   `xml:"Relative" json:"relative"`
+	Frame    FrameSpecs `xml:"-" json:"frame"`
 }
+
+type FrameSpecs struct {
+	Height int `xml:"-" json:"height"`
+	Width  int `xml:"-" json:"width"`
+}
+
+func (r *PTZCtrlRelativeRequest) toMove3D() *Move3DRequest {
+	relX := r.Relative.PositionX
+	relY := r.Relative.PositionY
+	width := r.Frame.Width
+	height := r.Frame.Height
+	scaler := interp.PiecewiseLinear{}
+	// scale width. ONVIF specs is [-1, 1] (left, right)
+	scaler.Fit([]float64{-1, 1}, []float64{0, float64(width)})
+	relCoordX := scaler.Predict(float64(relX))
+
+	// scale height. ONVIF specs is [1, -1] (up, down)
+	scaler.Fit([]float64{-1, 1}, []float64{0, float64(height)})
+	relCoordY := scaler.Predict(float64(relY))
+
+	// scale to Move3D range
+	scaler.Fit([]float64{0, float64(height)}, []float64{0, 255})
+	move3DDestY := scaler.Predict(relCoordY)
+
+	scaler.Fit([]float64{0, float64(width)}, []float64{0, 255})
+	move3DDestX := scaler.Predict(relCoordX)
+	return &Move3DRequest{
+		StartPoint: Position3D{
+			PositionX: move3DDestX,
+			PositionY: move3DDestY,
+		},
+		EndPoint: Position3D{
+			PositionX: move3DDestX,
+			PositionY: move3DDestY,
+		},
+	}
+}
+
 type Relative struct {
-	PositionX    float32 `xml:"positionX"`
-	PositionY    float32 `xml:"positionY"`
-	RelativeZoom float32 `xml:"relativeZoom"`
+	PositionX    float32 `xml:"positionX" json:"positionX"`
+	PositionY    float32 `xml:"positionY" json:"positionY"`
+	RelativeZoom float32 `xml:"relativeZoom" json:"relativeZoom"`
+}
+
+type Move3DRequest struct {
+	XMLName    xml.Name   `xml:"Position3D"`
+	StartPoint Position3D `xml:"StartPoint"`
+	EndPoint   Position3D `xml:"EndPoint"`
+}
+
+type Position3D struct {
+	PositionX float64 `xml:"positionX"`
+	PositionY float64 `xml:"positionY"`
 }
 
 func (c *ptzApiClient) Relative(ctx context.Context, req *PTZCtrlRelativeRequest) error {
-	p, _ := url.Parse(fmt.Sprintf("%s/relative", c.getUrlWithChannel("1")))
+	p, _ := url.Parse(fmt.Sprintf("%s/position3D",
+		c.getUrlWithChannel("1")))
 	logger.SDebug("PTZ relative request",
 		zap.String("url", p.String()))
+
+	m3dreq := req.toMove3D()
+	logger.SDebug("PTZ relative request",
+		zap.Reflect("request", m3dreq))
 
 	request, err := custhttp.NewHttpRequest(
 		ctx,
@@ -468,7 +525,7 @@ func (c *ptzApiClient) Relative(ctx context.Context, req *PTZCtrlRelativeRequest
 		http.MethodPut,
 		custhttp.WithBasicAuth(c.username, c.password),
 		custhttp.WithContentType("application/xml"),
-		custhttp.WithXMLBody(req),
+		custhttp.WithXMLBody(m3dreq),
 	)
 	if err != nil {
 		return err
@@ -485,5 +542,9 @@ func (c *ptzApiClient) Relative(ctx context.Context, req *PTZCtrlRelativeRequest
 		return err
 	}
 
+	return nil
+}
+
+func (c *ptzApiClient) MoveMap(ctx context.Context, req *PTZCtrlRelativeRequest) error {
 	return nil
 }

@@ -142,11 +142,13 @@ func (s *CommandService) PTZStatus(ctx context.Context, camera *db.Camera, req *
 
 	status, err := ptzCtrl.Status(ctx, req)
 	if err != nil {
+		logger.SError("failed to retrieve PTZ status (1)", zap.Error(err))
 		return nil, err
 	}
-	<-time.After(time.Millisecond * 200)
+	<-time.After(time.Millisecond * 400)
 	updatedStatus, err := ptzCtrl.Status(ctx, req)
 	if err != nil {
+		logger.SError("failed to retrieve PTZ status (2)", zap.Error(err))
 		return nil, err
 	}
 
