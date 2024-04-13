@@ -544,7 +544,3 @@ func (c *ptzApiClient) Relative(ctx context.Context, req *PTZCtrlRelativeRequest
 
 	return nil
 }
-
-func (c *ptzApiClient) MoveMap(ctx context.Context, req *PTZCtrlRelativeRequest) error {
-	return nil
-}
