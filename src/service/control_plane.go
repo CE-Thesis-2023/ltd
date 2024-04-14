@@ -132,8 +132,6 @@ func (s *ControlPlaneService) GetAssignedDevices(ctx context.Context, req *GetAs
 }
 
 func (s *ControlPlaneService) GetOpenGateIntegrationConfigurations(ctx context.Context, req *web.GetOpenGateIntegrationByIdRequest) (*web.GetOpenGateCameraSettingsResponse, error) {
-	logger.SInfo("requested to get OpenGate integration configurations",
-		zap.Reflect("request", req))
 	path := s.baseUrl.JoinPath("/opengate", req.OpenGateId)
 	request, err := http.NewRequestWithContext(
 		ctx,
@@ -172,8 +170,6 @@ func (s *ControlPlaneService) GetOpenGateIntegrationConfigurations(ctx context.C
 }
 
 func (s *ControlPlaneService) GetOpenGateCameraSettings(ctx context.Context, req *web.GetOpenGateCameraSettingsRequest) (*web.GetOpenGateCameraSettingsResponse, error) {
-	logger.SInfo("requested to get OpenGate camera settings",
-		zap.Reflect("request", req))
 	path := s.baseUrl.JoinPath("/opengate/cameras")
 	q := path.Query()
 	for _, camera := range req.CameraId {
@@ -218,8 +214,6 @@ func (s *ControlPlaneService) GetOpenGateCameraSettings(ctx context.Context, req
 }
 
 func (s *ControlPlaneService) GetOpenGateMqttConfigurations(ctx context.Context, req *web.GetOpenGateMqttSettingsRequest) (*web.GetOpenGateMqttSettingsResponse, error) {
-	logger.SInfo("requested to get OpenGate MQTT configurations",
-		zap.Reflect("request", req))
 	path := s.baseUrl.JoinPath("/opengate", req.ConfigurationId, "mqtt")
 	request, err := http.NewRequestWithContext(
 		ctx,
@@ -258,8 +252,6 @@ func (s *ControlPlaneService) GetOpenGateMqttConfigurations(ctx context.Context,
 }
 
 func (s *ControlPlaneService) GetOpenGateConfigurations(ctx context.Context, req *web.GetTranscoderOpenGateConfigurationRequest) (*web.GetTranscoderOpenGateConfigurationResponse, error) {
-	logger.SDebug("requested to get OpenGate configurations",
-		zap.Reflect("request", req))
 	path := s.baseUrl.JoinPath("/opengate", "configurations", req.TranscoderId)
 	request, err := http.NewRequestWithContext(
 		ctx,
@@ -298,8 +290,6 @@ func (s *ControlPlaneService) GetOpenGateConfigurations(ctx context.Context, req
 }
 
 func (s *ControlPlaneService) GetCameraStreamSettings(ctx context.Context, req *web.GetStreamConfigurationsRequest) (*web.GetStreamConfigurationsResponse, error) {
-	logger.SInfo("requested to get camera stream settings",
-		zap.Reflect("request", req))
 	path := s.baseUrl.JoinPath("/transcoders/streams")
 	q := path.Query()
 	for _, camera := range req.CameraId {
@@ -344,8 +334,6 @@ func (s *ControlPlaneService) GetCameraStreamSettings(ctx context.Context, req *
 }
 
 func (s *ControlPlaneService) GetMQTTEndpoints(ctx context.Context, req *web.GetMQTTEventEndpointRequest) (*web.GetMQTTEventEndpointResponse, error) {
-	logger.SInfo("requested to get MQTT endpoints",
-		zap.Reflect("request", req))
 	path := s.baseUrl.JoinPath("/transcoders/mqtt")
 	q := path.Query()
 	q.Add("transcoder_id", req.TranscoderId)

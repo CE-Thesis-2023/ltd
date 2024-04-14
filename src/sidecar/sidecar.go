@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/CE-Thesis-2023/backend/src/models/events"
 	"github.com/CE-Thesis-2023/ltd/src/internal/hikvision"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/reconciler"
@@ -61,8 +62,39 @@ func (s *HttpSidecar) newServeMux() *http.ServeMux {
 	mux.HandleFunc("/ptz/status", s.handlePtzStatus)
 	mux.HandleFunc("/ptz/relative", s.handlePtzRelative)
 	mux.HandleFunc("/ptz/capabilities", s.handlePtzCapabilities)
+	mux.HandleFunc("/ptz/continuous", s.handlePtzContinuous)
 
 	return mux
+}
+
+func (s *HttpSidecar) handlePtzContinuous(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	cameraName := query.Get("name")
+	if len(cameraName) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	camera, err := s.metadata.GetCameraByName(cameraName)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	var req events.PTZCtrlRequest
+	if err := json.
+		NewDecoder(r.Body).
+		Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if err := s.commandService.PtzCtrl(r.Context(), camera, &req); err != nil {
+		logger.SError("failed to send PTZ continuous command",
+			zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *HttpSidecar) handlePtzStatus(w http.ResponseWriter, r *http.Request) {

@@ -384,8 +384,6 @@ func (c *Reconciler) pullLatestMQTTConfigurations(ctx context.Context) error {
 }
 
 func (c *Reconciler) reconcile(ctx context.Context) error {
-	logger.SDebug("reconcile Enabled")
-
 	if err := c.pullLatestConfigurations(ctx); err != nil {
 		logger.SError("failed to pull latest configurations",
 			zap.Error(err))
@@ -404,14 +402,10 @@ func (c *Reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	logger.SDebug("reconcile completed")
 	return nil
 }
 
 func (c *Reconciler) pullLatestConfigurations(ctx context.Context) error {
-	logger.SDebug("pulling latest configurations",
-		zap.String("transcoderId", c.deviceInfo.DeviceId))
-
 	if err := c.pullOpenGateConfiguration(ctx); err != nil {
 		logger.SError("failed to pull open gate configuration",
 			zap.Error(err))
@@ -428,7 +422,6 @@ func (c *Reconciler) pullLatestConfigurations(ctx context.Context) error {
 		return err
 	}
 
-	logger.SDebug("pulling latest configurations completed")
 	return nil
 }
 
@@ -450,8 +443,6 @@ func (c *Reconciler) pullOpenGateConfiguration(ctx context.Context) error {
 }
 
 func (c *Reconciler) pullStreamConfigurations(ctx context.Context) error {
-	logger.SDebug("pulling stream configurations",
-		zap.String("transcoderId", c.deviceInfo.DeviceId))
 	assignedResp, err := c.controlPlaneService.GetAssignedDevices(ctx, &service.GetAssignedDevicesRequest{
 		DeviceId: c.
 			deviceInfo.

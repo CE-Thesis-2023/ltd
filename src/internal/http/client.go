@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/xml"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -163,7 +162,6 @@ func XMLResponse(resp *http.Response, dest interface{}) error {
 		logger.SDebug("failed to read HTTP response body", zap.Error(err))
 		return err
 	}
-	fmt.Println(string(bodyBytes))
 
 	if err := xml.Unmarshal(bodyBytes, dest); err != nil {
 		logger.SDebug("failed to unmarshal XML response", zap.Error(err))
