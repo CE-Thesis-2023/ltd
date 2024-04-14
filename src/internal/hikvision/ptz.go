@@ -480,14 +480,15 @@ func (r *PTZCtrlRelativeRequest) toMove3D() *Move3DRequest {
 
 	scaler.Fit([]float64{0, float64(width)}, []float64{0, 255})
 	move3DDestX := scaler.Predict(relCoordX)
+
 	return &Move3DRequest{
 		StartPoint: Position3D{
-			PositionX: move3DDestX,
-			PositionY: move3DDestY,
+			PositionX: int32(move3DDestX),
+			PositionY: int32(move3DDestY),
 		},
 		EndPoint: Position3D{
-			PositionX: move3DDestX,
-			PositionY: move3DDestY,
+			PositionX: int32(move3DDestX),
+			PositionY: int32(move3DDestY),
 		},
 	}
 }
@@ -505,8 +506,8 @@ type Move3DRequest struct {
 }
 
 type Position3D struct {
-	PositionX float64 `xml:"positionX"`
-	PositionY float64 `xml:"positionY"`
+	PositionX int32 `xml:"positionX"`
+	PositionY int32 `xml:"positionY"`
 }
 
 func (c *ptzApiClient) Relative(ctx context.Context, req *PTZCtrlRelativeRequest) error {
