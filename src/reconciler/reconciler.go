@@ -96,21 +96,21 @@ func (c *Reconciler) Run(ctx context.Context) {
 	var wg sync.WaitGroup
 	wg.Add(0)
 
-	// go func() {
-	// 	defer wg.Done()
-	// 	if err := c.mediaService.Reconcile(ctx); err != nil {
-	// 		logger.SFatal("media controller reconcile failed",
-	// 			zap.Error(err))
-	// 	}
-	// }()
+	go func() {
+		defer wg.Done()
+		if err := c.mediaService.Reconcile(ctx); err != nil {
+			logger.SFatal("media controller reconcile failed",
+				zap.Error(err))
+		}
+	}()
 
-	// go func() {
-	// 	defer wg.Done()
-	// 	if err := c.openGateService.Reconcile(ctx); err != nil {
-	// 		logger.SFatal("open gate controller reconcile failed",
-	// 			zap.Error(err))
-	// 	}
-	// }()
+	go func() {
+		defer wg.Done()
+		if err := c.openGateService.Reconcile(ctx); err != nil {
+			logger.SFatal("open gate controller reconcile failed",
+				zap.Error(err))
+		}
+	}()
 
 	for {
 		c.mu.Lock()
@@ -265,8 +265,11 @@ func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, pay
 		if err = json.Unmarshal(payload, &req); err != nil {
 			return err
 		}
+		if len(event.Arguments) == 0 {
+			return custerror.FormatInvalidArgument("no camera id found")
+		}
 		var camera *db.Camera
-		camera, err = c.resoluteCamera(event.ID)
+		camera, err = c.resoluteCamera(event.Arguments[0])
 		if err != nil {
 			logger.SError("failed to resolute camera",
 				zap.Error(err))
@@ -279,7 +282,10 @@ func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, pay
 
 	case "info":
 		var camera *db.Camera
-		camera, err = c.resoluteCamera(event.ID)
+		if len(event.Arguments) == 0 {
+			return custerror.FormatInvalidArgument("no camera id found")
+		}
+		camera, err = c.resoluteCamera(event.Arguments[0])
 		if err != nil {
 			logger.SError("failed to resolute camera",
 				zap.Error(err))
@@ -297,7 +303,10 @@ func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, pay
 		reply, _ = c.buildPublish(publishTo, resp, prop)
 	case "ptz_capabilities":
 		var camera *db.Camera
-		camera, err = c.resoluteCamera(event.ID)
+		if len(event.Arguments) == 0 {
+			return custerror.FormatInvalidArgument("no camera id found")
+		}
+		camera, err = c.resoluteCamera(event.Arguments[0])
 		if err != nil {
 			logger.SError("failed to resolute camera",
 				zap.Error(err))

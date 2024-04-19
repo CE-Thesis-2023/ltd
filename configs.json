@@ -7,7 +7,8 @@
     "deviceId": "test-device-01",
     "cloudApiServer": "https://private.api.ctportal.ntranlab.com",
     "username": "dev",
-    "password": "dev"
+    "password": "dev",
+    "subscribeOn": "commands/test-device-01"
   },
   "ffmpeg": {
     "binaryPath": "/usr/bin/ffmpeg"
