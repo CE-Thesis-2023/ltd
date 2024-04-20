@@ -34,17 +34,17 @@ func (c *OpenGateHTTPAPIClient) EventsSnapshot(ctx context.Context, eventId stri
 		uri,
 		nil)
 	if err != nil {
-		return nil, custerror.FormatInternalError("failed to create http request", err)
+		return nil, custerror.FormatInternalError("failed to create http request: %s", err)
 	}
 	resp, err := c.
 		httpClient.
 		Do(req)
 	if err != nil {
-		return nil, custerror.FormatInternalError("failed to send http request", err)
+		return nil, custerror.FormatInternalError("failed to send http request: %s", err)
 	}
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, custerror.FormatInternalError("failed to read response body", err)
+		return nil, custerror.FormatInternalError("failed to read response body: %s", err)
 	}
 	return bodyBytes, nil
 }
@@ -56,17 +56,17 @@ func (c *OpenGateHTTPAPIClient) EventsThumbnail(ctx context.Context, eventId str
 		uri,
 		nil)
 	if err != nil {
-		return nil, custerror.FormatInternalError("failed to create http request", err)
+		return nil, custerror.FormatInternalError("failed to create http request: %s", err)
 	}
 	resp, err := c.
 		httpClient.
 		Do(req)
 	if err != nil {
-		return nil, custerror.FormatInternalError("failed to send http request", err)
+		return nil, custerror.FormatInternalError("failed to send http request: %s", err)
 	}
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, custerror.FormatInternalError("failed to read response body", err)
+		return nil, custerror.FormatInternalError("failed to read response body: %s", err)
 	}
 	return bodyBytes, nil
 }
