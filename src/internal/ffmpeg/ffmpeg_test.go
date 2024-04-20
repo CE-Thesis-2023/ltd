@@ -28,7 +28,7 @@ func Test_FfmpegCommand(t *testing.T) {
 			"tune:v":   "zerolatency",
 		}).
 		WithScale(25, 1280, 720).
-		WithHardwareAccelerationType(VA_API)
+		WithHardwareAccelerationType("")
 
 	res, err := ffmpegCommand.String()
 	if err != nil {

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/CE-Thesis-2023/backend/src/models/events"
+	"github.com/CE-Thesis-2023/backend/src/models/ltdproxy"
 	"github.com/CE-Thesis-2023/ltd/src/internal/hikvision"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
 	"github.com/CE-Thesis-2023/ltd/src/reconciler"
@@ -63,7 +64,7 @@ func (s *HttpSidecar) newServeMux() *http.ServeMux {
 	mux.HandleFunc("/ptz/relative", s.handlePtzRelative)
 	mux.HandleFunc("/ptz/capabilities", s.handlePtzCapabilities)
 	mux.HandleFunc("/ptz/continuous", s.handlePtzContinuous)
-
+	mux.HandleFunc("/proxier/events", s.handleEventProxier)
 	return mux
 }
 
@@ -182,4 +183,21 @@ func (s *HttpSidecar) handlePtzCapabilities(w http.ResponseWriter, r *http.Reque
 	w.Write(resp)
 	w.Header().
 		Add("Content-Type", "application/json")
+}
+
+func (s *HttpSidecar) handleEventProxier(w http.ResponseWriter, r *http.Request) {
+	var req ltdproxy.UploadEventRequest
+	if err := json.
+		NewDecoder(r.Body).
+		Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if err := s.commandService.UploadEvent(r.Context(), &req); err != nil {
+		logger.SError("failed to upload event",
+			zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }

@@ -112,7 +112,7 @@ func (s *mediaService) buildFfmpegRestreamingCommand(ctx context.Context, source
 			"tune:v":   "zerolatency",
 		}).
 		WithScale(20, 1280, 720).
-		WithHardwareAccelerationType(custff.VA_API)
+		WithHardwareAccelerationType(custff.CPU)
 
 	execCmd, err := cmd.String()
 	if err != nil {

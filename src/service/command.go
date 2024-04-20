@@ -2,24 +2,34 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"math"
 	"time"
 
 	"github.com/CE-Thesis-2023/backend/src/models/db"
 	"github.com/CE-Thesis-2023/backend/src/models/events"
+	"github.com/CE-Thesis-2023/backend/src/models/ltdproxy"
+	custerror "github.com/CE-Thesis-2023/ltd/src/internal/error"
 	"github.com/CE-Thesis-2023/ltd/src/internal/hikvision"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
-
+	"github.com/CE-Thesis-2023/ltd/src/internal/opengate"
+	"github.com/eclipse/paho.golang/autopaho"
+	"github.com/eclipse/paho.golang/paho"
 	"go.uber.org/zap"
 )
 
 type CommandService struct {
 	hikvisionClient hikvision.Client
+	MqttClient      *autopaho.ConnectionManager
+	openGateClient  *opengate.OpenGateHTTPAPIClient
 }
 
-func NewCommandService(hikvisionClient hikvision.Client) *CommandService {
+func NewCommandService(hikvisionClient hikvision.Client, mqttClient *autopaho.ConnectionManager, opengateClient *opengate.OpenGateHTTPAPIClient) *CommandService {
 	return &CommandService{
 		hikvisionClient: hikvisionClient,
+		MqttClient:      mqttClient,
+		openGateClient:  opengateClient,
 	}
 }
 
@@ -177,6 +187,48 @@ func (s *CommandService) PTZRelative(ctx context.Context, camera *db.Camera, req
 		Ip:       camera.Ip,
 	})
 	if err := ptzCtrl.Relative(ctx, req); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *CommandService) UploadEvent(ctx context.Context, req *ltdproxy.UploadEventRequest) error {
+	if s.MqttClient == nil {
+		return custerror.FormatInternalError("mqtt client is not initialized")
+	}
+
+	topic := req.Topic
+	if len(topic) == 0 {
+		return custerror.FormatInvalidArgument("missing topic")
+	}
+	eventId := req.
+		Event.
+		After.
+		ID
+	if len(eventId) == 0 {
+		eventId = req.
+			Event.
+			Before.
+			ID
+	}
+	if req.Snapshot == nil {
+		jpegImg, err := s.openGateClient.EventsSnapshot(ctx, eventId, 480, 80)
+		if err != nil {
+			logger.SError("failed to retrieve snapshot", zap.Error(err))
+			return err
+		}
+		base64Encoded := base64.StdEncoding.EncodeToString(jpegImg)
+		req.Snapshot = &ltdproxy.EventSnapshot{
+			Base64Image: base64Encoded,
+		}
+	}
+	jsonPayload, err := json.Marshal(req)
+	if err != nil {
+		logger.SError("failed to marshal event", zap.Error(err))
+		return err
+	}
+	if _, err := s.MqttClient.Publish(ctx, &paho.Publish{Topic: topic, Payload: jsonPayload}); err != nil {
+		logger.SError("failed to publish event", zap.Error(err))
 		return err
 	}
 	return nil

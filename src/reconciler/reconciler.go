@@ -180,6 +180,7 @@ func (c *Reconciler) initializeMQTTClient(ctx context.Context) error {
 		custmqtt.WithHandlerRegister(c.registerListeners),
 	)
 	c.mqttClient = client
+	c.commandService.MqttClient = client
 	return nil
 }
 
@@ -278,7 +279,7 @@ func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, pay
 		if err = c.commandService.PtzCtrl(ctx, camera, &req); err != nil {
 			return err
 		}
-		reply, _ = c.buildPublish(publishTo, events.EventReply_OK, prop)
+		reply, _ = c.buildPublish(publishTo, &events.EventReply{Status: "500", Err: err}, prop)
 
 	case "info":
 		var camera *db.Camera

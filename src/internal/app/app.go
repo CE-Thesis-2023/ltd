@@ -10,6 +10,7 @@ import (
 	"github.com/CE-Thesis-2023/ltd/src/internal/configs"
 	"github.com/CE-Thesis-2023/ltd/src/internal/hikvision"
 	"github.com/CE-Thesis-2023/ltd/src/internal/logger"
+	"github.com/CE-Thesis-2023/ltd/src/internal/opengate"
 	"github.com/CE-Thesis-2023/ltd/src/reconciler"
 	"github.com/CE-Thesis-2023/ltd/src/service"
 	"github.com/CE-Thesis-2023/ltd/src/sidecar"
@@ -41,11 +42,18 @@ func Run() {
 		logger.SFatal("failed to create hikvision client", zap.Error(err))
 	}
 	controlPlaneService := service.NewControlPlaneService(&globalConfigs.DeviceInfo)
-	commandService := service.NewCommandService(hikvisionClient)
+	// will add mqttClient and opengateClient later in reconciler
+	commandService := service.NewCommandService(
+		hikvisionClient,
+		nil,
+		opengate.NewOpenGateHTTPAPIClient("http://localhost:5000"))
 	mediaService := service.NewMediaService()
 
 	mediaController := service.NewMediaController(mediaService)
-	processorController := service.NewProcessorController(&configs.Get().OpenGate, mediaService)
+	processorController := service.NewProcessorController(
+		&configs.Get().
+			OpenGate,
+		mediaService)
 
 	reconciler := reconciler.NewReconciler(
 		controlPlaneService,

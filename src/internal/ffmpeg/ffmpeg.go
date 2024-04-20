@@ -10,6 +10,7 @@ type FFmpegHardwareAccelerationType string
 var (
 	VA_API    FFmpegHardwareAccelerationType = "vaapi"
 	QUICKSYNC FFmpegHardwareAccelerationType = "quicksync"
+	CPU       FFmpegHardwareAccelerationType = "cpu"
 )
 
 type ffmpegCommand struct {
