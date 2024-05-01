@@ -1,0 +1,95 @@
+audio:
+    enabled: false
+birdseye:
+    enabled: false
+cameras:
+    ip_camera_02:
+        detect:
+            fps: 5
+            height: 480
+            width: 640
+        ffmpeg:
+            input_args: preset-rtsp-generic
+            inputs:
+                - hwaccel_args:
+                    - preset-vaapi
+                  path: rtsp://admin:ACLAB2023@172.28.182.160:80/ISAPI/Streaming/channels/101
+                  roles:
+                    - detect
+        mqtt:
+            bounding_box: true
+            crop: true
+            enabled: true
+            required_zones:
+                - all
+            timestamp: true
+        onvif:
+            autotracking:
+                enabled: true
+                required_zones:
+                    - all
+                track:
+                    - person
+                zooming: disabled
+            host: 172.28.182.160
+            isapi_fallback: true
+            isapi_sidecar:
+                host: localhost
+                port: 5600
+            password: ACLAB2023
+            port: 80
+            user: admin
+    ip_camera_03:
+        detect:
+            fps: 5
+            height: 480
+            width: 640
+        ffmpeg:
+            input_args: preset-rtsp-generic
+            inputs:
+                - hwaccel_args:
+                    - preset-vaapi
+                  path: rtsp://admin:ACLAB2023@172.28.182.165:80/ISAPI/Streaming/channels/101
+                  roles:
+                    - detect
+        mqtt:
+            bounding_box: true
+            crop: true
+            enabled: true
+            required_zones:
+                - all
+            timestamp: true
+        onvif:
+            autotracking:
+                enabled: true
+                required_zones:
+                    - all
+                track:
+                    - person
+                zooming: disabled
+            host: 172.28.182.165
+            isapi_fallback: true
+            isapi_sidecar:
+                host: localhost
+                port: 5600
+            password: ACLAB2023
+            port: 80
+            user: admin
+detectors:
+    default:
+        type: cpu
+ffmpeg:
+    retry_interval: 10
+logger:
+    default: info
+mqtt:
+    enabled: true
+    host: mosquitto.mqtt.ntranlab.com
+    password: ctportal2024
+    port: 1883
+    topic_prefix: opengate/test-device-01
+    user: admin
+snapshots:
+    enabled: true
+    retain:
+        default: 7

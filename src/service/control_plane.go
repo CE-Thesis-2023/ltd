@@ -333,6 +333,39 @@ func (s *ControlPlaneService) GetCameraStreamSettings(ctx context.Context, req *
 	}
 }
 
+func (s *ControlPlaneService) UpdateTranscoderStatus(ctx context.Context, transcoderId string, status bool) error {
+	path := s.baseUrl.JoinPath("/transcoders/status")
+	q := path.Query()
+	q.Add("transcoder_id", transcoderId)
+	q.Add("transcoder_status", fmt.Sprintf("%t", status))
+	path.RawQuery = q.Encode()
+
+	request, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPut,
+		path.String(),
+		nil)
+	if err != nil {
+		return err
+	}
+
+	request.SetBasicAuth(s.basicAuthUser, s.basicAuthPassword)
+	response, err := s.httpClient.Do(request)
+	if err != nil {
+		return err
+	}
+	switch response.StatusCode {
+	case 200, 201, 202:
+		return nil
+	case 400:
+		return custerror.ErrorInvalidArgument
+	case 404:
+		return custerror.ErrorNotFound
+	default:
+		return custerror.ErrorInternal
+	}
+}
+
 func (s *ControlPlaneService) GetMQTTEndpoints(ctx context.Context, req *web.GetMQTTEventEndpointRequest) (*web.GetMQTTEventEndpointResponse, error) {
 	path := s.baseUrl.JoinPath("/transcoders/mqtt")
 	q := path.Query()

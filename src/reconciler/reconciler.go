@@ -84,9 +84,23 @@ func NewReconciler(
 	}
 }
 
+func (c *Reconciler) onShutdown(ctx context.Context) error {
+	if err := c.controlPlaneService.UpdateTranscoderStatus(
+		ctx,
+		c.deviceInfo.DeviceId,
+		false); err != nil {
+		logger.SError("failed to update transcoder status",
+			zap.Error(err))
+		return err
+	}
+	logger.SInfo("onShutdown: updated status to false")
+	return nil
+}
+
 func (c *Reconciler) Run(ctx context.Context) {
 	logger.SDebug("reconciler loop started")
 
+	defer c.onShutdown(context.Background())
 	if err := c.init(ctx); err != nil {
 		logger.SError("reconciler loop initialize application failed",
 			zap.Error(err))
@@ -94,7 +108,7 @@ func (c *Reconciler) Run(ctx context.Context) {
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(0)
+	wg.Add(2)
 
 	go func() {
 		defer wg.Done()
@@ -155,6 +169,15 @@ func (c *Reconciler) init(ctx context.Context) error {
 			zap.Error(err))
 		return err
 	}
+	if err := c.controlPlaneService.UpdateTranscoderStatus(
+		ctx,
+		c.deviceInfo.DeviceId,
+		true); err != nil {
+		logger.SError("failed to update transcoder status",
+			zap.Error(err))
+		return err
+	}
+	logger.SInfo("init: updated status to true")
 	return nil
 }
 
