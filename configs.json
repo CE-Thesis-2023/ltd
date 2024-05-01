@@ -15,9 +15,9 @@
   },
   "openGate": {
     "dockerComposePath": "./opengate/docker-compose.yml",
-    "configurationPath": "./opengate/configs.yaml",
+    "configurationPath": "./opengate/config/config.yaml",
     "prepullImages": [
-      "nginx:1.25.4"
+      "nguyentrantrung/opengate:latest"
     ]
   }
 }

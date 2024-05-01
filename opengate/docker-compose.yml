@@ -1,11 +1,19 @@
 services:
-  nginx:
-    image: nginx:1.25.4
+  opengate:
     container_name: opengate
-    restart: always
+    privileged: true
+    restart: unless-stopped
+    image: nguyentrantrung/opengate:latest
+    shm_size: "512mb"
+    devices:
+      - /dev/bus/usb:/dev/bus/usb # USB Coral
+      - /dev/dri/renderD128:/dev/dri/renderD128 # Intel hardware acceleration
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /opengate/config:/config
+      - /opengate/storage:/media/opengate
+      - type: tmpfs
+        target: /tmp/cache
+        tmpfs:
+          size: 1000000000
     network_mode: host
-    deploy:
-      resources:
-        limits:
-          cpus: 4
-          memory: '4096M'
