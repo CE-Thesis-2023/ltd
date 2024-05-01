@@ -85,13 +85,18 @@ func NewReconciler(
 }
 
 func (c *Reconciler) onShutdown(ctx context.Context) error {
-	if err := c.controlPlaneService.UpdateTranscoderStatus(
-		ctx,
-		c.deviceInfo.DeviceId,
-		false); err != nil {
-		logger.SError("failed to update transcoder status",
-			zap.Error(err))
-		return err
+	for cameraId := range c.cameras {
+		logger.SInfo("onShutdown: updating status to false",
+			zap.String("cameraId", cameraId))
+		if err := c.controlPlaneService.UpdateTranscoderStatus(
+			ctx,
+			c.deviceInfo.DeviceId,
+			cameraId,
+			false); err != nil {
+			logger.SError("failed to update transcoder status",
+				zap.Error(err))
+			return err
+		}
 	}
 	logger.SInfo("onShutdown: updated status to false")
 	return nil
@@ -169,15 +174,6 @@ func (c *Reconciler) init(ctx context.Context) error {
 			zap.Error(err))
 		return err
 	}
-	if err := c.controlPlaneService.UpdateTranscoderStatus(
-		ctx,
-		c.deviceInfo.DeviceId,
-		true); err != nil {
-		logger.SError("failed to update transcoder status",
-			zap.Error(err))
-		return err
-	}
-	logger.SInfo("init: updated status to true")
 	return nil
 }
 
@@ -520,6 +516,15 @@ func (c *Reconciler) reconcileFFmpegStreams() error {
 					zap.Error(err))
 				return err
 			}
+			if err := c.controlPlaneService.UpdateTranscoderStatus(
+				context.Background(),
+				c.deviceInfo.DeviceId,
+				cameraId,
+				true); err != nil {
+				logger.SError("failed to update transcoder camera status",
+					zap.Error(err))
+				return err
+			}
 			if updated {
 				logger.SInfo("camera stream configuration updated",
 					zap.String("cameraId", cameraId))
@@ -531,6 +536,15 @@ func (c *Reconciler) reconcileFFmpegStreams() error {
 			logger.SInfo("camera stream configuration removed",
 				zap.String("cameraId", cameraId))
 			c.mediaService.Deregister(cameraId)
+			if err := c.controlPlaneService.UpdateTranscoderStatus(
+				context.Background(),
+				c.deviceInfo.DeviceId,
+				cameraId,
+				false); err != nil {
+				logger.SError("failed to update transcoder camera status",
+					zap.Error(err))
+				return err
+			}
 		}
 	}
 	c.cameras = c.updatedCameras

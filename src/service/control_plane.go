@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 
 	db "github.com/CE-Thesis-2023/backend/src/models/db"
 	"github.com/CE-Thesis-2023/backend/src/models/web"
@@ -172,9 +173,8 @@ func (s *ControlPlaneService) GetOpenGateIntegrationConfigurations(ctx context.C
 func (s *ControlPlaneService) GetOpenGateCameraSettings(ctx context.Context, req *web.GetOpenGateCameraSettingsRequest) (*web.GetOpenGateCameraSettingsResponse, error) {
 	path := s.baseUrl.JoinPath("/opengate/cameras")
 	q := path.Query()
-	for _, camera := range req.CameraId {
-		q.Add("cameraId", camera)
-	}
+	aggr := strings.Join(req.CameraId, ",")
+	q.Add("camera_id", aggr)
 	path.RawQuery = q.Encode()
 
 	request, err := http.NewRequestWithContext(
@@ -292,9 +292,8 @@ func (s *ControlPlaneService) GetOpenGateConfigurations(ctx context.Context, req
 func (s *ControlPlaneService) GetCameraStreamSettings(ctx context.Context, req *web.GetStreamConfigurationsRequest) (*web.GetStreamConfigurationsResponse, error) {
 	path := s.baseUrl.JoinPath("/transcoders/streams")
 	q := path.Query()
-	for _, camera := range req.CameraId {
-		q.Add("camera_id", camera)
-	}
+	aggr := strings.Join(req.CameraId, ",")
+	q.Add("camera_id", aggr)
 	path.RawQuery = q.Encode()
 
 	request, err := http.NewRequestWithContext(
@@ -333,10 +332,11 @@ func (s *ControlPlaneService) GetCameraStreamSettings(ctx context.Context, req *
 	}
 }
 
-func (s *ControlPlaneService) UpdateTranscoderStatus(ctx context.Context, transcoderId string, status bool) error {
+func (s *ControlPlaneService) UpdateTranscoderStatus(ctx context.Context, transcoderId string, cameraId string, status bool) error {
 	path := s.baseUrl.JoinPath("/transcoders/status")
 	q := path.Query()
 	q.Add("transcoder_id", transcoderId)
+	q.Add("camera_id", cameraId)
 	q.Add("transcoder_status", fmt.Sprintf("%t", status))
 	path.RawQuery = q.Encode()
 
