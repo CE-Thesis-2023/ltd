@@ -3,6 +3,7 @@ package sidecar
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
@@ -41,10 +42,14 @@ func (s *HttpSidecar) Start() error {
 	logger.SInfo("Starting HTTP sidecar",
 		zap.String("addr", s.server.Addr))
 	if err := s.server.ListenAndServe(); err != nil {
+		if errors.Is(err, http.ErrServerClosed) {
+			logger.SInfo("HTTP sidecar stopped")
+			return nil
+		}
 		logger.SError("Failed to start HTTP sidecar",
 			zap.Error(err))
+		return err
 	}
-	logger.SDebug("HTTP sidecar stopped")
 	return nil
 }
 

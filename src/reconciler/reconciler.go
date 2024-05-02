@@ -484,6 +484,11 @@ func (c *Reconciler) pullStreamConfigurations(ctx context.Context) error {
 
 	cameraIds := make([]string, 0, len(cameras))
 	for _, camera := range cameras {
+		if !camera.Enabled {
+			continue
+		}
+		logger.SInfo("camera is enabled",
+			zap.String("id", camera.CameraId))
 		cameraIds = append(cameraIds, camera.CameraId)
 		c.cameraProperties[camera.CameraId] = camera
 	}
