@@ -215,6 +215,17 @@ func (s *mediaService) writeConfigurationFile(p *OpenGateProcess) error {
 	}
 	defer f.Close()
 
+	// clean the file
+	err = f.Truncate(0)
+	if err != nil {
+		logger.SError("failed to truncate file", zap.Error(err))
+		return err
+	}
+	_, err = f.Seek(0, 0)
+	if err != nil {
+		logger.SError("failed to move pointer to start of file", zap.Error(err))
+		return err
+	}
 	data := p.settings
 	if _, err := f.Write(data); err != nil {
 		logger.SError("failed to write to file", zap.Error(err))
