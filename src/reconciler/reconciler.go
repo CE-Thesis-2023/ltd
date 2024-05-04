@@ -487,8 +487,6 @@ func (c *Reconciler) pullStreamConfigurations(ctx context.Context) error {
 		if !camera.Enabled {
 			continue
 		}
-		logger.SInfo("camera is enabled",
-			zap.String("id", camera.CameraId))
 		cameraIds = append(cameraIds, camera.CameraId)
 		c.cameraProperties[camera.CameraId] = camera
 	}
