@@ -114,9 +114,12 @@ func (s *HttpSidecar) handlePtzStatus(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	info, err := s.commandService.PTZStatus(r.Context(), camera, &hikvision.PtzCtrlStatusRequest{
-		ChannelId: "1",
-	})
+	info, err := s.commandService.PTZStatus(
+		context.Background(),
+		camera,
+		&hikvision.PtzCtrlStatusRequest{
+			ChannelId: "1",
+		})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
