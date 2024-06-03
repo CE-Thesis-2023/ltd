@@ -293,7 +293,7 @@ func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, pay
 			return custerror.FormatInvalidArgument("no camera id found")
 		}
 		var camera *db.Camera
-		camera, err = c.resoluteCamera(event.Arguments[0])
+		camera, err = c.resoluteCamera(req.CameraId)
 		if err != nil {
 			logger.SError("failed to resolute camera",
 				zap.Error(err))
