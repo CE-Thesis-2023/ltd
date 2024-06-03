@@ -265,6 +265,8 @@ func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, pay
 	var reply *paho.Publish
 	defer func() {
 		if err != nil {
+			logger.SError("failed to handle command",
+				zap.Error(err))
 			resp := events.EventReply{
 				Err:    err,
 				Status: err.Error(),
@@ -285,6 +287,8 @@ func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, pay
 		if err = json.Unmarshal(payload, &req); err != nil {
 			return err
 		}
+		logger.SInfo("received PTZ command",
+			zap.Any("command", req))
 		if len(event.Arguments) == 0 {
 			return custerror.FormatInvalidArgument("no camera id found")
 		}
@@ -298,8 +302,7 @@ func (c *Reconciler) handleCommand(ctx context.Context, event *events.Event, pay
 		if err = c.commandService.PtzCtrl(ctx, camera, &req); err != nil {
 			return err
 		}
-		reply, _ = c.buildPublish(publishTo, &events.EventReply{Status: "500", Err: err}, prop)
-
+		reply, _ = c.buildPublish(publishTo, &events.EventReply{Status: "200", Err: nil}, prop)
 	case "info":
 		var camera *db.Camera
 		if len(event.Arguments) == 0 {
